@@ -1,0 +1,620 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geomstats.riemannian_metric &mdash; Geomstats 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Geomstats
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Install Geomstats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api-reference.html">API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Support</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Geomstats</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>geomstats.riemannian_metric</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for geomstats.riemannian_metric</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Riemannian and pseudo-Riemannian metrics.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+
+
+<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<span class="n">N_CENTERS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">N_REPETITIONS</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">N_MAX_ITERATIONS</span> <span class="o">=</span> <span class="mi">50000</span>
+
+
+<div class="viewcode-block" id="loss"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.loss">[docs]</a><span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loss function given by a riemannian metric,</span>
+<span class="sd">    expressed as the squared geodesic distance between the prediction</span>
+<span class="sd">    and the ground truth.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="grad"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.grad">[docs]</a><span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Closed-form for the gradient of the loss function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">y_true</span><span class="p">)</span>
+    <span class="n">grad_vec</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">tangent_vec</span>
+
+    <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">y_pred</span><span class="p">)</span>
+
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ni,nij-&gt;ni&#39;</span><span class="p">,</span>
+                     <span class="n">grad_vec</span><span class="p">,</span>
+                     <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">grad</span></div>
+
+
+<div class="viewcode-block" id="RiemannianMetric"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMetric</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for Riemannian and pseudo-Riemannian metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dimension</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">assert</span> <span class="n">dimension</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="n">dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">signature</span>
+
+<div class="viewcode-block" id="RiemannianMetric.inner_product_matrix"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.inner_product_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inner product matrix at the tangent space at a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;The computation of the inner product matrix&#39;</span>
+                <span class="s1">&#39; is not implemented.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.inner_product"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inner product between two tangent vectors at a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">n_tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">n_mats</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">n_inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">n_tangent_vec_a</span><span class="p">,</span> <span class="n">n_tangent_vec_b</span><span class="p">)</span>
+        <span class="n">n_inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">n_inner_prod</span><span class="p">,</span> <span class="n">n_mats</span><span class="p">)</span>
+
+        <span class="n">n_tiles_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">n_inner_prod</span><span class="p">,</span> <span class="n">n_tangent_vec_a</span><span class="p">)</span>
+        <span class="n">n_tiles_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">n_tiles_a</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="p">[</span><span class="n">n_tiles_a</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">n_tiles_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">n_inner_prod</span><span class="p">,</span> <span class="n">n_tangent_vec_b</span><span class="p">)</span>
+        <span class="n">n_tiles_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">n_tiles_b</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="p">[</span><span class="n">n_tiles_b</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">n_tiles_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">n_inner_prod</span><span class="p">,</span> <span class="n">n_mats</span><span class="p">)</span>
+        <span class="n">n_tiles_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">n_tiles_mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">,</span> <span class="p">[</span><span class="n">n_tiles_mat</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nj,njk-&gt;nk&#39;</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">inner_prod_mat</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nk-&gt;n&#39;</span><span class="p">,</span> <span class="n">aux</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="n">inner_prod</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">return</span> <span class="n">inner_prod</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.squared_norm"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.squared_norm">[docs]</a>    <span class="k">def</span> <span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Squared norm of a vector associated to the inner product</span>
+<span class="sd">        at the tangent space at a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sq_norm</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.norm"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.norm">[docs]</a>    <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Norm of a vector associated to the inner product</span>
+<span class="sd">        at the tangent space at a base point.</span>
+
+<span class="sd">        Note: This only works for positive-definite</span>
+<span class="sd">        Riemannian metrics and inner products.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sq_norm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">norm</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.exp"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Riemannian exponential of a tangent vector wrt to a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;The Riemannian exponential is not implemented.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.log"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Riemannian logarithm of a point wrt a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s1">&#39;The Riemannian logarithm is not implemented.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.geodesic"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span>
+                 <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Geodesic curve defined by either:</span>
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        or</span>
+<span class="sd">        -an initial point and an end point.</span>
+
+<span class="sd">        The geodesic is returned as a function parameterized by t.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">point_ndim</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">point_ndim</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span>
+                                      <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Specify an end point or an initial tangent &#39;</span>
+                             <span class="s1">&#39;vector to define the geodesic.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span>
+                                      <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">shooting_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span>
+                                            <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">shooting_tangent_vec</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">shooting_tangent_vec</span>
+        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">)</span>
+        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">,</span>
+                                            <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">point_on_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                                          <span class="n">initial_point</span><span class="p">,</span>
+                                          <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                                          <span class="n">initial_tangent_vec</span><span class="p">,</span>
+                                          <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+                <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;il,nk-&gt;ik&#39;</span><span class="p">,</span>
+                                         <span class="n">t</span><span class="p">,</span>
+                                         <span class="n">new_initial_tangent_vec</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+                <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;il,nkm-&gt;ikm&#39;</span><span class="p">,</span>
+                                         <span class="n">t</span><span class="p">,</span>
+                                         <span class="n">new_initial_tangent_vec</span><span class="p">)</span>
+
+            <span class="n">point_at_time_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vecs</span><span class="p">,</span>
+                                       <span class="n">base_point</span><span class="o">=</span><span class="n">new_initial_point</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">point_at_time_t</span>
+
+        <span class="k">return</span> <span class="n">point_on_geodesic</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.squared_dist"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Squared geodesic distance between two points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">point_a</span><span class="p">)</span>
+        <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="n">log</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">point_a</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sq_dist</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.dist"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.dist">[docs]</a>    <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Geodesic distance between two points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_negative_eigenvalues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n_negative_eigenvalues</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;The method </span><span class="se">\&#39;</span><span class="s1">dist</span><span class="se">\&#39;</span><span class="s1"> only works for positive-definite&#39;</span>
+                    <span class="s1">&#39; Riemannian metrics and inner products.&#39;</span><span class="p">)</span>
+        <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dist</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.variance"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.variance">[docs]</a>    <span class="k">def</span> <span class="nf">variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Variance of (weighted) points wrt a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+        <span class="n">variance</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="n">sq_dists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
+        <span class="n">variance</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">sq_dists</span><span class="p">)</span>
+
+        <span class="n">variance</span> <span class="o">/=</span> <span class="n">sum_weights</span>
+
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">variance</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.mean"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span>
+             <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Frechet mean of (weighted) points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO(nina): profile this code to study performance,</span>
+        <span class="c1"># i.e. what to do with sq_dists_between_iterates.</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mean</span>
+
+        <span class="n">sq_dists_between_iterates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+            <span class="n">a_tangent_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+            <span class="n">tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a_tangent_vector</span><span class="p">)</span>
+
+            <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
+            <span class="n">tangent_mean</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
+
+            <span class="n">tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
+
+            <span class="n">mean_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_mean</span><span class="p">,</span>
+                <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
+
+            <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">mean_next</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+            <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
+
+            <span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+                                     <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                                     <span class="n">base_point</span><span class="o">=</span><span class="n">mean_next</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">sq_dist</span> <span class="o">&lt;=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">variance</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+                <span class="k">break</span>
+
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
+            <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">iteration</span> <span class="ow">is</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached.&#39;</span>
+                  <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.tangent_pca"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.tangent_pca">[docs]</a>    <span class="k">def</span> <span class="nf">tangent_pca</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tangent Principal Component Analysis (tPCA) of points</span>
+<span class="sd">        on the tangent space at a base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO(nina): It only works for points of ndim=2, adapt to other ndims.</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">covariance_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+        <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">tangent_eigenvecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">covariance_mat</span><span class="p">)</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">eigenvalues</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">eigenvalues</span> <span class="o">=</span> <span class="n">eigenvalues</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">tangent_eigenvecs</span> <span class="o">=</span> <span class="n">tangent_eigenvecs</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">tangent_eigenvecs</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.diameter"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.diameter">[docs]</a>    <span class="k">def</span> <span class="nf">diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Distance between the two points that are farthest away from each other</span>
+<span class="sd">        in points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diameter</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_points</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">dist_to_neighbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="p">:])</span>
+            <span class="n">dist_to_farthest_neighbor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">dist_to_neighbors</span><span class="p">)</span>
+            <span class="n">diameter</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">diameter</span><span class="p">,</span> <span class="n">dist_to_farthest_neighbor</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">diameter</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.closest_neighbor_index"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.closest_neighbor_index">[docs]</a>    <span class="k">def</span> <span class="nf">closest_neighbor_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closest neighbor of point among neighbors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">)</span>
+        <span class="n">closest_neighbor_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">closest_neighbor_index</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.optimal_quantization"><a class="viewcode-back" href="../../api-reference.html#geomstats.riemannian_metric.RiemannianMetric.optimal_quantization">[docs]</a>    <span class="k">def</span> <span class="nf">optimal_quantization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">n_centers</span><span class="o">=</span><span class="n">N_CENTERS</span><span class="p">,</span>
+                             <span class="n">n_repetitions</span><span class="o">=</span><span class="n">N_REPETITIONS</span><span class="p">,</span>
+                             <span class="n">tolerance</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">,</span>
+                             <span class="n">n_max_iterations</span><span class="o">=</span><span class="n">N_MAX_ITERATIONS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the optimal approximation of points by a smaller number</span>
+<span class="sd">        of weighted centers using the Competitive Learning Riemannian</span>
+<span class="sd">        Quantization algorithm. The centers are updated using decreasing</span>
+<span class="sd">        step sizes, each of which stays constant for n_repetitions iterations</span>
+<span class="sd">        to allow a better exploration of the data points.</span>
+<span class="sd">        See https://arxiv.org/abs/1806.07605.</span>
+<span class="sd">        Return :</span>
+<span class="sd">            - n_centers centers</span>
+<span class="sd">            - n_centers weights between 0 and 1</span>
+<span class="sd">            - a dictionary containing the clusters, where each key is the</span>
+<span class="sd">              cluster index, and its value is the lists of points belonging</span>
+<span class="sd">              to the cluster</span>
+<span class="sd">            - the number of steps needed to converge.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dimension</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">random_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span>
+                                           <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_centers</span><span class="p">,))</span>
+        <span class="n">centers</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">random_indices</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">dimension</span><span class="p">))]</span>
+
+        <span class="n">gap</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+            <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">step_size</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">iteration</span> <span class="o">/</span> <span class="n">n_repetitions</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="n">random_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">random_index</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">dimension</span><span class="p">))]</span>
+
+            <span class="n">index_to_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">centers</span><span class="p">)</span>
+            <span class="n">center_to_update</span> <span class="o">=</span> <span class="n">centers</span><span class="p">[</span><span class="n">index_to_update</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="n">tangent_vec_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                    <span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span>
+                    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">step_size</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                    <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec_update</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span>
+                    <span class="p">)</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">center_to_update</span><span class="p">,</span> <span class="n">new_center</span><span class="p">)</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="p">(</span><span class="n">gap</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">gap</span> <span class="o">+</span> <span class="p">(</span><span class="n">gap</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">centers</span><span class="p">[</span><span class="n">index_to_update</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">new_center</span>
+
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">tolerance</span><span class="p">):</span>
+                    <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached. The&#39;</span>
+                  <span class="s1">&#39;quantization may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+
+        <span class="n">clusters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_centers</span><span class="p">,))</span>
+        <span class="n">index_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">centers</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">index_list</span><span class="p">:</span>
+                <span class="n">clusters</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+                <span class="n">index_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">clusters</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="n">weights</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">n_points</span>
+
+        <span class="k">return</span> <span class="n">centers</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">iteration</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Geomstats, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
