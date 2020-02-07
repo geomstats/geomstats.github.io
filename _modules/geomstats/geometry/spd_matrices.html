@@ -181,12 +181,14 @@
             <span class="n">embedding_manifold</span><span class="o">=</span><span class="n">GeneralLinear</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
 
-<div class="viewcode-block" id="SPDMatrices.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check if a matrix belongs to the manifold.</span>
-
-<span class="sd">        Check if a matrix belongs to the manifold of symmetric positive</span>
-<span class="sd">        definite matrices.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SPDMatrices.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.belongs">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if a matrix is symmetric and invertible.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO (opeltre): check positivity, implying invertibility.</span>
+        <span class="c1">#</span>
+        <span class="c1"># note : vectorized &quot;and&quot; on numpy works with:</span>
+        <span class="c1">#       [bool] * [bool] -&gt; bool</span>
+        <span class="c1"># but does not on tf.</span>
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">is_symmetric</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SPDMatrices.vector_from_symmetric_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.vector_from_symmetric_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">vector_from_symmetric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
@@ -229,9 +231,8 @@
 <div class="viewcode-block" id="SPDMatrices.random_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.random_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Define a log-uniform random sample of SPD matrices.&quot;&quot;&quot;</span>
         <span class="n">mat</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">spd_mat</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mat</span> <span class="o">+</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span>
 
-        <span class="n">spd_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_manifold</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">mat</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">spd_mat</span></div>
 
 <div class="viewcode-block" id="SPDMatrices.random_tangent_vec_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.random_tangent_vec_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_tangent_vec_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1094,10 +1095,6 @@
 <div class="viewcode-block" id="SPDMetricLogEuclidean.geodesic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMetricLogEuclidean.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Log-Euclidean geodesic.</span>
 
-<span class="sd">        Compute the Riemannian geodesic starting at point base_point</span>
-<span class="sd">        in direction of initial_tangent_vec.</span>
-<span class="sd">        This gives a function from real numbers to SPD matrices.</span>
-
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        initial_point : array-like, shape=[n_samples, n, n]</span>
@@ -1105,12 +1102,13 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        geodesic : callable</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            The time parameterized geodesic.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">def</span> <span class="nf">point_on_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">point_on_geodesic</span></div></div>
+        <span class="k">return</span> <span class="n">path</span></div></div>
 </pre></div>
 
            </div>
