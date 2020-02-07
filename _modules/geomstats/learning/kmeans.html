@@ -168,7 +168,7 @@
 <div class="viewcode-block" id="RiemannianKMeans"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.kmeans.RiemannianKMeans">[docs]</a><span class="k">class</span> <span class="nc">RiemannianKMeans</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">,</span> <span class="n">ClusterMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">riemannian_metric</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
-                 <span class="n">tol</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                 <span class="n">tol</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span> <span class="n">mean_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; K-Means algorithm using Riemannian manifolds</span>
 
 <span class="sd">        Parameters</span>
@@ -197,6 +197,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span> <span class="o">=</span> <span class="n">riemannian_metric</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_method</span> <span class="o">=</span> <span class="n">mean_method</span>
 
 <div class="viewcode-block" id="RiemannianKMeans.fit"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.kmeans.RiemannianKMeans.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Predict for each data point the closest center in terms of</span>
@@ -215,6 +216,7 @@
 <span class="sd">        self : object</span>
 <span class="sd">            Return centroids array</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span> <span class="o">=</span> <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)],</span> <span class="mi">0</span><span class="p">)</span>
@@ -232,8 +234,13 @@
             <span class="n">old_centroids</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">):</span>
                 <span class="n">fold</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">belongs</span> <span class="o">==</span> <span class="n">i</span><span class="p">])</span>
+
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+                        <span class="n">fold</span><span class="p">,</span>
+                        <span class="n">mean_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_method</span><span class="p">,</span>
+                        <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
@@ -246,6 +253,10 @@
                     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Convergence Reached after &quot;</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="s2">&quot; iterations&quot;</span><span class="p">)</span>
 
                 <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="n">max_iter</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;K-means maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached.&#39;</span>
+                  <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_iter</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">)</span></div>
 

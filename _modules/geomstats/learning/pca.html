@@ -157,8 +157,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for geomstats.learning.pca</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot; Principal Component Analysis on Manifolds</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Principal Component Analysis on Manifolds.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numbers</span>
 <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log</span>
@@ -174,7 +173,7 @@
 
 
 <span class="k">def</span> <span class="nf">_assess_dimension_</span><span class="p">(</span><span class="n">spectrum</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Compute the likelihood of a rank ``rank`` dataset</span>
+    <span class="sd">&quot;&quot;&quot;Compute the likelihood of a rank ``rank`` dataset.</span>
 
 <span class="sd">    The dataset is assumed to be embedded in gaussian noise of shape(n,</span>
 <span class="sd">    dimf) having spectrum ``spectrum``.</span>
@@ -236,7 +235,7 @@
 
 
 <span class="k">def</span> <span class="nf">_infer_dimension_</span><span class="p">(</span><span class="n">spectrum</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Infers the dimension of a dataset of shape (n_samples, n_features)</span>
+    <span class="sd">&quot;&quot;&quot;Infers the dimension of a dataset of shape (n_samples, n_features).</span>
 
 <span class="sd">    The dataset is described by its spectrum `spectrum`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -248,12 +247,12 @@
 
 
 <div class="viewcode-block" id="TangentPCA"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.pca.TangentPCA">[docs]</a><span class="k">class</span> <span class="nc">TangentPCA</span><span class="p">(</span><span class="n">_BasePCA</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Tangent Principal component analysis (tPCA)</span>
+    <span class="sd">&quot;&quot;&quot;Tangent Principal component analysis (tPCA).</span>
 
 <span class="sd">    Linear dimensionality reduction using</span>
 <span class="sd">    Singular Value Decomposition of the</span>
 <span class="sd">    Riemannian Log of the data at the tangent space</span>
-<span class="sd">    of the mean.</span>
+<span class="sd">    of the Frechet mean.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -267,45 +266,51 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">iterated_power</span> <span class="o">=</span> <span class="n">iterated_power</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
 
-<div class="viewcode-block" id="TangentPCA.fit"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.pca.TangentPCA.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="TangentPCA.fit"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.pca.TangentPCA.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fit the model with X.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape (n_samples, n_features)</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_features]</span>
 <span class="sd">            Training data, where n_samples is the number of samples</span>
 <span class="sd">            and n_features is the number of features.</span>
-
-<span class="sd">        y : Ignored</span>
+<span class="sd">        y : Ignored (Compliance with scikit-learn interface)</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, n_features]</span>
+<span class="sd">            Point at which to perform the tangent PCA</span>
+<span class="sd">            Optional, default to Frechet mean if None</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Optional</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        self : object</span>
 <span class="sd">            Returns the instance itself.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="TangentPCA.fit_transform"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.pca.TangentPCA.fit_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span>
-                      <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span>
-                      <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="TangentPCA.fit_transform"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.pca.TangentPCA.fit_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fit the model with X and apply the dimensionality reduction on X.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape (n_samples, n_features)</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_features]</span>
 <span class="sd">            Training data, where n_samples is the number of samples</span>
 <span class="sd">            and n_features is the number of features.</span>
-
-<span class="sd">        y : Ignored</span>
+<span class="sd">        y : Ignored (Compliance with scikit-learn interface)</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, n_features]</span>
+<span class="sd">            Point at which to perform the tangent PCA</span>
+<span class="sd">            Optional, default to Frechet mean if None</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Optional</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        X_new : array-like, shape (n_samples, n_components)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="n">U</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components_</span><span class="p">]</span>
 
         <span class="n">U</span> <span class="o">*=</span> <span class="n">S</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components_</span><span class="p">]</span>
@@ -313,7 +318,24 @@
         <span class="k">return</span> <span class="n">U</span></div>
 
     <span class="k">def</span> <span class="nf">_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fit the model by computing full SVD on X&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Fit the model by computing full SVD on X.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_features]</span>
+<span class="sd">            Training data, where n_samples is the number of samples</span>
+<span class="sd">            and n_features is the number of features.</span>
+<span class="sd">        y : Ignored (Compliance with scikit-learn interface)</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, n_features]</span>
+<span class="sd">            Point at which to perform the tangent PCA</span>
+<span class="sd">            Optional, default to Frechet mean if None</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Optional</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        U, S, V: SVD decomposition</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="s1">&#39;This is currently only implemented for vectors.&#39;</span><span class="p">)</span>
@@ -328,7 +350,6 @@
         <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span> <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">)</span>
 
-        <span class="c1"># Handle n_components==None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_components</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -351,7 +372,7 @@
                                  <span class="s2">&quot;was of type=</span><span class="si">%r</span><span class="s2">&quot;</span>
                                  <span class="o">%</span> <span class="p">(</span><span class="n">n_components</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">n_components</span><span class="p">)))</span>
 
-        <span class="c1"># Center data</span>
+        <span class="c1"># Center data - the mean should be 0 if base_point is the Frechet mean</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">X</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span>
 

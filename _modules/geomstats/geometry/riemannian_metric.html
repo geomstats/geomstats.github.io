@@ -162,20 +162,26 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
+<span class="kn">import</span> <span class="nn">autograd</span>
+
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.connection</span> <span class="kn">import</span> <span class="n">Connection</span>
+
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
 <span class="n">N_CENTERS</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-5</span>
 <span class="n">N_REPETITIONS</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">N_MAX_ITERATIONS</span> <span class="o">=</span> <span class="mi">50000</span>
+<span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">10</span>
 
 
 <div class="viewcode-block" id="loss"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.loss">[docs]</a><span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Compute loss given by a Riemannian metric.</span>
+    <span class="sd">&quot;&quot;&quot;Compute loss function between prediction and ground truth.</span>
 
-<span class="sd">    Loss function given by a Riemannian metric expressed as the squared</span>
-<span class="sd">    geodesic distance between the prediction and the ground truth.</span>
+<span class="sd">    Loss function given by a Riemannian metric,</span>
+<span class="sd">    expressed as the squared geodesic distance between the prediction</span>
+<span class="sd">    and the ground truth.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -186,13 +192,14 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    loss</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">loss</span></div>
 
 
 <div class="viewcode-block" id="grad"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.grad">[docs]</a><span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Compute closed-form for the gradient of the loss function.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Closed-form for the gradient of the loss function.&quot;&quot;&quot;</span>
     <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">y_true</span><span class="p">)</span>
     <span class="n">grad_vec</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">tangent_vec</span>
 
@@ -205,17 +212,17 @@
     <span class="k">return</span> <span class="n">grad</span></div>
 
 
-<div class="viewcode-block" id="RiemannianMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMetric</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="RiemannianMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMetric</span><span class="p">(</span><span class="n">Connection</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for Riemannian and pseudo-Riemannian metrics.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dimension</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
         <span class="k">assert</span> <span class="n">dimension</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="n">dimension</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dimension</span><span class="o">=</span><span class="n">dimension</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">signature</span>
 
 <div class="viewcode-block" id="RiemannianMetric.inner_product_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute inner product matrix at the tangent space at base point.</span>
+        <span class="sd">&quot;&quot;&quot;Inner product matrix at the tangent space at a base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -226,31 +233,71 @@
             <span class="s1">&#39; is not implemented.&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.inner_product_inverse_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product_inverse_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_inverse_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute inner prod. inv. matrix at the tangent space at base point.</span>
+        <span class="sd">&quot;&quot;&quot;Inner product matrix at the tangent space at a base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        base_point : array-like, shape=[n_samples, dimension], optional</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s1">&#39;The computation of the inner product inv. matrix&#39;</span>
-            <span class="s1">&#39; is not implemented.&#39;</span><span class="p">)</span></div>
+        <span class="n">metric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">cometric_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">metric_matrix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cometric_matrix</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.inner_product_derivative_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product_derivative_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, dimension], optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metric_derivative</span> <span class="o">=</span> <span class="n">autograd</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">metric_derivative</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.christoffels"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.christoffels">[docs]</a>    <span class="k">def</span> <span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute Christoffel symbols associated with the connection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        christoffels: array-like,</span>
+<span class="sd">                             shape=[n_samples, dimension, dimension, dimension]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cometric_mat_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_inverse_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">metric_derivative_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_derivative_matrix</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nim,nmkl-&gt;nikl&#39;</span><span class="p">,</span>
+                           <span class="n">cometric_mat_at_point</span><span class="p">,</span>
+                           <span class="n">metric_derivative_at_point</span><span class="p">)</span>
+        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nim,nmlk-&gt;nilk&#39;</span><span class="p">,</span>
+                           <span class="n">cometric_mat_at_point</span><span class="p">,</span>
+                           <span class="n">metric_derivative_at_point</span><span class="p">)</span>
+        <span class="n">term_3</span> <span class="o">=</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nim,nklm-&gt;nikl&#39;</span><span class="p">,</span>
+                             <span class="n">cometric_mat_at_point</span><span class="p">,</span>
+                             <span class="n">metric_derivative_at_point</span><span class="p">)</span>
+
+        <span class="n">christoffels</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span> <span class="o">+</span> <span class="n">term_3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">christoffels</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute inner product between two tangent vectors at a base point.</span>
+        <span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec_a: array-like, shape=[n_samples, dimension]</span>
 <span class="sd">                                   or shape=[1, dimension]</span>
+
 <span class="sd">        tangent_vec_b: array-like, shape=[n_samples, dimension]</span>
 <span class="sd">                                   or shape=[1, dimension]</span>
+
 <span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
 <span class="sd">                                or shape=[1, dimension]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        inner_product</span>
+<span class="sd">        inner_product : array-like, shape=[n_samples,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -295,21 +342,19 @@
         <span class="k">return</span> <span class="n">inner_prod</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.squared_norm"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.squared_norm">[docs]</a>    <span class="k">def</span> <span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the squared norm of a vector.</span>
+        <span class="sd">&quot;&quot;&quot;Compute the square of the norm of a vector.</span>
 
 <span class="sd">        Squared norm of a vector associated to the inner product</span>
 <span class="sd">        at the tangent space at a base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        vector: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                            or shape=[1, dimension]</span>
-<span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                                or shape=[1, dimension]</span>
+<span class="sd">        vector : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, dimension]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sq_norm</span>
+<span class="sd">        sq_norm : array-like, shape=[n_samples,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sq_norm</span></div>
@@ -325,76 +370,39 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        vector: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                            or shape=[1, dimension]</span>
-
-<span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                                or shape=[1, dimension]</span>
+<span class="sd">        vector : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, dimension]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        norm</span>
+<span class="sd">        norm : array-like, shape=[n_samples,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sq_norm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">norm</span></div>
 
-<div class="viewcode-block" id="RiemannianMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tangent vector wrt to base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                                 or shape=[1, dimension]</span>
-<span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                                or shape=[1, dimension]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s1">&#39;The Riemannian exponential is not implemented.&#39;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="RiemannianMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_spoint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                           or shape=[1, dimension]</span>
-
-<span class="sd">        base_point: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                                or shape=[1, dimension]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s1">&#39;The Riemannian logarithm is not implemented.&#39;</span><span class="p">)</span></div>
-
 <div class="viewcode-block" id="RiemannianMetric.geodesic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span>
                  <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute geodesic curve.</span>
+        <span class="sd">&quot;&quot;&quot;Return the geodesic as function of t.</span>
 
 <span class="sd">        Geodesic curve defined by either:</span>
 <span class="sd">        - an initial point and an initial tangent vector, or</span>
-<span class="sd">        -an initial point and an end point.</span>
+<span class="sd">        - an initial point and an end point.</span>
 
 <span class="sd">        The geodesic is returned as a function parameterized by t.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        initial_point</span>
-<span class="sd">        end_point</span>
-<span class="sd">        initial_tangent_vec</span>
-<span class="sd">        point_type</span>
+<span class="sd">        initial_point : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        end_point : array-like, shape=[n_samples, dimension], optional</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[n_samples, dimension],</span>
+<span class="sd">            optional</span>
+<span class="sd">        point_type : str, optional</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        point_on_geodesic : callable</span>
+<span class="sd">        path : callable</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point_ndim</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
@@ -418,12 +426,12 @@
         <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">,</span>
                                             <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">point_on_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Generate a function parameterizing the geodesic.</span>
 
 <span class="sd">            Parameters</span>
 <span class="sd">            ----------</span>
-<span class="sd">            t</span>
+<span class="sd">            t :  parameter value of the geodesic</span>
 
 <span class="sd">            Returns</span>
 <span class="sd">            -------</span>
@@ -452,21 +460,19 @@
                                        <span class="n">base_point</span><span class="o">=</span><span class="n">new_initial_point</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">point_at_time_t</span>
 
-        <span class="k">return</span> <span class="n">point_on_geodesic</span></div>
+        <span class="k">return</span> <span class="n">path</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.squared_dist"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute squared geodesic distance between two points.</span>
+        <span class="sd">&quot;&quot;&quot;Squared geodesic distance between two points.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_a: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                             or shape=[1, dimension]</span>
-<span class="sd">        point_b: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                             or shape=[1, dimension]</span>
+<span class="sd">        point_a : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        point_b : array-like, shape=[n_samples, dimension]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sq_dist</span>
+<span class="sd">        sq_dist : array-like, shape=[n_samples,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">point_a</span><span class="p">)</span>
         <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="n">log</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">point_a</span><span class="p">)</span>
@@ -474,20 +480,19 @@
         <span class="k">return</span> <span class="n">sq_dist</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.dist"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.dist">[docs]</a>    <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute geodesic distance between two points.</span>
+        <span class="sd">&quot;&quot;&quot;Geodesic distance between two points.</span>
 
-<span class="sd">        Note: It only works for positive definite Riemannian metrics.</span>
+<span class="sd">        Note: It only works for positive definite</span>
+<span class="sd">        Riemannian metrics.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_a: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                             or shape=[1, dimension]</span>
-<span class="sd">        point_b: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">                             or shape=[1, dimension]</span>
+<span class="sd">        point_a : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        point_b : array-like, shape=[n_samples, dimension]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        dist</span>
+<span class="sd">        dist : array-like, shape=[n_samples,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
         <span class="n">dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
@@ -498,16 +503,13 @@
                  <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute variance of (weighted) points wrt a base point.</span>
+        <span class="sd">&quot;&quot;&quot;Variance of (weighted) points wrt a base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        points: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">        weights: array-like, shape=[n_samples, 1], optional</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        variance</span>
+<span class="sd">        weights: array-like, shape=[n_samples, 1], optional</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -543,100 +545,143 @@
              <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
              <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">,</span>
              <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span>
+             <span class="n">mean_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
              <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the Frechet mean of (weighted) points.</span>
+        <span class="sd">&quot;&quot;&quot;Frechet mean of (weighted) points.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        points: array-like, shape=[n_samples, dimension]</span>
-<span class="sd">        weights: array-like, shape=[n_samples, 1], optional</span>
-<span class="sd">        verbose: bool, optional</span>
+<span class="sd">        points : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">        weights : array-like, shape=[n_samples, 1], optional</span>
+<span class="sd">        verbose : bool, optional</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        mean</span>
+<span class="sd">        mean : array-like</span>
+<span class="sd">            the Frechet mean of points, a point on the manifold</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO(nina): Profile this code to study performance,</span>
-        <span class="c1"># i.e. what to do with sq_dists_between_iterates.</span>
-        <span class="k">def</span> <span class="nf">while_loop_cond</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">):</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="mf">0.</span><span class="p">),</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">variance</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">mean_method</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">while_loop_body</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">):</span>
-            <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
-            <span class="n">tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
+            <span class="c1"># TODO(nina): Profile this code to study performance,</span>
+            <span class="c1"># i.e. what to do with sq_dists_between_iterates.</span>
+            <span class="k">def</span> <span class="nf">while_loop_cond</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="mf">0.</span><span class="p">),</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">variance</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span>
 
-            <span class="n">tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
+            <span class="k">def</span> <span class="nf">while_loop_body</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">):</span>
 
-            <span class="n">mean_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_mean</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
+                <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
 
-            <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">mean_next</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
-            <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
+                <span class="n">tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
 
-            <span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
-                                     <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
-                                     <span class="n">base_point</span><span class="o">=</span><span class="n">mean_next</span><span class="p">)</span>
+                <span class="n">tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
 
-            <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
-            <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">]</span>
+                <span class="n">mean_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                    <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_mean</span><span class="p">,</span>
+                    <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">sq_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">mean_next</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+                <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+                                         <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                                         <span class="n">base_point</span><span class="o">=</span><span class="n">mean_next</span><span class="p">)</span>
 
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
+                <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">]</span>
 
-        <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">mean</span>
+
+            <span class="n">sq_dists_between_iterates</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">sq_dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">]])</span>
+            <span class="n">variance</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">]])</span>
+
+            <span class="n">last_iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">while_loop</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">:</span> <span class="n">while_loop_cond</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">),</span>
+                <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">:</span> <span class="n">while_loop_body</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">),</span>
+                <span class="n">loop_vars</span><span class="o">=</span><span class="p">[</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">],</span>
+                <span class="n">maximum_iterations</span><span class="o">=</span><span class="n">n_max_iterations</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">last_iteration</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached.&#39;</span>
+                      <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;n_iter: </span><span class="si">{}</span><span class="s1">, final variance: </span><span class="si">{}</span><span class="s1">, final dist: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">last_iteration</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">))</span>
+
             <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">mean</span>
 
-        <span class="n">sq_dists_between_iterates</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">sq_dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">]])</span>
-        <span class="n">variance</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">mean_method</span> <span class="o">==</span> <span class="s1">&#39;frechet-poincare-ball&#39;</span><span class="p">:</span>
 
-        <span class="n">last_iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">while_loop</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">:</span> <span class="n">while_loop_cond</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">),</span>
-            <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">:</span> <span class="n">while_loop_body</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">sq</span><span class="p">),</span>
-            <span class="n">loop_vars</span><span class="o">=</span><span class="p">[</span><span class="n">iteration</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">],</span>
-            <span class="n">maximum_iterations</span><span class="o">=</span><span class="n">n_max_iterations</span><span class="p">)</span>
+            <span class="n">lr</span> <span class="o">=</span> <span class="mf">1e-3</span>
+            <span class="n">tau</span> <span class="o">=</span> <span class="mf">5e-3</span>
 
-        <span class="k">if</span> <span class="n">last_iteration</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached. The &#39;</span>
-                          <span class="s1">&#39;mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">points</span>
 
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;n_iter: </span><span class="si">{}</span><span class="s1">, final variance: </span><span class="si">{}</span><span class="s1">, final dist: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">last_iteration</span><span class="p">,</span> <span class="n">variance</span><span class="p">,</span> <span class="n">sq_dist</span><span class="p">))</span>
+            <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">convergence</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">barycenter</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span>
 
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mean</span></div>
+            <span class="k">while</span> <span class="n">convergence</span> <span class="o">&gt;</span> <span class="n">tau</span> <span class="ow">and</span> <span class="n">n_max_iterations</span> <span class="o">&gt;</span> <span class="n">iteration</span><span class="p">:</span>
+
+                <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">expand_barycenter</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">barycenter</span><span class="p">,</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">grad_tangent</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">expand_barycenter</span><span class="p">)</span>
+
+                <span class="n">cc_barycenter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lr</span> <span class="o">*</span> <span class="n">grad_tangent</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                               <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                                         <span class="n">barycenter</span><span class="p">)</span>
+
+                <span class="n">convergence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cc_barycenter</span><span class="p">,</span> <span class="n">barycenter</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+                <span class="n">barycenter</span> <span class="o">=</span> <span class="n">cc_barycenter</span>
+
+            <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached. The &#39;</span>
+                    <span class="s1">&#39;mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">barycenter</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.adaptive_gradientdescent_mean"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.adaptive_gradientdescent_mean">[docs]</a>    <span class="k">def</span> <span class="nf">adaptive_gradientdescent_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span>
                                       <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                      <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+                                      <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
                                       <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
-                                      <span class="n">init_points</span><span class="o">=</span><span class="p">[]):</span>
+                                      <span class="n">init_points</span><span class="o">=</span><span class="p">[],</span>
+                                      <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Frechet mean of (weighted) points using adaptive time-steps.</span>
 
+<span class="sd">        Frechet mean of (weighted) points using adaptive time-steps</span>
 <span class="sd">        The loss function optimized is ||M_1(x)||_x (where M_1(x) is</span>
 <span class="sd">        the tangent mean at x) rather than the mean-square-distance (MSD)</span>
 <span class="sd">        because this saves computation time.</span>
@@ -644,17 +689,21 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        points: array-like, shape=[n_samples, dimension]</span>
+
 <span class="sd">        weights: array-like, shape=[n_samples, 1], optional</span>
+
 <span class="sd">        init_points: array-like, shape=[n_init, dimension]</span>
 <span class="sd">        epsilon: tolerance for stopping the gradient descent</span>
+<span class="sd">        verbose: verbose mode printing the surrogate value</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mean</span>
+<span class="sd">        epsilon: tolerance for stopping the gradient descent</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO(Xavier): This function assumes that all points are lists</span>
         <span class="c1">#  of vectors and not of matrices</span>
         <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
@@ -671,11 +720,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">current_mean</span> <span class="o">=</span> <span class="n">init_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">current_mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
         <span class="n">tau</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="nb">iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">current_mean</span><span class="p">)</span>
         <span class="n">current_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
@@ -683,8 +729,8 @@
         <span class="n">norm_current_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">current_tangent_mean</span><span class="p">)</span>
 
         <span class="k">while</span> <span class="p">(</span><span class="n">norm_current_tangent_mean</span> <span class="o">&gt;</span> <span class="n">epsilon</span>
-                <span class="ow">and</span> <span class="nb">iter</span> <span class="o">&lt;</span> <span class="n">n_max_iterations</span><span class="p">):</span>
-            <span class="nb">iter</span> <span class="o">=</span> <span class="nb">iter</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="ow">and</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">n_max_iterations</span><span class="p">):</span>
+            <span class="n">iteration</span> <span class="o">=</span> <span class="n">iteration</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="n">shooting_vector</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
                 <span class="n">tau</span> <span class="o">*</span> <span class="n">current_tangent_mean</span><span class="p">,</span>
                 <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -695,6 +741,11 @@
             <span class="n">next_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nk,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
             <span class="n">next_tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
             <span class="n">norm_next_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">next_tangent_mean</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="s2">&quot;Iter </span><span class="si">{0}</span><span class="s2">: tau= </span><span class="si">{1}</span><span class="s2">, &quot;</span>
+                    <span class="s2">&quot;norm_current_tangent_mean = </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="nb">iter</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">norm_current_tangent_mean</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">norm_next_tangent_mean</span> <span class="o">&lt;</span> <span class="n">norm_current_tangent_mean</span><span class="p">:</span>
                 <span class="n">current_mean</span> <span class="o">=</span> <span class="n">next_mean</span>
                 <span class="n">current_tangent_mean</span> <span class="o">=</span> <span class="n">next_tangent_mean</span>
@@ -703,48 +754,18 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">tau</span> <span class="o">=</span> <span class="n">tau</span> <span class="o">*</span> <span class="mf">0.8</span>
 
-        <span class="k">if</span> <span class="nb">iter</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached.&#39;</span>
-                  <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">n_max_iterations</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached.&#39;</span>
+                <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_max_iterations</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">current_mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="RiemannianMetric.tangent_pca"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.tangent_pca">[docs]</a>    <span class="k">def</span> <span class="nf">tangent_pca</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Perform tPCA of points on the tangent space at a base point.</span>
-
-<span class="sd">        Tangent Principal Component Analysis (tPCA) of points</span>
-<span class="sd">        on the tangent space at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        points</span>
-<span class="sd">        base_point</span>
-<span class="sd">        point_type</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        eigenvalues</span>
-<span class="sd">        tangent_eigenvecs</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s1">&#39;This is currently only implemented for vectors.&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
-
-        <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">covariance_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
-        <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">tangent_eigenvecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">covariance_mat</span><span class="p">)</span>
-
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">eigenvalues</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">eigenvalues</span> <span class="o">=</span> <span class="n">eigenvalues</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-        <span class="n">tangent_eigenvecs</span> <span class="o">=</span> <span class="n">tangent_eigenvecs</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">tangent_eigenvecs</span></div>
-
 <div class="viewcode-block" id="RiemannianMetric.diameter"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.diameter">[docs]</a>    <span class="k">def</span> <span class="nf">diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute distance between the two points farthest from each other.</span>
+        <span class="sd">&quot;&quot;&quot;Give the distance between two farthest points.</span>
+
+<span class="sd">        Distance between the two points that are farthest away from each other</span>
+<span class="sd">        in points.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -753,6 +774,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        diameter</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">diameter</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -765,16 +787,16 @@
         <span class="k">return</span> <span class="n">diameter</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.closest_neighbor_index"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.closest_neighbor_index">[docs]</a>    <span class="k">def</span> <span class="nf">closest_neighbor_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute closest neighbor of point among neighbors.</span>
+        <span class="sd">&quot;&quot;&quot;Closest neighbor of point among neighbors.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point</span>
 <span class="sd">        neighbors</span>
-
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        closest_neighbor_index</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">neighbors</span><span class="p">)</span>
         <span class="n">closest_neighbor_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
