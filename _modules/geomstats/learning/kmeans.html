@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geomstats.learning.kmeans &mdash; Geomstats 0.1 documentation</title>
+  <title>geomstats.learning.kmeans &mdash; Geomstats latest documentation</title>
   
 
   
@@ -21,11 +21,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.1
+                latest
               </div>
             
           
@@ -157,41 +157,52 @@
            <div itemprop="articleBody">
             
   <h1>Source code for geomstats.learning.kmeans</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
+<span></span><span class="sd">&quot;&quot;&quot;K-means clustering.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
 
 <span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClusterMixin</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.learning._template</span> <span class="kn">import</span> <span class="n">TransformerMixin</span>
+<span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
 
 
 <div class="viewcode-block" id="RiemannianKMeans"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.kmeans.RiemannianKMeans">[docs]</a><span class="k">class</span> <span class="nc">RiemannianKMeans</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">,</span> <span class="n">ClusterMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for k-means clustering on manifolds.</span>
+
+<span class="sd">    K-means algorithm using Riemannian manifolds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_clusters :    int</span>
+<span class="sd">                    Number of clusters (k value of the k-means).</span>
+
+<span class="sd">    riemannian_metric : object of class RiemannianMetric</span>
+<span class="sd">                        The geomstats Riemmanian metric associate to</span>
+<span class="sd">                        the space used.</span>
+
+<span class="sd">    init :  str</span>
+<span class="sd">            How to init centroids at the beginning of the algorithm.</span>
+<span class="sd">           &#39;random&#39; : will select random uniformally train point as</span>
+<span class="sd">                     initial centroids.</span>
+
+<span class="sd">    tol :   float</span>
+<span class="sd">            Convergence factor. Convergence is achieved when the difference</span>
+<span class="sd">            of mean distance between two steps is lower than tol.</span>
+
+<span class="sd">    verbose :   int</span>
+<span class="sd">                if verbose &gt; 0, information will be print during learning.</span>
+
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    Available example on the Poincaré Ball and Hypersphere manifolds</span>
+<span class="sd">    :mod:`examples.plot_kmeans_manifolds`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">riemannian_metric</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
                  <span class="n">tol</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span> <span class="n">mean_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; K-Means algorithm using Riemannian manifolds</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_clusters : Number of clusters (k value of the k-means)</span>
-
-<span class="sd">        riemannian_metric : The geomstats riemmanian metric associate to</span>
-<span class="sd">                            the space used</span>
-
-<span class="sd">        init : How to init centroids at the beginning of the algorithm.</span>
-<span class="sd">               &#39;random&#39; : will select random uniformally train point as</span>
-<span class="sd">                         initial centroids</span>
-
-<span class="sd">        tol : convergence factor. If the difference of mean distance</span>
-<span class="sd">             between two step is lower than tol</span>
-
-<span class="sd">        verbose : if verbose &gt; 0, information will be print during learning</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        self : object</span>
-<span class="sd">            Returns the instance itself.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span> <span class="o">=</span> <span class="n">n_clusters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">init</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span> <span class="o">=</span> <span class="n">riemannian_metric</span>
@@ -200,8 +211,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_method</span> <span class="o">=</span> <span class="n">mean_method</span>
 
 <div class="viewcode-block" id="RiemannianKMeans.fit"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.kmeans.RiemannianKMeans.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Predict for each data point the closest center in terms of</span>
-<span class="sd">            riemannian_metric distance</span>
+        <span class="sd">&quot;&quot;&quot;Provide clusters centroids and data labels.</span>
+
+<span class="sd">        Alternate between computing the mean of each cluster</span>
+<span class="sd">        and labelling data according to the new positions of the centroids.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -209,14 +222,14 @@
 <span class="sd">            Training data, where n_samples is the number of samples</span>
 <span class="sd">            and n_features is the number of features.</span>
 
-<span class="sd">        max_iter : Maximum number of iterations</span>
+<span class="sd">        max_iter :  int</span>
+<span class="sd">                    Maximum number of iterations</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        self : object</span>
 <span class="sd">            Return centroids array</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span> <span class="o">=</span> <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)],</span> <span class="mi">0</span><span class="p">)</span>
@@ -237,11 +250,13 @@
 
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
-                        <span class="n">fold</span><span class="p">,</span>
-                        <span class="n">mean_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_method</span><span class="p">,</span>
+                    <span class="n">mean</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span>
+                        <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="p">,</span>
+                        <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_method</span><span class="p">,</span>
                         <span class="n">n_max_iterations</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+                    <span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">estimate_</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
 
@@ -261,9 +276,10 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centroids</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RiemannianKMeans.predict"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.kmeans.RiemannianKMeans.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict the labels for each data point.</span>
 
-        <span class="sd">&quot;&quot;&quot;Predict for each data point the closest center in terms of</span>
-<span class="sd">            riemannian_metric distance</span>
+<span class="sd">        Label each data point with the cluster having the nearest</span>
+<span class="sd">        centroid using riemannian_metric distance.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -292,7 +308,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Geomstats, Inc.
+        &copy; Copyright 2019-2020, Geomstats, Inc.
 
     </p>
   </div>

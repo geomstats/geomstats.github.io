@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>geomstats.geometry.product_manifold &mdash; Geomstats 0.1 documentation</title>
+  <title>geomstats.geometry.product_manifold &mdash; Geomstats latest documentation</title>
   
 
   
@@ -21,11 +21,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.1
+                latest
               </div>
             
           
@@ -161,6 +161,8 @@
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.product_riemannian_metric</span> <span class="kn">import</span> \
+    <span class="n">ProductRiemannianMetric</span>
 
 <span class="c1"># TODO(nina): get rid of for loops</span>
 <span class="c1"># TODO(nina): unit tests</span>
@@ -172,49 +174,54 @@
 <span class="sd">    In contrast to the class Landmarks or DiscretizedCruves,</span>
 <span class="sd">    the manifolds M_1, ..., M_n need not be the same, nor of</span>
 <span class="sd">    same dimension, but the list of manifolds needs to be provided.</span>
+
+<span class="sd">    By default, a point is represented by an array of shape:</span>
+<span class="sd">        [n_samples, dim_1 + ... + dim_n_manifolds]</span>
+<span class="sd">    where n_manifolds is the number of manifolds in the product.</span>
+<span class="sd">    This type of representation is called &#39;vector&#39;.</span>
+
+<span class="sd">    Alternatively, a point can be represented by an array of shape:</span>
+<span class="sd">        [n_samples, n_manifolds, dim]</span>
+<span class="sd">    if the n_manifolds have same dimension dim.</span>
+<span class="sd">    This type of representation is called `matrix`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    manifolds : list</span>
+<span class="sd">        List of manifolds in the product.</span>
+<span class="sd">    default_point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">        Default representation of points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manifolds</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Instantiate an object of the class ProductManifold.</span>
-
-<span class="sd">        By default, a point is represented by an array of shape:</span>
-<span class="sd">            [n_samples, dim_1 + ... + dim_n_manifolds]</span>
-<span class="sd">        where n_manifolds is the number of manifolds in the product.</span>
-<span class="sd">        This type of representation is called &#39;vector&#39;.</span>
-
-<span class="sd">        Alternatively, a point can be represented by an array of shape:</span>
-<span class="sd">            [n_samples, n_manifolds, dim]</span>
-<span class="sd">        if the n_manifolds have same dimension dim.</span>
-<span class="sd">        This type of representation is called `matrix`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        manifolds : list</span>
-<span class="sd">            list of manifolds in the product</span>
-<span class="sd">        default_point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            default representation of points</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">default_point_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">=</span> <span class="n">default_point_type</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span> <span class="o">=</span> <span class="n">manifolds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_manifolds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">manifolds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">ProductRiemannianMetric</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">manifold</span><span class="o">.</span><span class="n">metric</span> <span class="k">for</span> <span class="n">manifold</span> <span class="ow">in</span> <span class="n">manifolds</span><span class="p">])</span>
 
         <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">manifold</span><span class="o">.</span><span class="n">dimension</span> <span class="k">for</span> <span class="n">manifold</span> <span class="ow">in</span> <span class="n">manifolds</span><span class="p">]</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ProductManifold</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">dimension</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">dimensions</span><span class="p">))</span>
 
 <div class="viewcode-block" id="ProductManifold.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_manifold.ProductManifold.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check if the point belongs to the manifold.</span>
+        <span class="sd">&quot;&quot;&quot;Test if a point belongs to the manifold.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point : array-like</span>
+<span class="sd">        point : array-like, shape=[n_samples, dim]</span>
+<span class="sd">                           or shape=[n_samples, dim_2, dim_2]</span>
+<span class="sd">            Point.</span>
+
 <span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Representation of point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        belongs: array-like, shape=[n_samples, 1]</span>
+<span class="sd">        belongs : array-like, shape=[n_samples, 1]</span>
+<span class="sd">            Array of booleans evaluating if the corresponding points</span>
+<span class="sd">            belong to the manifold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
@@ -225,12 +232,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
-        <span class="n">n_manifolds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_manifolds</span>
-        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_manifolds</span><span class="p">))</span>
+        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">)))</span>
         <span class="n">cum_dim</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1"># FIXME: this only works if the points are in intrinsic representation</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_manifolds</span><span class="p">):</span>
-            <span class="n">manifold_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">manifold_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">):</span>
             <span class="n">cum_dim_next</span> <span class="o">=</span> <span class="n">cum_dim</span> <span class="o">+</span> <span class="n">manifold_i</span><span class="o">.</span><span class="n">dimension</span>
             <span class="n">point_i</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="n">cum_dim</span><span class="p">:</span><span class="n">cum_dim_next</span><span class="p">]</span>
             <span class="n">belongs_i</span> <span class="o">=</span> <span class="n">manifold_i</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">point_i</span><span class="p">)</span>
@@ -246,59 +251,33 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point : array-like</span>
+<span class="sd">        point : array-like, shape=[n_samples, dim]</span>
+<span class="sd">                           or shape=[n_samples, dim_2, dim_2]</span>
+<span class="sd">            Point to be regularized.</span>
 <span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Representation of point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        regularize_points : array-like</span>
+<span class="sd">        regularized_point : array-like, shape=[n_samples, dim]</span>
+<span class="sd">                            or shape=[n_samples, dim_2, dim_2]</span>
+<span class="sd">            Point in the manifold&#39;s canonical representation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO(nina): Vectorize.</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
         <span class="k">assert</span> <span class="n">point_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">]</span>
 
-        <span class="n">regularize_points</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">manifold</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_manifolds</span><span class="p">)]</span>
+        <span class="n">regularized_point</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">manifold_i</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_i</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">manifold_i</span><span class="p">,</span> <span class="n">point_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">,</span> <span class="n">point</span><span class="p">)]</span>
 
         <span class="c1"># TODO(nina): Put this in a decorator</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">regularize_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">regularize_points</span><span class="p">)</span>
+            <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">regularized_point</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">regularize_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">regularize_points</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">regularize_points</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">regularize_points</span></div>
-
-<div class="viewcode-block" id="ProductManifold.geodesic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_manifold.ProductManifold.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span>
-                 <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute geodesic curve for a product metric.</span>
-
-<span class="sd">        This geodesic is seen as the product of the geodesic on each space.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        initial_point : array-like, shape=[n_samples, dimension]</span>
-<span class="sd">        end_point : array-like, shape=[n_samples, dimension]</span>
-<span class="sd">        initial_tangent_vec : array-like, shape=[n_samples, dimension]</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        geodesics : array-like</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="k">assert</span> <span class="n">point_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">]</span>
-
-        <span class="n">geodesics</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">manifold</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-            <span class="n">initial_point</span><span class="p">,</span>
-            <span class="n">end_point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span>
-            <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">initial_tangent_vec</span><span class="p">,</span>
-            <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_manifolds</span><span class="p">)]])</span>
-        <span class="k">return</span> <span class="n">geodesics</span></div></div>
+            <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">regularized_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">regularized_point</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -311,7 +290,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Geomstats, Inc.
+        &copy; Copyright 2019-2020, Geomstats, Inc.
 
     </p>
   </div>
