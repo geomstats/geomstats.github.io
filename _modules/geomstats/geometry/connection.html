@@ -387,13 +387,94 @@
                 <span class="s1">&#39;geodesics&#39;</span><span class="p">:</span> <span class="n">geodesics</span><span class="p">,</span>
                 <span class="s1">&#39;end_point&#39;</span><span class="p">:</span> <span class="n">end_point</span><span class="p">}</span>
 
-<div class="viewcode-block" id="Connection.pole_ladder_parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.pole_ladder_parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">pole_ladder_parallel_transport</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">_schild_ladder_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">base_shoot</span><span class="p">,</span>
+                            <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute one Schild&#39;s Ladder step.</span>
+
+<span class="sd">        One step of the Schild&#39;s ladder scheme [LP2013a]_ using the geodesic to</span>
+<span class="sd">        transport along as one side of the parallelogram.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">            Point on the manifold, from which to transport.</span>
+<span class="sd">        next_point : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">            Point on the manifold, to transport to.</span>
+<span class="sd">        base_shoot : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">            Point on the manifold, end point of the geodesics starting</span>
+<span class="sd">            from the base point with initial speed to be transported.</span>
+<span class="sd">        return_geodesics : bool, optional (defaults to False)</span>
+<span class="sd">            Whether to return points computed along each geodesic of the</span>
+<span class="sd">            construction.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vector : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">            Tangent vector at end point.</span>
+<span class="sd">        end_point : array-like, shape=[n_samples, dimension]</span>
+<span class="sd">            Point on the manifold, closes the geodesic parallelogram of the</span>
+<span class="sd">            construction.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [LP2013a] Marco Lorenzi, Xavier Pennec. Efficient Parallel Transport</span>
+<span class="sd">         of Deformations in Time Series of Images: from Schild&#39;s to</span>
+<span class="sd">         Pole Ladder. Journal of Mathematical Imaging and Vision, Springer</span>
+<span class="sd">         Verlag, 2013,50 (1-2), pp.5-17. ⟨10.1007/s10851-013-0470-3⟩</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mid_tangent_vector_to_shoot</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span>
+            <span class="n">point</span><span class="o">=</span><span class="n">next_point</span><span class="p">)</span>
+
+        <span class="n">mid_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">mid_tangent_vector_to_shoot</span><span class="p">)</span>
+
+        <span class="n">tangent_vector_to_shoot</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span>
+            <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">end_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vector_to_shoot</span><span class="p">)</span>
+
+        <span class="n">next_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">end_shoot</span><span class="p">)</span>
+
+        <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">return_geodesics</span><span class="p">:</span>
+            <span class="n">main_geodesic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
+                <span class="n">end_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">)</span>
+            <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
+                <span class="n">end_point</span><span class="o">=</span><span class="n">end_shoot</span><span class="p">)</span>
+            <span class="n">second_diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span>
+                <span class="n">end_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">)</span>
+            <span class="n">final_geodesic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span>
+                <span class="n">end_point</span><span class="o">=</span><span class="n">end_shoot</span><span class="p">)</span>
+            <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">main_geodesic</span><span class="p">,</span>
+                <span class="n">diagonal</span><span class="p">,</span>
+                <span class="n">second_diagonal</span><span class="p">,</span>
+                <span class="n">final_geodesic</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;next_tangent_vec&#39;</span><span class="p">:</span> <span class="n">next_tangent_vec</span><span class="p">,</span>
+                <span class="s1">&#39;geodesics&#39;</span><span class="p">:</span> <span class="n">geodesics</span><span class="p">,</span>
+                <span class="s1">&#39;end_point&#39;</span><span class="p">:</span> <span class="n">end_shoot</span><span class="p">}</span>
+
+<div class="viewcode-block" id="Connection.ladder_parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.ladder_parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">ladder_parallel_transport</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">single_step_kwargs</span><span class="p">):</span>
+            <span class="n">step</span><span class="o">=</span><span class="s1">&#39;pole&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">single_step_kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Approximate parallel transport using the pole ladder scheme.</span>
 
-<span class="sd">        Approximate Parallel transport using the pole ladder scheme [LP2013b]_</span>
-<span class="sd">        [GJSP2019]_. `tangent_vec_a` is transported along the geodesic starting</span>
+<span class="sd">        Approximate Parallel transport using either the pole ladder or the</span>
+<span class="sd">        Schild&#39;s ladder scheme [LP2013b]_. Pole ladder is exact in symmetric</span>
+<span class="sd">        spaces [GJSP2019]_ while Schild&#39;s ladder is a first order</span>
+<span class="sd">        approximation. Both schemes are available any affine connection</span>
+<span class="sd">        manifolds whose exponential and logarithm maps are implemented.</span>
+<span class="sd">        `tangent_vec_a` is transported along the geodesic starting</span>
 <span class="sd">        at the base_point with initial tangent vector `tangent_vec_b`.</span>
 
 <span class="sd">        Parameters</span>
@@ -408,6 +489,8 @@
 <span class="sd">            which to transport.</span>
 <span class="sd">        n_steps : int</span>
 <span class="sd">            The number of pole ladder steps.</span>
+<span class="sd">        step : str, {&#39;pole&#39;, &#39;schild&#39;}</span>
+<span class="sd">            The scheme to use for the construction of the ladder at each step.</span>
 <span class="sd">        **single_step_kwargs : keyword arguments for the step functions</span>
 
 <span class="sd">        Returns</span>
@@ -433,7 +516,10 @@
 <span class="sd">          ⟨hal-02148832⟩</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">current_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">next_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
+        <span class="n">next_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_steps</span>
+        <span class="n">methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pole&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pole_ladder_step</span><span class="p">,</span>
+                   <span class="s1">&#39;schild&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schild_ladder_step</span><span class="p">}</span>
+        <span class="n">single_step</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">step</span><span class="p">]</span>
         <span class="n">base_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">current_point</span><span class="p">,</span>
                               <span class="n">tangent_vec</span><span class="o">=</span><span class="n">next_tangent_vec</span><span class="p">)</span>
         <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[]</span>
@@ -442,7 +528,7 @@
             <span class="n">next_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
                 <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
                 <span class="n">tangent_vec</span><span class="o">=</span><span class="n">frac_tangent_vector_b</span><span class="p">)</span>
-            <span class="n">next_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pole_ladder_step</span><span class="p">(</span>
+            <span class="n">next_step</span> <span class="o">=</span> <span class="n">single_step</span><span class="p">(</span>
                 <span class="n">base_point</span><span class="o">=</span><span class="n">current_point</span><span class="p">,</span>
                 <span class="n">next_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span>
                 <span class="n">base_shoot</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span>
@@ -450,8 +536,9 @@
             <span class="n">current_point</span> <span class="o">=</span> <span class="n">next_point</span>
             <span class="n">base_shoot</span> <span class="o">=</span> <span class="n">next_step</span><span class="p">[</span><span class="s1">&#39;end_point&#39;</span><span class="p">]</span>
             <span class="n">trajectory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_step</span><span class="p">[</span><span class="s1">&#39;geodesics&#39;</span><span class="p">])</span>
+        <span class="n">transported_tangent_vec</span> <span class="o">=</span> <span class="n">n_steps</span> <span class="o">*</span> <span class="n">next_step</span><span class="p">[</span><span class="s1">&#39;next_tangent_vec&#39;</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;transported_tangent_vec&#39;</span><span class="p">:</span> <span class="n">next_step</span><span class="p">[</span><span class="s1">&#39;next_tangent_vec&#39;</span><span class="p">],</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;transported_tangent_vec&#39;</span><span class="p">:</span> <span class="n">transported_tangent_vec</span><span class="p">,</span>
                 <span class="s1">&#39;trajectory&#39;</span><span class="p">:</span> <span class="n">trajectory</span><span class="p">}</span></div>
 
 <div class="viewcode-block" id="Connection.riemannian_curvature"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.riemannian_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">riemannian_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
@@ -576,7 +663,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Mar 18, 2020, 10:26:02 PM.
+        Last updated on Mar 22, 2020, 3:53:13 PM.
       </span>
 
     </p>
