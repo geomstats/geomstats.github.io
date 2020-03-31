@@ -156,13 +156,13 @@
 <span class="sd">Define the metric of a product manifold endowed with a product metric.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">joblib</span>
+
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-5</span>
 
-
-<span class="c1"># TODO(nina): unit tests</span>
 
 <div class="viewcode-block" id="ProductRiemannianMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric">[docs]</a><span class="k">class</span> <span class="nc">ProductRiemannianMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for product of Riemannian metrics.</span>
@@ -173,13 +173,16 @@
 <span class="sd">        List of metrics in the product.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
         <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">dimension</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="n">dimensions</span>
         <span class="n">signatures</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">signature</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="n">dimensions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signatures</span> <span class="o">=</span> <span class="n">signatures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">=</span> <span class="n">default_point_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
 
         <span class="n">sig_0</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">signatures</span><span class="p">])</span>
         <span class="n">sig_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">sig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">signatures</span><span class="p">])</span>
@@ -205,21 +208,52 @@
 <span class="sd">            Matrix of the inner-product at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">])</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">matrix</span><span class="p">[:</span><span class="n">b</span><span class="p">,</span> <span class="p">:</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">dim_current</span> <span class="o">=</span> <span class="mi">0</span>
-
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">dim_current</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">dim_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">dim_current</span>
             <span class="n">b</span> <span class="o">=</span> <span class="n">dim_current</span> <span class="o">+</span> <span class="n">dim_next</span>
-            <span class="n">matrix_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">matrix_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">(</span>
+                <span class="n">base_point</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
             <span class="n">matrix</span><span class="p">[</span><span class="n">a</span><span class="p">:</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_next</span>
 
         <span class="k">return</span> <span class="n">matrix</span></div>
 
-<div class="viewcode-block" id="ProductRiemannianMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_is_intrinsic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">:</span>
+            <span class="n">intrinsic</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">]):</span>
+            <span class="n">intrinsic</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Input shape does not match the dimension of the manifold&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">intrinsic</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_method</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">metric_args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)(</span><span class="o">**</span><span class="n">metric_args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_iterate_over_metrics</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="n">cum_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">intrinsic</span> <span class="k">else</span> \
+            <span class="n">gs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">arguments</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">cum_index</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        <span class="n">args_list</span> <span class="o">=</span> <span class="p">[{</span><span class="n">key</span><span class="p">:</span> <span class="n">arguments</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">)]</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">prefer</span><span class="o">=</span><span class="s1">&#39;threads&#39;</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pool</span><span class="p">(</span>
+            <span class="n">joblib</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_method</span><span class="p">)(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">func</span><span class="p">,</span> <span class="n">args_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="ProductRiemannianMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors at a base point.</span>
 
 <span class="sd">        Inner product defined by the Riemannian metric at point `base_point`</span>
@@ -233,6 +267,8 @@
 <span class="sd">            Second tangent vector at base point.</span>
 <span class="sd">        base_point : array-like, shape=[n_samples, dimension + 1], optional</span>
 <span class="sd">            Point on the manifold.</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Type of representation used for points.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -242,19 +278,34 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span>
 
-        <span class="n">inner_products</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                               <span class="n">tangent_vec_b</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                               <span class="n">base_point</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                          <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)]</span>
-        <span class="n">inner_product</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inner_products</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="n">tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_intrinsic</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tangent_vec_a&#39;</span><span class="p">:</span> <span class="n">tangent_vec_a</span><span class="p">,</span>
+                    <span class="s1">&#39;tangent_vec_b&#39;</span><span class="p">:</span> <span class="n">tangent_vec_b</span><span class="p">,</span>
+                    <span class="s1">&#39;base_point&#39;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
+            <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_metrics</span><span class="p">(</span>
+                <span class="s1">&#39;inner_product&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">inner_products</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+                                                   <span class="n">tangent_vec_b</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+                                                   <span class="n">base_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+                              <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">inner_products</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid point_type argument: </span><span class="si">{}</span><span class="s1">, expected &#39;</span>
+                             <span class="s1">&#39;either matrix of vector&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">point_type</span><span class="p">))</span></div>
 
-        <span class="k">return</span> <span class="n">inner_product</span></div>
-
-<div class="viewcode-block" id="ProductRiemannianMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tangent vector at base point.</span>
-
-<span class="sd">        Riemannian exponential at point base_point</span>
-<span class="sd">        of tangent vector tangent_vec wrt the Riemannian metric.</span>
+<div class="viewcode-block" id="ProductRiemannianMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -262,6 +313,8 @@
 <span class="sd">            Tangent vector at a base point.</span>
 <span class="sd">        base_point : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">            Point on the manifold.</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Type of representation used for points.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -272,12 +325,26 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span>
 
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                              <span class="n">base_point</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">)])</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_intrinsic</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tangent_vec&#39;</span><span class="p">:</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="s1">&#39;base_point&#39;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_metrics</span><span class="p">(</span><span class="s1">&#39;exp&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid point_type argument: </span><span class="si">{}</span><span class="s1">, expected &#39;</span>
+                             <span class="s1">&#39;either matrix of vector&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">point_type</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ProductRiemannianMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ProductRiemannianMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        Parameters</span>
@@ -286,6 +353,8 @@
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        base_point : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">            Point on the manifold.</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Type of representation used for points.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -296,83 +365,24 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span>
 
-        <span class="n">log</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                              <span class="n">base_point</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">)])</span>
-        <span class="k">return</span> <span class="n">log</span></div>
-
-<div class="viewcode-block" id="ProductRiemannianMetric.squared_dist"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute squared geodesic distance between two points.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point_a : array-like, shape=[n_samples, dimension]</span>
-<span class="sd">            First point on the manifold.</span>
-<span class="sd">        point_b : array-like, shape=[n_samples, dimension]</span>
-<span class="sd">            Second point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        sq_dist : array-like, shape=[n_samples, 1]</span>
-<span class="sd">            Geodesic distance between the two points.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sq_distances</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">point_b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)])</span>
-
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sq_distances</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="ProductRiemannianMetric.geodesic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span>
-                 <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the geodesic as a function of t.</span>
-
-<span class="sd">        This geodesic is seen as the product of the geodesic on each space.</span>
-<span class="sd">        The geodesic curve is defined by either:</span>
-<span class="sd">        - an initial point and an initial tangent vector,</span>
-<span class="sd">        or</span>
-<span class="sd">        -an initial point and an end point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        initial_point : array-like, shape=[n_samples, dim]</span>
-<span class="sd">            Initial point of the geodesic.</span>
-<span class="sd">        end_point : array-like, shape=[n_samples, dim], optional</span>
-<span class="sd">            End point of the geodesic.</span>
-<span class="sd">        initial_tangent_vec : array-like, shape=[n_samples, dim], optional</span>
-<span class="sd">            Initial tangent vector of the geodesic.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}, optional</span>
-<span class="sd">            Representation of point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            The time-parameterized geodesic.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="k">assert</span> <span class="n">point_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-                    <span class="n">initial_point</span><span class="p">[:,</span> <span class="n">i_space</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-                    <span class="n">end_point</span><span class="o">=</span><span class="n">end_point</span><span class="p">[:,</span> <span class="n">i_space</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-                    <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">i_space</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_intrinsic</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;point&#39;</span><span class="p">:</span> <span class="n">point</span><span class="p">,</span> <span class="s1">&#39;base_point&#39;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_metrics</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-                    <span class="n">initial_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-                    <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">initial_tangent_vec</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-                    <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">metric</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">)]</span>
-
-        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-            <span class="n">geod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">geodesic</span> <span class="ow">in</span> <span class="n">geodesics</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">geod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">geod</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">geod</span>
-        <span class="k">return</span> <span class="n">path</span></div></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid point_type argument: </span><span class="si">{}</span><span class="s1">, expected &#39;</span>
+                             <span class="s1">&#39;either matrix of vector&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">point_type</span><span class="p">))</span></div></div>
 </pre></div>
 
            </div>
@@ -387,7 +397,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Mar 30, 2020, 1:35:21 PM.
+        Last updated on Mar 31, 2020, 9:09:40 PM.
       </span>
 
     </p>
