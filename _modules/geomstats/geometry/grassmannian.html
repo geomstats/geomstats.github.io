@@ -156,6 +156,7 @@
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.embedded_manifold</span> <span class="kn">import</span> <span class="n">EmbeddedManifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">EuclideanMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 
@@ -176,6 +177,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">GrassmannianCanonicalMetric</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
         <span class="n">dimension</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">k</span><span class="p">))</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Grassmannian</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -220,7 +222,7 @@
             <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span> <span class="o">=</span> <span class="n">EuclideanMetric</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span>
 
-<div class="viewcode-block" id="GrassmannianCanonicalMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<div class="viewcode-block" id="GrassmannianCanonicalMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Exponentiate the invariant vector field v from base point p.</span>
 
 <span class="sd">        Parameters</span>
@@ -236,7 +238,42 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">expm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span>
         <span class="n">mul</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span>
-        <span class="k">return</span> <span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">vector</span><span class="p">),</span> <span class="n">point</span><span class="p">,</span> <span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">vector</span><span class="p">))</span></div></div>
+        <span class="k">return</span> <span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">tangent_vec</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="GrassmannianCanonicalMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of point w.r.t. base_point.</span>
+
+<span class="sd">        Given :math:`P, P&#39;` in Gr(n, k) the logarithm from :math:`P`</span>
+<span class="sd">        to :math:`P` is given by the infinitesimal rotation [Batzies2015]_:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \omega = \frac 1 2 \log \big((2 P&#39; - 1)(2 P - 1)\big)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[n_samples, n, n]</span>
+<span class="sd">            Point in the Grassmannian.</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, n, n]</span>
+<span class="sd">            Point in the Grassmannian.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[n_samples, n, n]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Batzies2015] Batzies, Hüper, Machado, Leite.</span>
+<span class="sd">            &quot;Geometric Mean and Geodesic Regression on Grassmannians&quot;</span>
+<span class="sd">            Linear Algebra and its Applications, 466, 83-101, 2015.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">GLn</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">id_n</span> <span class="o">=</span> <span class="n">GLn</span><span class="o">.</span><span class="n">identity</span><span class="p">()</span>
+        <span class="n">sym2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">point</span> <span class="o">-</span> <span class="n">id_n</span>
+        <span class="n">sym1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">base_point</span> <span class="o">-</span> <span class="n">id_n</span>
+        <span class="n">rot</span> <span class="o">=</span> <span class="n">GLn</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sym2</span><span class="p">,</span> <span class="n">sym1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">GLn</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span></div></div>
 </pre></div>
 
            </div>
@@ -251,7 +288,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 1, 2020, 3:41:19 PM.
+        Last updated on Apr 1, 2020, 5:47:59 PM.
       </span>
 
     </p>
