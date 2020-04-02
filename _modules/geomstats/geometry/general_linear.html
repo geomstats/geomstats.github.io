@@ -185,8 +185,20 @@
 
 <div class="viewcode-block" id="GeneralLinear.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.GeneralLinear.exp">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Exponentiate a left-invariant vector field from a base point.</span>
+
+<span class="sd">        The vector input is not an element of the Lie algebra, but of the</span>
+<span class="sd">        tangent space at base_point: if :math:`g` denotes `base_point`,</span>
+<span class="sd">        :math:`v` the tangent vector, and :math:&#39;V = g^{-1} v&#39; the associated</span>
+<span class="sd">        Lie algebra vector, then</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \exp(v, g) = mul(g, \exp(V))</span>
+
+<span class="sd">        Therefore, the Lie exponential is obtained when base_point is None, or</span>
+<span class="sd">        the identity.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -197,19 +209,23 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        point :         array-like, shape=[..., n, n]</span>
-<span class="sd">            The left multiplication of `exp(tangent_vec)` with</span>
+<span class="sd">            The left multiplication of `exp(algebra_mat)` with</span>
 <span class="sd">            `base_point`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">expm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">expm</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">),</span> <span class="n">base_point</span><span class="p">)</span></div>
+            <span class="n">lie_algebra_vec</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lie_algebra_vec</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="GeneralLinear.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.GeneralLinear.log">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate a left-invariant vector field bringing base_point to point.</span>
+
+<span class="sd">        The output is a vector of the tangent space at base_point, so not a Lie</span>
+<span class="sd">        algebra element if it is not the identity.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -221,12 +237,22 @@
 <span class="sd">        -------</span>
 <span class="sd">        tangent_vec :   array-like, shape=[..., n, n]</span>
 <span class="sd">            A matrix such that `exp(tangent_vec, base_point) = point`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Denoting `point` by :math:`g` and `base_point` by :math:`h`,</span>
+<span class="sd">        the output satisfies:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            g = \exp(\log(g, h), h)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logm</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">logm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">logm</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">base_point</span><span class="p">)))</span></div>
+            <span class="n">lie_algebra_vec</span> <span class="o">=</span> <span class="n">logm</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">lie_algebra_vec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="GeneralLinear.orbit"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.GeneralLinear.orbit">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -265,7 +291,7 @@
 <span class="sd">        Return a collection of trajectories (4-D array)</span>
 <span class="sd">        from a collection of input matrices (3-D array).</span>
 
-<span class="sd">        Will work when expm gets properly 4-D vectorized.</span>
+<span class="sd">        # TODO(nina): Will work when expm gets properly 4-D vectorized.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
@@ -287,7 +313,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 2, 2020, 12:39:17 AM.
+        Last updated on Apr 2, 2020, 12:43:40 AM.
       </span>
 
     </p>
