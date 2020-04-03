@@ -158,6 +158,7 @@
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">InvariantMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_group</span> <span class="kn">import</span> <span class="n">LieGroup</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
@@ -188,7 +189,9 @@
 <div class="viewcode-block" id="SpecialEuclidean"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean">[docs]</a><span class="k">class</span> <span class="nc">SpecialEuclidean</span><span class="p">(</span><span class="n">LieGroup</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for the special euclidean group SE(n).</span>
 
-<span class="sd">    i.e. the Lie group of rigid transformations.</span>
+<span class="sd">    i.e. the Lie group of rigid transformations. Elements of SE(n) can either</span>
+<span class="sd">    be represented as vectors (in 3d) or as matrices in general. The matrix</span>
+<span class="sd">    representation corresponds to homogeneous coordinates.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
@@ -241,10 +244,14 @@
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
         <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">identity</span></div>
     <span class="n">identity</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_identity</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SpecialEuclidean.get_point_type_shape"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.get_point_type_shape">[docs]</a>    <span class="k">def</span> <span class="nf">get_point_type_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the shape of the instance given the default_point_style.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identity</span><span class="p">(</span><span class="n">point_type</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Evaluate if a point belongs to SE(n).</span>
@@ -268,12 +275,28 @@
             <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">n_points</span><span class="p">,</span> <span class="n">point_dim</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
             <span class="n">belongs</span> <span class="o">=</span> <span class="n">point_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span>
-            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="p">(</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
+                <span class="n">belongs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]))</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">belongs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
             <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">n_points</span><span class="p">,</span> <span class="n">point_dim1</span><span class="p">,</span> <span class="n">point_dim2</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="p">(</span><span class="n">point_dim1</span> <span class="o">==</span> <span class="n">point_dim2</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">rotation</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="n">rot_belongs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span>
+                <span class="n">rotation</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">rot_belongs</span><span class="p">)</span>
+
+            <span class="n">last_line_except_last_term</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">all_but_last_zeros</span> <span class="o">=</span> <span class="o">~</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span>
+                <span class="n">last_line_except_last_term</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">all_but_last_zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                <span class="n">all_but_last_zeros</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">all_but_last_zeros</span><span class="p">)</span>
+
+            <span class="n">last_term</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:]</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">last_term</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">belongs</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">belongs</span></div>
 
@@ -310,8 +333,7 @@
                 <span class="p">[</span><span class="n">regularized_rot_vec</span><span class="p">,</span> <span class="n">translation</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-            <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">regularized_point</span></div>
 
@@ -376,7 +398,6 @@
                 <span class="n">inner_product_mat_at_identity</span><span class="o">=</span><span class="n">rot_metric_mat</span><span class="p">,</span>
                 <span class="n">left_or_right</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
 
-            <span class="n">regularized_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
             <span class="n">rotations_vec</span> <span class="o">=</span> <span class="n">rotations</span><span class="o">.</span><span class="n">regularize_tangent_vec</span><span class="p">(</span>
                 <span class="n">tangent_vec</span><span class="o">=</span><span class="n">rot_tangent_vec</span><span class="p">,</span>
                 <span class="n">base_point</span><span class="o">=</span><span class="n">rot_base_point</span><span class="p">,</span>
@@ -390,6 +411,33 @@
             <span class="n">regularized_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span>
 
         <span class="k">return</span> <span class="n">regularized_vec</span></div>
+
+<div class="viewcode-block" id="SpecialEuclidean.matrix_from_vector"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.matrix_from_vector">[docs]</a>    <span class="k">def</span> <span class="nf">matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert point in vector point-type to matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vec: array-like, shape=[n_samples, dimension]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat: array-like, shape=[n_samples, {dimension, [n+1, n+1]}]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
+        <span class="n">n_vecs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">dimension</span><span class="p">]</span>
+        <span class="n">trans_vec</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">dimension</span><span class="p">:]</span>
+
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
+        <span class="n">trans_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">trans_vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">trans_vec</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">last_lines</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">get_mask_i_float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">last_lines</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">last_lines</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">last_lines</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">last_lines</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mat</span><span class="p">,</span> <span class="n">last_lines</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.compose"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_1</span><span class="p">,</span> <span class="n">point_2</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compose two elements of SE(n).</span>
@@ -453,7 +501,7 @@
                                           <span class="n">composition_translation</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">composition</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point_1</span><span class="p">,</span> <span class="n">point_2</span><span class="p">)</span>
 
         <span class="n">composition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">composition</span></div>
@@ -464,6 +512,8 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point: array-like, shape=[n_samples, {dimension, [n + 1, n + 1]}]</span>
+<span class="sd">        point_type: str, {&#39;vector&#39;, &#39;matrix&#39;}, optional</span>
+<span class="sd">            default: self.default_point_type</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -504,7 +554,13 @@
                 <span class="p">[</span><span class="n">inverse_rotation</span><span class="p">,</span> <span class="n">inverse_translation</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">inverse_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="n">inverse_point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+                <span class="n">point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">inverse_point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                <span class="n">inverse_point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">],</span>
+                <span class="o">-</span> <span class="n">point</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:])</span>
+            <span class="n">inverse_point</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:,</span> <span class="p">:]</span>
 
         <span class="n">inverse_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">inverse_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inverse_point</span></div>
@@ -516,6 +572,7 @@
 <span class="sd">        Compute the jacobian matrix of the differential</span>
 <span class="sd">        of the left/right translations from the identity to point in SE(n).</span>
 <span class="sd">        Currently only implemented for point_type == &#39;vector&#39;.</span>
+<span class="sd">        # TODO(nguigs): implement for matrix, formula p157 in Xavier&#39;s thesis</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -583,7 +640,7 @@
             <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">jacobian</span> <span class="o">=</span> <span class="n">point</span>
 
         <span class="k">return</span> <span class="n">jacobian</span></div>
 
@@ -668,8 +725,9 @@
 
             <span class="n">group_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">group_exp</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">group_exp</span>
+
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+            <span class="k">return</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.log_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.log_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group logarithm of the point at the identity.</span>
@@ -759,7 +817,7 @@
             <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">group_log</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">group_log</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">group_log</span></div>
 
@@ -770,33 +828,44 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples: int, optional</span>
 <span class="sd">            default: 1</span>
-<span class="sd">        point_typ: str, {&#39;vector&#39;, &#39;matrix&#39;}, optional</span>
+<span class="sd">        point_type: str, {&#39;vector&#39;, &#39;matrix&#39;}, optional</span>
 <span class="sd">            default: self.default_point_type</span>
-
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        random_transfo: array-like,</span>
+<span class="sd">        random_point: array-like,</span>
 <span class="sd">            shape=[n_samples, {dimension, [n + 1, n + 1]}]</span>
-<span class="sd">            an array of random elements in SE(n) having the given point_type</span>
+<span class="sd">            An array of random elements in SE(n) having the given point_type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
-        <span class="n">random_rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">random_uniform</span><span class="p">(</span>
-            <span class="n">n_samples</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="n">random_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translations</span><span class="o">.</span><span class="n">random_uniform</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">random_transfo</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="n">random_rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">random_uniform</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="n">random_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">random_rot_vec</span><span class="p">,</span> <span class="n">random_translation</span><span class="p">],</span>
                 <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">random_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">random_uniform</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">random_translation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">random_translation</span><span class="p">),</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">random_translation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                    <span class="n">random_translation</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">random_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">random_rotation</span><span class="p">,</span> <span class="n">random_translation</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">last_line</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">random_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">random_point</span><span class="p">,</span> <span class="n">last_line</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">random_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">assignment</span><span class="p">(</span><span class="n">random_point</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">random_transfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">random_transfo</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">random_transfo</span></div>
+        <span class="k">return</span> <span class="n">random_point</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.exponential_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.exponential_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">exponential_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute exponential of rotation matrix represented by rot_vec.</span>
@@ -854,7 +923,7 @@
         <span class="k">return</span> <span class="n">exponential_mat</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.exponential_barycenter"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.exponential_barycenter">[docs]</a>    <span class="k">def</span> <span class="nf">exponential_barycenter</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group exponential barycenter in SE(n).</span>
 
 <span class="sd">        Parameters</span>
@@ -874,21 +943,20 @@
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
-        <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="n">n_points</span> <span class="o">&gt;</span> <span class="mi">0</span>
-
-        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">n_weights</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">assert</span> <span class="n">n_points</span> <span class="o">==</span> <span class="n">n_weights</span>
-
         <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span>
         <span class="n">rotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span>
         <span class="n">dim_rotations</span> <span class="o">=</span> <span class="n">rotations</span><span class="o">.</span><span class="n">dimension</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">n_points</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">n_weights</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">assert</span> <span class="n">n_points</span> <span class="o">==</span> <span class="n">n_weights</span>
             <span class="n">rotation_vectors</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:,</span> <span class="p">:</span><span class="n">dim_rotations</span><span class="p">]</span>
             <span class="n">translations</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:,</span> <span class="n">dim_rotations</span><span class="p">:</span><span class="n">dim</span><span class="p">]</span>
             <span class="k">assert</span> <span class="n">rotation_vectors</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_points</span><span class="p">,</span> <span class="n">dim_rotations</span><span class="p">)</span>
@@ -926,10 +994,9 @@
             <span class="n">exp_bar</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim_rotations</span><span class="p">:</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_translation</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">vector_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_vector_from_matrix</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
-            <span class="n">vector_exp_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponential_barycenter</span><span class="p">(</span>
-                <span class="n">vector_points</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
-            <span class="n">exp_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">vector_exp_bar</span><span class="p">)</span>
+            <span class="n">exp_bar</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SpecialEuclidean</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">exponential_barycenter</span><span class="p">(</span>
+                <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">exp_bar</span></div></div>
 </pre></div>
 
@@ -945,7 +1012,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 2, 2020, 10:51:58 PM.
+        Last updated on Apr 3, 2020, 12:15:53 AM.
       </span>
 
     </p>
