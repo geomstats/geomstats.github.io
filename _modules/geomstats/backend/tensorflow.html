@@ -193,100 +193,250 @@
     <span class="k">return</span> <span class="n">mask_i_float</span>
 
 
-<div class="viewcode-block" id="get_mask_float"><a class="viewcode-back" href="../../../backend.html#geomstats.backend.tensorflow.get_mask_float">[docs]</a><span class="k">def</span> <span class="nf">get_mask_float</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">mask_shape</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_mask_from_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">mask_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Create a binary mask.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    indices : tuple</span>
+<span class="sd">    indices: tuple</span>
 <span class="sd">        Single index or tuple of indices where ones will be.</span>
-<span class="sd">    mask_shape : tuple</span>
+<span class="sd">    mask_shape: tuple</span>
 <span class="sd">        Shape of the mask.</span>
+<span class="sd">    dtype: dtype</span>
+<span class="sd">        Type of the mask.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tf_mask : array</span>
+<span class="sd">    tf_mask : array, shape=[mask_shape]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">np_mask</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ndim</span><span class="p">(</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ndim</span><span class="p">(</span><span class="n">np_mask</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">ndim</span><span class="p">(</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ndim</span><span class="p">(</span><span class="n">np_mask</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The index must have the same size as shape&#39;</span><span class="p">)</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">nb_index</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">indices</span><span class="p">[</span><span class="n">nb_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">index</span><span class="p">,)</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Indices must have the same size as shape&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Indices must have the same size as shape&#39;</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
         <span class="n">np_mask</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">tf_mask</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">np_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">tf_mask</span></div>
+    <span class="n">tf_mask</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">np_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tf_mask</span>
 
 
-<span class="k">def</span> <span class="nf">duplicate_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_duplicate_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stack copies of an array along an additional dimension.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array-like, shape=[dimension]</span>
+<span class="sd">        Initial array which will be copied.</span>
+<span class="sd">    n_samples: int</span>
+<span class="sd">        Number of copies of the array to create.</span>
+<span class="sd">    axis: int, optional</span>
+<span class="sd">        Dimension of the new array along which the copies of x are made.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tiled_array: array, shape=[dimension[:axis], n_samples, dimension[axis:]]</span>
+<span class="sd">        Copies of x stacked along dimension axis</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">multiples</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="n">multiples</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_samples</span>
-    <span class="k">return</span> <span class="n">tile</span><span class="p">(</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">multiples</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tile</span><span class="p">(</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">),</span> <span class="n">multiples</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="get_vectorized_mask_float"><a class="viewcode-back" href="../../../backend.html#geomstats.backend.tensorflow.get_vectorized_mask_float">[docs]</a><span class="k">def</span> <span class="nf">get_vectorized_mask_float</span><span class="p">(</span>
-        <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Create a vectorized binzary mask.</span>
+<span class="k">def</span> <span class="nf">_vectorized_mask_from_indices</span><span class="p">(</span>
+        <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a vectorized binary mask.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    n_samples: int</span>
 <span class="sd">        Number of copies of the mask along the additional dimension.</span>
-<span class="sd">    indices : tuple, optional</span>
-<span class="sd">        Single index or tuple of indices where ones will be.</span>
-<span class="sd">    mask_shape : tuple, optional</span>
+<span class="sd">    indices : {tuple, list(tuple)}</span>
+<span class="sd">        Single tuple, or list of tuples of indices where ones will be.</span>
+<span class="sd">    mask_shape : tuple</span>
 <span class="sd">        Shape of the mask.</span>
 <span class="sd">    axis: int</span>
 <span class="sd">        Axis along which the mask is vectorized.</span>
+<span class="sd">    dtype: dtype</span>
+<span class="sd">        Type of the returned array.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tf_mask : array</span>
-<span class="sd">    TODO(pchauchat): give shape of the output according to guideline</span>
+<span class="sd">    tf_mask : array, shape=[mask_shape[:axis], n_samples, mask_shape[axis:]]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">mask</span> <span class="o">=</span> <span class="n">get_mask_float</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">mask_shape</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">duplicate_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span></div>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">_mask_from_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">mask_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_duplicate_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__assignment_single_value_by_sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a value at given indices of an array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array-like, shape=[dimension]</span>
+<span class="sd">        Initial array.</span>
+<span class="sd">    value: float</span>
+<span class="sd">        Value to be added.</span>
+<span class="sd">    indices: {int, tuple, list(int), list(tuple)}</span>
+<span class="sd">        Single int or tuple, or list of ints or tuples of indices where value</span>
+<span class="sd">        is assigned.</span>
+<span class="sd">        If the length of the tuples is shorter than ndim(x), value is</span>
+<span class="sd">        assigned to each copy along axis.</span>
+<span class="sd">    axis: int, optional</span>
+<span class="sd">        Axis along which value is assigned, if vectorized.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_new : array-like, shape=[dimension]</span>
+<span class="sd">        Copy of x where value was added at all indices (and possibly along</span>
+<span class="sd">        an axis).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">single_index</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">single_index</span><span class="p">:</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
-    <span class="n">use_vectorization</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">use_vectorization</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">use_vectorization</span> <span class="o">=</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
 
     <span class="k">if</span> <span class="n">use_vectorization</span><span class="p">:</span>
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">get_vectorized_mask_float</span><span class="p">(</span>
-            <span class="n">n_samples</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_vectorized_mask_from_indices</span><span class="p">(</span>
+            <span class="n">n_samples</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">axis</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">get_mask_float</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">value</span> <span class="o">*</span> <span class="n">mask</span>
-    <span class="k">return</span> <span class="n">x</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_mask_from_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">x_new</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">value</span> <span class="o">*</span> <span class="n">mask</span>
+    <span class="k">return</span> <span class="n">x_new</span>
 
 
-<span class="k">def</span> <span class="nf">assignment</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="assignment_by_sum"><a class="viewcode-back" href="../../../backend.html#geomstats.backend.tensorflow.assignment_by_sum">[docs]</a><span class="k">def</span> <span class="nf">assignment_by_sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add values at given indices of an array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array-like, shape=[dimension]</span>
+<span class="sd">        Initial array.</span>
+<span class="sd">    values: {float, list(float)}</span>
+<span class="sd">        Value or list of values to be assigned.</span>
+<span class="sd">    indices: {int, tuple, list(int), list(tuple)}</span>
+<span class="sd">        Single int or tuple, or list of ints or tuples of indices where value</span>
+<span class="sd">        is assigned.</span>
+<span class="sd">        If the length of the tuples is shorter than ndim(x), values are</span>
+<span class="sd">        assigned to each copy along axis.</span>
+<span class="sd">    axis: int, optional</span>
+<span class="sd">        Axis along which values are assigned, if vectorized.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_new : array-like, shape=[dimension]</span>
+<span class="sd">        Copy of x as the sum of x and the values at the given indices.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If a single value is provided, it is assigned at all the indices.</span>
+<span class="sd">    If a list is given, it must have the same length as indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">__assignment_single_value_by_sum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either one value or as many values as indices&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">nb_index</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">__assignment_single_value_by_sum</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">nb_index</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span></div>
+
+
+<span class="k">def</span> <span class="nf">_assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assign a value at given indices of an array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array-like, shape=[dimension]</span>
+<span class="sd">        Initial array.</span>
+<span class="sd">    value: float</span>
+<span class="sd">        Value to be added.</span>
+<span class="sd">    indices: {int, tuple, list(int), list(tuple)}</span>
+<span class="sd">        Single int or tuple, or list of ints or tuples of indices where value</span>
+<span class="sd">        is assigned.</span>
+<span class="sd">        If the length of the tuples is shorter than ndim(x), value is</span>
+<span class="sd">        assigned to each copy along axis.</span>
+<span class="sd">    axis: int, optional</span>
+<span class="sd">        Axis along which value is assigned, if vectorized.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_new : array-like, shape=[dimension]</span>
+<span class="sd">        Copy of x where value was assigned at all indices (and possibly</span>
+<span class="sd">        along an axis).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">single_index</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">single_index</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">use_vectorization</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">use_vectorization</span> <span class="o">=</span> <span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either one value or as many values as indices&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_vectorization</span><span class="p">:</span>
+        <span class="n">full_shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">full_shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+        <span class="n">tile_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">full_shape</span><span class="p">[:</span><span class="n">axis</span><span class="p">])</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">full_shape</span><span class="p">[</span><span class="n">axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:])</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_vectorized_mask_from_indices</span><span class="p">(</span>
+            <span class="n">n_samples</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">tile_shape</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_mask_from_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">x_new</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="o">-</span><span class="n">x</span> <span class="o">*</span> <span class="n">mask</span> <span class="o">+</span> <span class="n">value</span> <span class="o">*</span> <span class="n">mask</span>
+    <span class="k">return</span> <span class="n">x_new</span>
 
-        <span class="k">for</span> <span class="p">(</span><span class="n">nb_index</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">nb_index</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">x</span>
+
+<div class="viewcode-block" id="assignment"><a class="viewcode-back" href="../../../backend.html#geomstats.backend.tensorflow.assignment">[docs]</a><span class="k">def</span> <span class="nf">assignment</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assign values at given indices of an array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array-like, shape=[dimension]</span>
+<span class="sd">        Initial array.</span>
+<span class="sd">    values: {float, list(float)}</span>
+<span class="sd">        Value or list of values to be assigned.</span>
+<span class="sd">    indices: {int, tuple, list(int), list(tuple)}</span>
+<span class="sd">        Single int or tuple, or list of ints or tuples of indices where value</span>
+<span class="sd">        is assigned.</span>
+<span class="sd">        If the length of the tuples is shorter than ndim(x), values are</span>
+<span class="sd">        assigned to each copy along axis.</span>
+<span class="sd">    axis: int, optional</span>
+<span class="sd">        Axis along which values are assigned, if vectorized.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_new : array-like, shape=[dimension]</span>
+<span class="sd">        Copy of x with the values assigned at the given indices.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If a single value is provided, it is assigned at all the indices.</span>
+<span class="sd">    If a list is given, it must have the same length as indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either one value or as many values as indices&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">nb_index</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">_assignment_single_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">nb_index</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span></div>
 
 
 <span class="k">def</span> <span class="nf">array_from_sparse</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">):</span>
@@ -672,7 +822,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 4, 2020, 4:38:00 PM.
+        Last updated on Apr 4, 2020, 5:28:51 PM.
       </span>
 
     </p>
