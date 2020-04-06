@@ -408,13 +408,17 @@
                 <span class="n">regularized_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">regularized_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span>
+            <span class="n">is_vectorized</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span> <span class="o">==</span> <span class="mi">3</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_vectorized</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">regularized_vec</span> <span class="o">=</span> \
+                <span class="mf">1.</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">tangent_vec</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">axes</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;point_type should be </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or </span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">regularized_vec</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.regularize_tangent_vec"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.regularize_tangent_vec">[docs]</a>    <span class="k">def</span> <span class="nf">regularize_tangent_vec</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span>
-            <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Regularize tangent vector at a base point.</span>
 
 <span class="sd">        In 3D, regularize a tangent_vector by getting the norm of its parallel</span>
@@ -423,6 +427,9 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec : array-like, shape=[n_samples, {dimension, [n, n]}]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[n_samples, {dimension, [n, n]}]</span>
+<span class="sd">            Point on the manifold.</span>
 <span class="sd">        metric : RiemannianMetric, optional</span>
 <span class="sd">            default: self.left_canonical_metric</span>
 <span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}, optional</span>
@@ -470,7 +477,18 @@
                 <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
+                    <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="n">inv_base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
+                <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
+                <span class="n">base_point</span><span class="p">,</span> <span class="n">regularized_tangent_vec</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;point_type should be </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or </span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">regularized_tangent_vec</span></div>
 
@@ -593,7 +611,7 @@
             <span class="n">upper_triangle_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">mat_dim</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vecs</span><span class="p">):</span>
                 <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">upper_triangle_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="k">return</span> <span class="n">skew_mat</span></div>
 
@@ -1687,7 +1705,7 @@
                 <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+            <span class="n">jacobian</span> <span class="o">=</span> <span class="n">point</span>
 
         <span class="k">return</span> <span class="n">jacobian</span></div>
 
@@ -1826,7 +1844,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 5, 2020, 6:41:59 PM.
+        Last updated on Apr 6, 2020, 5:24:49 PM.
       </span>
 
     </p>
