@@ -199,7 +199,8 @@
 <span class="sd">            rotations</span>
 <span class="sd">            default: 0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Parameter `n` is required to be an integer &gt; 1.&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
@@ -258,12 +259,12 @@
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="n">n_points</span><span class="p">,</span> <span class="n">vec_dim</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">vec_dim</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">belongs</span> <span class="o">=</span> <span class="n">vec_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span>
+            <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="n">belongs</span><span class="p">],</span> <span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
             <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="p">(</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">belongs</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
@@ -334,8 +335,6 @@
 
                 <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
                     <span class="s1">&#39;n,ni-&gt;ni&#39;</span><span class="p">,</span> <span class="n">norms_ratio</span><span class="p">,</span> <span class="n">regularized_point</span><span class="p">)</span>
-
-            <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">regularized_point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
             <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
@@ -492,7 +491,7 @@
 
         <span class="k">return</span> <span class="n">regularized_tangent_vec</span></div>
 
-<div class="viewcode-block" id="SpecialOrthogonal.projection"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.projection">[docs]</a>    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<div class="viewcode-block" id="SpecialOrthogonal.projection"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.projection">[docs]</a>    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Project a matrix on SO(n) using the Frobenius norm.</span>
 
 <span class="sd">        Parameters</span>
@@ -503,10 +502,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_mat : array-like, shape=[n_samples, n, n]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
-        <span class="n">n_mats</span><span class="p">,</span> <span class="n">mat_dim_1</span><span class="p">,</span> <span class="n">mat_dim_2</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">assert</span> <span class="n">mat_dim_1</span> <span class="o">==</span> <span class="n">mat_dim_2</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">n_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mat_unitary_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
@@ -536,7 +534,6 @@
 
             <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">inv_sqrt_mat</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="k">return</span> <span class="n">rot_mat</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.skew_matrix_from_vector"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.skew_matrix_from_vector">[docs]</a>    <span class="k">def</span> <span class="nf">skew_matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
@@ -612,7 +609,6 @@
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vecs</span><span class="p">):</span>
                 <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">upper_triangle_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="k">return</span> <span class="n">skew_mat</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.vector_from_skew_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.vector_from_skew_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">vector_from_skew_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">):</span>
@@ -633,9 +629,7 @@
 <span class="sd">        vec : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">mat_dim_1</span><span class="p">,</span> <span class="n">mat_dim_2</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="o">.</span><span class="n">shape</span>
-
-        <span class="k">assert</span> <span class="n">mat_dim_1</span> <span class="o">==</span> <span class="n">mat_dim_2</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">mat_dim_1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="n">vec_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span>
         <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">vec_dim</span><span class="p">))</span>
@@ -656,7 +650,6 @@
                     <span class="n">vec</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
                     <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="n">vec</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.rotation_vector_from_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.rotation_vector_from_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">rotation_vector_from_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">):</span>
@@ -689,13 +682,11 @@
 <span class="sd">        regularized_rot_vec : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">n_rot_mats</span><span class="p">,</span> <span class="n">mat_dim_1</span><span class="p">,</span> <span class="n">mat_dim_2</span> <span class="o">=</span> <span class="n">rot_mat</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">assert</span> <span class="n">mat_dim_1</span> <span class="o">==</span> <span class="n">mat_dim_2</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">n_rot_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rot_mat</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">trace</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">trace</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">trace</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">trace</span><span class="o">.</span><span class="n">shape</span>
 
             <span class="n">cos_angle</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">trace</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">cos_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -890,14 +881,15 @@
 <span class="sd">        -------</span>
 <span class="sd">        quaternion : array-like, shape=[n_samples, 4]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The quaternion representation does not exist&#39;</span>
+                <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="n">rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_vector_from_matrix</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_from_rotation_vector</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">quaternion</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="n">quaternion</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.quaternion_from_rotation_vector"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.quaternion_from_rotation_vector">[docs]</a>    <span class="k">def</span> <span class="nf">quaternion_from_rotation_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
@@ -911,8 +903,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        quaternion : array-like, shape=[n_samples, 4]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The quaternion representation does not exist&#39;</span>
+                <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
 
         <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -945,17 +939,17 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_vec : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The quaternion representation does not exist&#39;</span>
+                <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">n_quaternions</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quaternion</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="n">cos_half_angle</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">cos_half_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cos_half_angle</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">half_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_half_angle</span><span class="p">)</span>
 
         <span class="n">half_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">half_angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">half_angle</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n_quaternions</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">half_angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
         <span class="n">mask_not_0</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_0</span>
@@ -984,8 +978,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_mat : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The quaternion representation does not exist&#39;</span>
+                <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">n_quaternions</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quaternion</span><span class="o">.</span><span class="n">shape</span>
 
@@ -1014,7 +1010,6 @@
             <span class="n">rot_mat_i</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_mat_i</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
             <span class="n">rot_mat</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;n,nij-&gt;nij&#39;</span><span class="p">,</span> <span class="n">mask_i</span><span class="p">,</span> <span class="n">rot_mat_i</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="k">return</span> <span class="n">rot_mat</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.matrix_from_tait_bryan_angles_extrinsic_xyz"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.matrix_from_tait_bryan_angles_extrinsic_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles_extrinsic_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tait_bryan_angles</span><span class="p">):</span>
@@ -1038,9 +1033,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_mat : array-like, shape=[n_samples, n, n]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">tait_bryan_angles</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="o">.</span><span class="n">shape</span>
 
@@ -1095,9 +1091,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_mat : array-like, shape=[n_samples, n, n]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">tait_bryan_angles</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="o">.</span><span class="n">shape</span>
 
@@ -1163,12 +1160,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_mat : array-like, shape=[n_samples, n, n]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
         <span class="n">tait_bryan_angles</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
@@ -1231,8 +1226,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        tait_bryan_angles : array-like, shape=[n_samples, 3]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
         <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_from_matrix</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
@@ -1258,10 +1255,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        quaternion : array-like, shape=[n_samples, 4]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation&#39;</span>
-                             <span class="s1">&#39; and the Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; do not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; and the quaternion representation&#39;</span>
+                <span class="s1">&#39; do not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">tait_bryan_angles</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -1290,13 +1288,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        quat : array-like, shape=[n_samples, 4]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; and the quaternion representation&#39;</span>
+                <span class="s1">&#39; do not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation&#39;</span>
-                             <span class="s1">&#39; and the Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; do not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">tait_bryan_angles</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">extrinsic_zyx</span> <span class="o">=</span> <span class="p">(</span><span class="n">extrinsic_or_intrinsic</span> <span class="o">==</span> <span class="s1">&#39;extrinsic&#39;</span>
@@ -1356,11 +1353,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        rot_vec : array-like, shape=[n_samples, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
         <span class="n">quaternion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_from_tait_bryan_angles</span><span class="p">(</span>
             <span class="n">tait_bryan_angles</span><span class="p">,</span>
@@ -1382,10 +1378,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        tait_bryan_angles : array-like, shape=[n_samples, 3]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation&#39;</span>
-                             <span class="s1">&#39; and the Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; do not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; and the quaternion representation&#39;</span>
+                <span class="s1">&#39; do not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">w</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
@@ -1409,10 +1406,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        tait_bryan_angles : array-like, shape=[n_samples, 3]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation&#39;</span>
-                             <span class="s1">&#39; and the Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; do not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; and the quaternion representation&#39;</span>
+                <span class="s1">&#39; do not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">w</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
@@ -1443,12 +1441,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        tait_bryan : array-like, shape=[n_samples, 3]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The quaternion representation&#39;</span>
-                             <span class="s1">&#39; and the Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; do not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; and the quaternion representation&#39;</span>
+                <span class="s1">&#39; do not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
         <span class="n">quaternion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
@@ -1503,11 +1500,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        tait_bryan_angles : array-like, shape=[n_samples, 3]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
-                             <span class="s1">&#39; does not exist&#39;</span>
-                             <span class="s1">&#39; for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">extrinsic_or_intrinsic</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The Tait-Bryan angles representation&#39;</span>
+                <span class="s1">&#39; does not exist for rotations in </span><span class="si">%d</span><span class="s1"> dimensions.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 
         <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
@@ -1519,7 +1515,7 @@
 
         <span class="k">return</span> <span class="n">tait_bryan_angles</span></div>
 
-<div class="viewcode-block" id="SpecialOrthogonal.compose"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_1</span><span class="p">,</span> <span class="n">point_2</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SpecialOrthogonal.compose"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compose two elements of SO(n).</span>
 
 <span class="sd">        Parameters</span>
@@ -1536,27 +1532,14 @@
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
-        <span class="n">point_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_1</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-        <span class="n">point_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_2</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+        <span class="n">point_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+        <span class="n">point_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_b</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">point_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">point_1</span><span class="p">)</span>
-            <span class="n">point_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">point_2</span><span class="p">)</span>
+            <span class="n">point_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span>
+            <span class="n">point_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span>
 
-        <span class="n">n_points_1</span> <span class="o">=</span> <span class="n">point_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">n_points_2</span> <span class="o">=</span> <span class="n">point_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="k">assert</span> <span class="p">(</span><span class="n">point_1</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">point_2</span><span class="o">.</span><span class="n">shape</span>
-                <span class="ow">or</span> <span class="n">n_points_1</span> <span class="o">==</span> <span class="mi">1</span>
-                <span class="ow">or</span> <span class="n">n_points_2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">n_points_1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">point_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">point_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_points_2</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">n_points_2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">point_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">point_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_points_1</span><span class="p">)</span>
-
-        <span class="n">point_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ijk,ikl-&gt;ijl&#39;</span><span class="p">,</span> <span class="n">point_1</span><span class="p">,</span> <span class="n">point_2</span><span class="p">)</span>
+        <span class="n">point_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...jk,...kl-&gt;...jl&#39;</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="n">point_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_vector_from_matrix</span><span class="p">(</span><span class="n">point_prod</span><span class="p">)</span>
@@ -1613,7 +1596,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        jacobian : array-like, shape=[n_samples, dimension, dimension]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">left_or_right</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">left_or_right</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Parameter `left_or_right`&#39;</span>
+                <span class="s1">&#39; should be either `left` or `right`.&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
@@ -1785,7 +1771,7 @@
         <span class="k">return</span> <span class="n">tangent_vec</span></div>
 
 <div class="viewcode-block" id="SpecialOrthogonal.exponential_barycenter"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal.exponential_barycenter">[docs]</a>    <span class="k">def</span> <span class="nf">exponential_barycenter</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group exponential barycenter in SO(n).</span>
 
 <span class="sd">        This is the Frechet mean of the canonical bi-invariant metric on SO(n).</span>
@@ -1808,25 +1794,27 @@
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">assert</span> <span class="n">n_points</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">n_points</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can</span><span class="se">\&#39;</span><span class="s1"> compute the mean of 0 points.&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
             <span class="n">n_weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">assert</span> <span class="n">n_points</span> <span class="o">==</span> <span class="n">n_weights</span>
+            <span class="k">if</span> <span class="n">n_points</span> <span class="o">!=</span> <span class="n">n_weights</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;`points` and `weights` need to have the same length.&#39;</span><span class="p">)</span>
 
             <span class="n">mean</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bi_invariant_metric</span><span class="p">)</span>
             <span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
             <span class="n">exp_bar</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">estimate_</span>
 
             <span class="n">exp_bar</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">exp_bar</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">exp_bar</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">exp_bar</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
             <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation_vector_from_matrix</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
             <span class="n">exp_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponential_barycenter</span><span class="p">(</span>
-                <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
+                <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="n">exp_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">exp_bar</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">exp_bar</span></div></div>
@@ -1844,7 +1832,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 7, 2020, 8:56:26 PM.
+        Last updated on Apr 7, 2020, 11:25:51 PM.
       </span>
 
     </p>
