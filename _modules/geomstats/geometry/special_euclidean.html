@@ -357,8 +357,23 @@
         <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec</span><span class="p">(</span>
+                <span class="n">tangent_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="n">translation_mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">))])</span>
+            <span class="n">translation_mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">translation_mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">tangent_vec</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">translation_mask</span> <span class="o">!=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">0.</span><span class="p">))</span>
+            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">tangent_vec</span> <span class="o">-</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.</span>
+            <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">*</span> <span class="n">translation_mask</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid point_type, expected </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or &#39;</span>
+                         <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SpecialEuclidean.regularize_tangent_vec"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean.regularize_tangent_vec">[docs]</a>    <span class="k">def</span> <span class="nf">regularize_tangent_vec</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -410,7 +425,11 @@
                 <span class="p">[</span><span class="n">rotations_vec</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">[:,</span> <span class="n">dim_rotations</span><span class="p">:]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tangent_vec</span>
+            <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="n">regularized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
+                <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">regularized</span><span class="p">)</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid point_type, expected </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or &#39;</span>
                          <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span></div>
@@ -927,7 +946,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 10, 2020, 4:34:01 PM.
+        Last updated on Apr 10, 2020, 5:09:40 PM.
       </span>
 
     </p>
