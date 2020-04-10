@@ -557,6 +557,9 @@
         <span class="n">vec_dim</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vec</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># SO(2)</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
             <span class="n">id_skew</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]]</span> <span class="o">*</span> <span class="n">n_vecs</span><span class="p">)</span>
             <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
                 <span class="s1">&#39;...ij,...i-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">id_skew</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">vec</span><span class="p">)</span>
@@ -665,10 +668,9 @@
 <span class="sd">        :math:`S_r = \frac{angle}{(2 * \sin(angle) ) (R - R^T)}`</span>
 
 <span class="sd">        For the edge case where the angle is close to pi,</span>
-<span class="sd">        the formulation is derived by going from rotation matrix to unit</span>
-<span class="sd">        quaternion to axis-angle:</span>
-<span class="sd">        :math:`r = \frac{angle*v}{|v|}`</span>
-<span class="sd">        where :math:`(w, v)` is a unit quaternion.</span>
+<span class="sd">        the formulation is derived by using the following equality (see the</span>
+<span class="sd">        Axis-angle representation on Wikipedia):</span>
+<span class="sd">        :math:`outer(r, r) = \frac{1}{2} (R + I_3)`</span>
 
 <span class="sd">        In nD, the rotation vector stores the :math:`n(n-1)/2` values</span>
 <span class="sd">        of the skew-symmetric matrix representing the rotation.</span>
@@ -687,126 +689,36 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">trace</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">trace</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">cos_angle</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">trace</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">cos_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">)</span>
-
+            <span class="n">trace_num</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">trace_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
             <span class="n">rot_mat_transpose</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-            <span class="n">rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_from_skew_matrix</span><span class="p">(</span><span class="n">rot_mat</span> <span class="o">-</span> <span class="n">rot_mat_transpose</span><span class="p">)</span>
+            <span class="n">rot_vec_not_pi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_from_skew_matrix</span><span class="p">(</span>
+                <span class="n">rot_mat</span> <span class="o">-</span> <span class="n">rot_mat_transpose</span><span class="p">)</span>
+            <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">mask_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">mask_else</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mask_0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mask_pi</span><span class="p">)</span>
 
-            <span class="c1"># This avois dividing by 0.</span>
-            <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-            <span class="n">mask_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+            <span class="n">numerator</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">mask_0</span> <span class="o">+</span> <span class="n">angle</span> <span class="o">*</span> <span class="n">mask_else</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="n">mask_0</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span>
+                <span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">mask_else</span> <span class="o">+</span> <span class="n">mask_pi</span>
 
-            <span class="n">rot_vec</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="p">(</span><span class="o">.</span><span class="mi">5</span> <span class="o">-</span> <span class="p">(</span><span class="n">trace</span> <span class="o">-</span> <span class="mf">3.</span><span class="p">)</span> <span class="o">/</span> <span class="mf">12.</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+            <span class="n">rot_vec_not_pi</span> <span class="o">=</span> <span class="n">rot_vec_not_pi</span> <span class="o">*</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
 
-            <span class="c1"># This avois dividing by 0.</span>
-            <span class="n">mask_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
-            <span class="n">mask_pi_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_pi</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+            <span class="n">vector_outer</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="n">rot_mat</span><span class="p">)</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span>
+                <span class="n">vector_outer</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                    <span class="mf">0.</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">vector_outer</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
+            <span class="n">squared_diag_comp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">vector_outer</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">diag_comp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">squared_diag_comp</span><span class="p">)</span>
+            <span class="n">norm_line</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector_outer</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">max_line_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">norm_line</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">selected_line</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span>
+                <span class="n">vector_outer</span><span class="p">,</span> <span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_rot_mats</span><span class="p">),</span> <span class="n">max_line_index</span><span class="p">))</span>
+            <span class="n">signs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">selected_line</span><span class="p">)</span>
+            <span class="n">rot_vec_pi</span> <span class="o">=</span> <span class="n">angle</span> <span class="o">*</span> <span class="n">signs</span> <span class="o">*</span> <span class="n">diag_comp</span>
 
-            <span class="c1"># This avois dividing by 0.</span>
-            <span class="n">mask_else</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_0</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask_pi</span>
-            <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+            <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">rot_vec_not_pi</span> <span class="o">+</span> <span class="n">mask_pi</span> <span class="o">*</span> <span class="n">rot_vec_pi</span>
 
-            <span class="n">mask_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mask_pi</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="c1"># choose the largest diagonal element</span>
-            <span class="c1"># to avoid a square root of a negative number</span>
-            <span class="n">rot_mat_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;ni,njk-&gt;njk&#39;</span><span class="p">,</span> <span class="n">mask_pi_float</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">)</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">rot_mat_pi_00</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">rot_mat_pi</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">rot_mat_pi_11</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">rot_mat_pi</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">rot_mat_pi_22</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">rot_mat_pi</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">rot_mat_pi_diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">rot_mat_pi_00</span><span class="p">,</span> <span class="n">rot_mat_pi_11</span><span class="p">,</span> <span class="n">rot_mat_pi_22</span><span class="p">])</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">rot_mat_pi_diagonal</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span>
-            <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span>
-
-            <span class="c1"># compute the axis vector</span>
-            <span class="n">sq_root</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-            <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-                <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="p">(</span>
-                    <span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
-                    <span class="o">-</span> <span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
-                    <span class="o">-</span> <span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span>
-            <span class="n">sq_root_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;ni,nk-&gt;ni&#39;</span><span class="p">,</span> <span class="n">mask_pi_float</span><span class="p">,</span> <span class="n">aux</span><span class="p">)</span>
-
-            <span class="n">sq_root</span> <span class="o">+=</span> <span class="n">sq_root_pi</span>
-
-            <span class="n">rot_vec_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">))</span>
-
-            <span class="c1"># This avois dividing by 0.</span>
-            <span class="n">mask_a_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_mask_i_float</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">mask_b_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_mask_i_float</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">mask_c_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_mask_i_float</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-
-            <span class="n">mask_a_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_a_float</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">mask_b_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_b_float</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">mask_c_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_c_float</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">mask_a_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mask_a_float</span><span class="p">)</span>
-            <span class="n">mask_b_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mask_b_float</span><span class="p">)</span>
-            <span class="n">mask_c_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mask_c_float</span><span class="p">)</span>
-
-            <span class="n">mask_a_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mask_a_float</span><span class="p">,</span> <span class="p">(</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-            <span class="n">mask_b_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mask_b_float</span><span class="p">,</span> <span class="p">(</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-            <span class="n">mask_c_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mask_c_float</span><span class="p">,</span> <span class="p">(</span><span class="n">n_rot_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-            <span class="n">rot_vec_pi</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="n">mask_a_float</span> <span class="o">*</span> <span class="n">sq_root</span> <span class="o">/</span> <span class="mf">2.</span>
-
-            <span class="n">sq_root</span> <span class="o">+=</span> <span class="n">mask_0_float</span>
-            <span class="n">sq_root</span> <span class="o">+=</span> <span class="n">mask_else_float</span>
-
-            <span class="n">rot_vec_pi_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rot_vec_pi</span><span class="p">)</span>
-            <span class="n">rot_vec_pi_c</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rot_vec_pi</span><span class="p">)</span>
-
-            <span class="n">rot_vec_pi_b</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nk,ni-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">mask_b_float</span><span class="p">,</span>
-                <span class="p">((</span><span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
-                  <span class="o">+</span> <span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">])</span>
-                 <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">sq_root</span><span class="p">)))</span>
-            <span class="n">rot_vec_pi</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;ni,nk-&gt;nk&#39;</span><span class="p">,</span> <span class="n">mask_pi_float</span><span class="p">,</span> <span class="n">rot_vec_pi_b</span><span class="p">)</span>
-
-            <span class="n">rot_vec_pi_c</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nk,ni-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">mask_c_float</span><span class="p">,</span>
-                <span class="p">((</span><span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">c</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
-                  <span class="o">+</span> <span class="n">rot_mat</span><span class="p">[:,</span> <span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
-                 <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">sq_root</span><span class="p">)))</span>
-
-            <span class="n">rot_vec_pi</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;ni,nk-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">mask_pi_float</span><span class="p">,</span>
-                <span class="n">rot_vec_pi_c</span><span class="p">)</span>
-
-            <span class="n">norm_rot_vec_pi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rot_vec_pi</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">norm_rot_vec_pi</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mask_0_float</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">norm_rot_vec_pi</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mask_else_float</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">rot_vec</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                    <span class="s1">&#39;nk,n-&gt;nk&#39;</span><span class="p">,</span>
-                    <span class="n">angle</span> <span class="o">*</span> <span class="n">rot_vec_pi</span><span class="p">,</span>
-                    <span class="mf">1.</span> <span class="o">/</span> <span class="n">norm_rot_vec_pi</span><span class="p">))</span>
-
-            <span class="n">angle</span> <span class="o">+=</span> <span class="n">mask_0_float</span>
-            <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">fact</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;ni,ni-&gt;ni&#39;</span><span class="p">,</span>
-                <span class="n">mask_else_float</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">angle</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
-
-            <span class="n">rot_vec</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">fact</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">skew_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_manifold</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
             <span class="n">rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_from_skew_matrix</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">)</span>
@@ -1783,7 +1695,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 10, 2020, 6:07:36 PM.
+        Last updated on Apr 10, 2020, 8:49:44 PM.
       </span>
 
     </p>
