@@ -156,6 +156,7 @@
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="k">as</span> <span class="nn">riemannian_metric</span>
+<span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">InvariantMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
 
@@ -179,8 +180,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">metric</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">left_invariant_metric</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">riemannian_metric</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">loss</span></div>
+    <span class="n">metric_loss</span> <span class="o">=</span> <span class="n">riemannian_metric</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metric_loss</span></div>
 
 
 <div class="viewcode-block" id="grad"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.grad">[docs]</a><span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -202,8 +203,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">metric</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">left_invariant_metric</span>
-    <span class="n">grad</span> <span class="o">=</span> <span class="n">riemannian_metric</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">grad</span></div>
+    <span class="n">metric_grad</span> <span class="o">=</span> <span class="n">riemannian_metric</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metric_grad</span></div>
 
 
 <div class="viewcode-block" id="LieGroup"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup">[docs]</a><span class="k">class</span> <span class="nc">LieGroup</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
@@ -342,7 +343,9 @@
             <span class="s1">&#39;The group exponential from the identity is not implemented.&#39;</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="LieGroup.exp_not_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.exp_not_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">exp_not_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point_type&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">exp_not_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculate the group exponential at base_point.</span>
 
 <span class="sd">        Parameters</span>
@@ -357,14 +360,9 @@
 <span class="sd">        exp : array-like, shape=[n_samples, {dimension,[n,n]}]</span>
 <span class="sd">            the computed exponential</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO(nmiolane): Factorize this type of if in the codebase</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
                 <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
 
             <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
@@ -382,16 +380,16 @@
             <span class="k">return</span> <span class="n">exp</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-            <span class="n">lie_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="n">lie_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
                 <span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_from_identity</span><span class="p">(</span><span class="n">lie_vec</span><span class="p">,</span> <span class="n">point_type</span><span class="p">))</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid point_type, expected </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or &#39;</span>
-                         <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span></div>
+                         <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="LieGroup.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point_type&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group exponential at `base_point` of `tangent_vec`.</span>
 
 <span class="sd">        Parameters</span>
@@ -408,21 +406,13 @@
 <span class="sd">        result : array-like, shape=[n_samples, {dimension,[n,n]}]</span>
 <span class="sd">            The exponentiated tangent vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-
         <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identity</span><span class="p">(</span><span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">identity</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">identity</span><span class="p">,</span>
+            <span class="n">to_ndim</span><span class="o">=</span><span class="n">geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">POINT_TYPES_TO_NDIMS</span><span class="p">[</span><span class="n">point_type</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="n">n_tangent_vecs</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">n_base_points</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -443,7 +433,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_not_from_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">result</span></div>
+        <span class="k">return</span> <span class="n">result</span>
 
 <div class="viewcode-block" id="LieGroup.log_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.log_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group logarithm of `point` from the identity.</span>
@@ -462,7 +452,9 @@
             <span class="s1">&#39;The group logarithm from the identity is not implemented.&#39;</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="LieGroup.log_not_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.log_not_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">log_not_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point_type&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">log_not_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group logarithm of `point` from `base_point`.</span>
 
 <span class="sd">        Parameters</span>
@@ -476,9 +468,6 @@
 <span class="sd">        -------</span>
 <span class="sd">        tangent_vec : array-like, shape=[n_samples, {dimension,[n,n]}]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
                 <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
@@ -500,9 +489,11 @@
                 <span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">lie_point</span><span class="p">,</span> <span class="n">point_type</span><span class="p">))</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid point_type, expected </span><span class="se">\&#39;</span><span class="s1">vector</span><span class="se">\&#39;</span><span class="s1"> or &#39;</span>
-                         <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span></div>
+                         <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">matrix</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="LieGroup.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point&#39;</span><span class="p">,</span> <span class="s1">&#39;point_type&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group logarithm of `point` relative to `base_point`.</span>
 
 <span class="sd">        Parameters</span>
@@ -515,19 +506,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        tangent_vec : array-like, shape=[n_samples, {dimension,[n,n]}]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-
         <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identity</span><span class="p">(</span><span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">identity</span><span class="p">,</span>
+            <span class="n">to_ndim</span><span class="o">=</span><span class="n">geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">POINT_TYPES_TO_NDIMS</span><span class="p">[</span><span class="n">point_type</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
-
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
@@ -552,7 +536,7 @@
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_not_from_identity</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">result</span></div>
+        <span class="k">return</span> <span class="n">result</span>
 
 <div class="viewcode-block" id="LieGroup.add_metric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.add_metric">[docs]</a>    <span class="k">def</span> <span class="nf">add_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a metric to the instance&#39;s list of metrics.&quot;&quot;&quot;</span>
@@ -607,7 +591,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 15, 2020, 3:01:38 AM.
+        Last updated on Apr 15, 2020, 5:40:07 PM.
       </span>
 
     </p>
