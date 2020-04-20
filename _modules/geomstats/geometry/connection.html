@@ -158,6 +158,7 @@
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.error</span>
+<span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 
 
@@ -237,8 +238,13 @@
 <span class="sd">            Value of the vector field to be integrated at position.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
-        <span class="k">return</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...kij,...i,...j-&gt;...k&#39;</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">,</span>
-                           <span class="n">velocity</span><span class="p">)</span></div>
+        <span class="c1"># TODO(ninamiolane): Use einsum with 3 tensors when it is</span>
+        <span class="c1"># enabled in the backend</span>
+        <span class="n">equation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...kij,...i-&gt;...kj&#39;</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
+        <span class="n">equation</span> <span class="o">=</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...kj,...j-&gt;...k&#39;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">equation</span></div>
 
 <div class="viewcode-block" id="Connection.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;euler&#39;</span><span class="p">,</span>
             <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -266,12 +272,12 @@
 <span class="sd">        exp : array-like, shape=[n_samples, dim]</span>
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">initial_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">flow</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">exp</span></div>
 
 <div class="viewcode-block" id="Connection.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;euler&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute logarithm map associated to the affine connection.</span>
@@ -295,15 +301,14 @@
 <span class="sd">        tangent_vec : array-like, shape=[n_samples, dim]</span>
 <span class="sd">            Tangent vector at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">get_n_points</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">velocity</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Define the objective function.&quot;&quot;&quot;</span>
             <span class="n">velocity</span> <span class="o">=</span> <span class="n">velocity</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">-</span> <span class="n">point</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">delta</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">delta</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">n_samples</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
 
         <span class="n">objective_grad</span> <span class="o">=</span> <span class="n">autograd</span><span class="o">.</span><span class="n">elementwise_grad</span><span class="p">(</span><span class="n">objective</span><span class="p">)</span>
@@ -532,10 +537,10 @@
         <span class="n">methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pole&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pole_ladder_step</span><span class="p">,</span>
                    <span class="s1">&#39;schild&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schild_ladder_step</span><span class="p">}</span>
         <span class="n">single_step</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">step</span><span class="p">]</span>
-        <span class="n">base_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">current_point</span><span class="p">,</span>
-                              <span class="n">tangent_vec</span><span class="o">=</span><span class="n">next_tangent_vec</span><span class="p">)</span>
+        <span class="n">base_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">current_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">next_tangent_vec</span><span class="p">)</span>
         <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i_point</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_point</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
             <span class="n">frac_tangent_vector_b</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_point</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_steps</span> <span class="o">*</span> <span class="n">tangent_vec_b</span>
             <span class="n">next_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
                 <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
@@ -678,7 +683,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 20, 2020, 10:30:25 PM.
+        Last updated on Apr 20, 2020, 11:12:32 PM.
       </span>
 
     </p>
