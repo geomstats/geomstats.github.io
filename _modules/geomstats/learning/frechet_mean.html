@@ -157,16 +157,14 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">math</span>
 
-<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">TransformerMixin</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.error</span> <span class="k">as</span> <span class="nn">error</span>
 <span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">EuclideanMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span><span class="p">,</span> <span class="n">MatricesMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">MatricesMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.minkowski</span> <span class="kn">import</span> <span class="n">MinkowskiMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.skew_symmetric_matrices</span> <span class="kn">import</span> <span class="n">SkewSymmetricMatrices</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
 
@@ -438,7 +436,7 @@
     <span class="k">return</span> <span class="n">current_mean</span>
 
 
-<div class="viewcode-block" id="FrechetMean"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.frechet_mean.FrechetMean">[docs]</a><span class="k">class</span> <span class="nc">FrechetMean</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">TransformerMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="FrechetMean"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.frechet_mean.FrechetMean">[docs]</a><span class="k">class</span> <span class="nc">FrechetMean</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Empirical Frechet mean.</span>
 
 <span class="sd">    Parameters</span>
@@ -512,92 +510,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">mean</span>
 
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-<div class="viewcode-block" id="FrechetMean.transform"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.frechet_mean.FrechetMean.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Lift data to a tangent space.</span>
-
-<span class="sd">        Compute the logs of all data point and reshapes them to</span>
-<span class="sd">        1d vectors if necessary. By default the logs are taken at the mean</span>
-<span class="sd">        but any other base point can be passed. Any machine learning</span>
-<span class="sd">        algorithm can then be used with the output array.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, {dim, [n, n]}]</span>
-<span class="sd">            Data to transform.</span>
-<span class="sd">        y : Ignored (Compliance with scikit-learn interface)</span>
-<span class="sd">        base_point : array-like, shape={dim, [n,n]}, optional (mean)</span>
-<span class="sd">            Point on the manifold, the returned samples will be tangent</span>
-<span class="sd">            vectors at the base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        X_new : array-like, shape=[n_samples, dim]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO(nguis): put this in a dedicated class</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;fit needs to be called first or a &#39;</span>
-                                   <span class="s1">&#39;base_point passed.&#39;</span><span class="p">)</span>
-
-        <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tangent_vecs</span>
-
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_symmetric</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">)):</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">vector_from_symmetric_matrix</span><span class="p">(</span>
-                <span class="n">tangent_vecs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_skew_symmetric</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">)):</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">SkewSymmetricMatrices</span><span class="p">(</span>
-                <span class="n">tangent_vecs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">basis_representation</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">X</span></div>
-
-<div class="viewcode-block" id="FrechetMean.inverse_transform"><a class="viewcode-back" href="../../../learning.html#geomstats.learning.frechet_mean.FrechetMean.inverse_transform">[docs]</a>    <span class="k">def</span> <span class="nf">inverse_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Reconstruction of X.</span>
-
-<span class="sd">        The reconstruction will match X_original whose transform would be X.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, dim]</span>
-<span class="sd">            New data, where dim is the dimension of the manifold data belong</span>
-<span class="sd">            to.</span>
-<span class="sd">        base_point : array-like, shape={dim, [n,n]}, optional (mean)</span>
-<span class="sd">            Point on the manifold, where the input samples are tangent</span>
-<span class="sd">            vectors.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        X_original : array-like, shape=[n_samples, {dim, [n, n]}</span>
-<span class="sd">            Data lying on the manifold.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;fit needs to be called first or a &#39;</span>
-                                   <span class="s1">&#39;base_point passed.&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_symmetric</span><span class="p">(</span><span class="n">base_point</span><span class="p">)):</span>
-                <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="p">(</span>
-                    <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">symmetric_matrix_from_vector</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_skew_symmetric</span><span class="p">(</span><span class="n">base_point</span><span class="p">)):</span>
-                <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">SkewSymmetricMatrices</span><span class="p">(</span>
-                    <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dim</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">X</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span></div></div>
 </pre></div>
 
            </div>
@@ -612,7 +525,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Apr 23, 2020, 6:43:42 AM.
+        Last updated on Apr 23, 2020, 5:47:30 PM.
       </span>
 
     </p>
