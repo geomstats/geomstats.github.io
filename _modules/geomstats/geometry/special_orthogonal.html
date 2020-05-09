@@ -163,6 +163,7 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_group</span> <span class="kn">import</span> <span class="n">LieGroup</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.skew_symmetric_matrices</span> <span class="kn">import</span> <span class="n">SkewSymmetricMatrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 
 
 <span class="n">ATOL</span> <span class="o">=</span> <span class="mf">1e-5</span>
@@ -196,13 +197,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="o">=</span> <span class="n">SkewSymmetricMatrices</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bi_invariant_metric</span> <span class="o">=</span> <span class="n">BiInvariantMetric</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">ATOL</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check whether point is an orthogonal matrix.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point to check.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance to check equality of the transpose and the</span>
+<span class="sd">            inverse of point.</span>
+<span class="sd">            Optional, default: 1e-5.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -210,7 +215,7 @@
 <span class="sd">            Boolean evaluating if point belongs to SO(n).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -227,6 +232,25 @@
 <span class="sd">            Inverse.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Project a matrix on SO(n) by minimizing the Frobenius norm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rot_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aux_mat</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">inv_sqrt_mat</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">aux_mat</span><span class="p">,</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_mat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rot_mat</span>
 
     <span class="k">def</span> <span class="nf">_is_in_lie_algebra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">ATOL</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
@@ -313,13 +337,14 @@
 
     <span class="n">identity</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_identity</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">ATOL</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Evaluate if a point belongs to SO(3).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point : array-like, shape=[..., 3]</span>
 <span class="sd">            Point to check whether it belongs to SO(3).</span>
+<span class="sd">        atol : unused</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -497,11 +522,11 @@
 
     <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Project a matrix on SO(n) using the Frobenius norm.</span>
+        <span class="sd">&quot;&quot;&quot;Project a matrix on SO(3) using the Frobenius norm.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Matrix.</span>
 
 <span class="sd">        Returns</span>
@@ -510,38 +535,23 @@
 <span class="sd">            Rotation matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mat</span> <span class="o">=</span> <span class="n">point</span>
-        <span class="n">n_mats</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">n_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
 
-        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mat_unitary_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-            <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">)</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
-            <span class="n">mask_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span>
-            <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">algebra_utils</span><span class="o">.</span><span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diag</span><span class="p">),</span>
-                <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">new_mat_diag_s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="p">[</span><span class="n">n_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mat_unitary_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="n">mask_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">algebra_utils</span><span class="o">.</span><span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diag</span><span class="p">),</span>
+            <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">new_mat_diag_s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="p">[</span><span class="n">n_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 
-            <span class="n">aux_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span>
-                <span class="n">mat_unitary_u</span><span class="p">,</span>
-                <span class="n">new_mat_diag_s</span><span class="p">)</span>
-            <span class="n">rot_mat</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;n,njk-&gt;njk&#39;</span><span class="p">,</span>
-                <span class="n">mask_float</span><span class="p">,</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                    <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span>
-                    <span class="n">aux_mat</span><span class="p">,</span>
-                    <span class="n">mat_unitary_v</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">aux_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">mat</span><span class="p">)</span>
-
-            <span class="n">inv_sqrt_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="n">aux_mat</span><span class="p">))</span>
-
-            <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">inv_sqrt_mat</span><span class="p">)</span>
-
+        <span class="n">aux_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">new_mat_diag_s</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;n,njk-&gt;njk&#39;</span><span class="p">,</span> <span class="n">mask_float</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">aux_mat</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">rot_mat</span>
 
     <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
@@ -916,8 +926,9 @@
 
         <span class="k">return</span> <span class="n">rot_mat</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles_extrinsic_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tait_bryan_angles</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles_extrinsic_xyz</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert Tait-Bryan angles to rot mat in extrensic coords (xyz).</span>
 
 <span class="sd">        Convert a rotation given in terms of the tait bryan angles,</span>
@@ -940,11 +951,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="o">.</span><span class="n">shape</span>
 
-        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_tait_bryan_angles</span><span class="p">,)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">angle_1</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">angle_2</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">angle_3</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
 
+        <span class="c1"># TODO: avoid for loop in vectorization of tait bryan angles</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tait_bryan_angles</span><span class="p">):</span>
             <span class="n">cos_angle_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle_1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="n">sin_angle_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle_1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
@@ -967,11 +979,12 @@
                           <span class="o">-</span> <span class="n">cos_angle_1</span> <span class="o">*</span> <span class="n">sin_angle_3</span><span class="p">)],</span>
                         <span class="p">[</span><span class="n">cos_angle_2</span> <span class="o">*</span> <span class="n">cos_angle_3</span><span class="p">]]</span>
 
-            <span class="n">rot_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">column_1</span><span class="p">,</span> <span class="n">column_2</span><span class="p">,</span> <span class="n">column_3</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">rot_mat</span>
+            <span class="n">rot_mat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">column_1</span><span class="p">,</span> <span class="n">column_2</span><span class="p">,</span> <span class="n">column_3</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles_extrinsic_zyx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tait_bryan_angles</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles_extrinsic_zyx</span><span class="p">(</span><span class="n">tait_bryan_angles</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert Tait-Bryan angles to rot mat in extrensic coords (zyx).</span>
 
 <span class="sd">        Convert a rotation given in terms of the tait bryan angles,</span>
@@ -994,7 +1007,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_tait_bryan_angles</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="o">.</span><span class="n">shape</span>
 
-        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_tait_bryan_angles</span><span class="p">,)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">angle_1</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">angle_2</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">angle_3</span> <span class="o">=</span> <span class="n">tait_bryan_angles</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -1022,8 +1035,8 @@
             <span class="n">column_3</span> <span class="o">=</span> <span class="p">[[</span><span class="n">sin_angle_2</span><span class="p">],</span>
                         <span class="p">[</span><span class="o">-</span> <span class="n">cos_angle_2</span> <span class="o">*</span> <span class="n">sin_angle_1</span><span class="p">],</span>
                         <span class="p">[</span><span class="n">cos_angle_1</span> <span class="o">*</span> <span class="n">cos_angle_2</span><span class="p">]]</span>
-            <span class="n">rot_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">column_1</span><span class="p">,</span> <span class="n">column_2</span><span class="p">,</span> <span class="n">column_3</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">rot_mat</span>
+            <span class="n">rot_mat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">column_1</span><span class="p">,</span> <span class="n">column_2</span><span class="p">,</span> <span class="n">column_3</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
 
     <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">matrix_from_tait_bryan_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tait_bryan_angles</span><span class="p">,</span>
@@ -1671,7 +1684,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on May 8, 2020, 8:34:48 PM.
+        Last updated on May 9, 2020, 4:29:52 PM.
       </span>
 
     </p>
