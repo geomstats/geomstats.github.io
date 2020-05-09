@@ -584,7 +584,7 @@
 
 <div class="viewcode-block" id="Connection.geodesic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span>
                  <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
+                 <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
 
 <span class="sd">        Geodesic curve defined by either:</span>
@@ -609,32 +609,39 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        path : callable</span>
-<span class="sd">            Time parameterized geodesic curve.</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
+<span class="sd">            represents time, and the second corresponds to the different</span>
+<span class="sd">            initial conditions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point_ndim</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">point_ndim</span> <span class="o">=</span> <span class="mi">2</span>
-
-        <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-            <span class="n">initial_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
+            <span class="n">point_type</span><span class="p">,</span> <span class="s1">&#39;point_type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Specify an end point or an initial tangent &#39;</span>
                              <span class="s1">&#39;vector to define the geodesic.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">end_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">shooting_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-                <span class="n">point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
+                <span class="n">point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">shooting_tangent_vec</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
                         <span class="s1">&#39;The shooting tangent vector is too&#39;</span>
                         <span class="s1">&#39; far from the input initial tangent vector.&#39;</span><span class="p">)</span>
             <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">shooting_tangent_vec</span>
-        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">)</span>
-        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-            <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+                <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">n_initial_conditions</span> <span class="o">=</span> <span class="n">initial_tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Generate parameterized function for geodesic curve.</span>
@@ -644,33 +651,22 @@
 <span class="sd">            t : array-like, shape=[n_points,]</span>
 <span class="sd">                Times at which to compute points of the geodesics.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">new_initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">initial_point</span><span class="p">,</span>
-                <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">new_initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-                <span class="n">initial_tangent_vec</span><span class="p">,</span>
-                <span class="n">to_ndim</span><span class="o">=</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
                 <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                    <span class="s1">&#39;il,nk-&gt;ik&#39;</span><span class="p">,</span>
-                    <span class="n">t</span><span class="p">,</span>
-                    <span class="n">new_initial_tangent_vec</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+                    <span class="s1">&#39;i,...k-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
                 <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                    <span class="s1">&#39;il,nkm-&gt;ikm&#39;</span><span class="p">,</span>
-                    <span class="n">t</span><span class="p">,</span>
-                    <span class="n">new_initial_tangent_vec</span><span class="p">)</span>
+                    <span class="s1">&#39;i,...kl-&gt;...ikl&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
 
-            <span class="n">point_at_time_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vecs</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="o">=</span><span class="n">new_initial_point</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">point_at_time_t</span>
+            <span class="n">points_at_time_t</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tv</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span> <span class="k">for</span> <span class="n">tv</span><span class="p">,</span>
+                <span class="n">pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)]</span>
+            <span class="n">points_at_time_t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points_at_time_t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
+            <span class="k">return</span> <span class="n">points_at_time_t</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_initial_conditions</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> \
+                <span class="n">points_at_time_t</span>
         <span class="k">return</span> <span class="n">path</span></div>
 
 <div class="viewcode-block" id="Connection.torsion"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.connection.Connection.torsion">[docs]</a>    <span class="k">def</span> <span class="nf">torsion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
@@ -697,7 +693,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on May 9, 2020, 4:29:52 PM.
+        Last updated on May 9, 2020, 4:51:26 PM.
       </span>
 
     </p>

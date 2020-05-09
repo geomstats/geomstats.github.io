@@ -161,7 +161,6 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">BiInvariantMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_group</span> <span class="kn">import</span> <span class="n">LieGroup</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.skew_symmetric_matrices</span> <span class="kn">import</span> <span class="n">SkewSymmetricMatrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 
@@ -497,26 +496,17 @@
         <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_canonical_metric</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">n_vecs</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
-            <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
-        <span class="n">jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jacobian</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_vecs</span><span class="p">)</span>
-        <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
-        <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span>
-            <span class="n">tangent_vec</span><span class="p">,</span>
-            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">))</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span>
+            <span class="n">tangent_vec</span>
+        <span class="p">)</span>
 
         <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
             <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
 
-        <span class="n">jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">jacobian</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span>
-            <span class="n">tangent_vec_at_id</span><span class="p">,</span>
-            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jacobian</span><span class="p">))</span>
+        <span class="n">regularized_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">regularized_tangent_vec</span>
 
@@ -1421,8 +1411,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
-        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">jacobian_translation</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the jacobian matrix corresponding to translation.</span>
@@ -1449,7 +1437,7 @@
             <span class="n">left_or_right</span><span class="p">,</span> <span class="s1">&#39;left_or_right&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">])</span>
 
         <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-
+        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">n_points</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -1488,8 +1476,7 @@
             <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_PI</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="n">delta_angle</span> <span class="o">**</span> <span class="mi">6</span><span class="p">)</span>
 
         <span class="n">angle</span> <span class="o">+=</span> <span class="n">mask_0_float</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">coef_1</span><span class="p">)</span> <span class="o">/</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_pi_float</span> <span class="o">*</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">coef_1</span><span class="p">)</span> <span class="o">/</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
         <span class="c1"># This avoids dividing by 0.</span>
         <span class="n">mask_else</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_0</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask_pi</span>
@@ -1518,7 +1505,8 @@
 
             <span class="n">jacobian</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;n,ij-&gt;nij&#39;</span><span class="p">,</span> <span class="n">mask_i_float</span><span class="p">,</span> <span class="n">jacobian_i</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">jacobian</span>
+        <span class="k">return</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">jacobian</span>
 
     <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sample in SO(3) with the uniform distribution.</span>
@@ -1684,7 +1672,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on May 9, 2020, 4:29:52 PM.
+        Last updated on May 9, 2020, 4:51:26 PM.
       </span>
 
     </p>

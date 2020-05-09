@@ -156,6 +156,7 @@
 
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">import</span> <span class="nn">geomstats.errors</span> <span class="k">as</span> <span class="nn">errors</span>
 <span class="kn">import</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="k">as</span> <span class="nn">riemannian_metric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">InvariantMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
@@ -321,7 +322,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point : array-like, shape=[..., {dim, [n, n]]</span>
-<span class="sd">            Point to be inverted.</span>
+<span class="sd">            Point.</span>
 <span class="sd">        left_or_right : str, {&#39;left&#39;, &#39;right&#39;}</span>
 <span class="sd">            Indicate whether to calculate the differential of left or right</span>
 <span class="sd">            translations.</span>
@@ -332,12 +333,57 @@
 <span class="sd">        jacobian : array-like, shape=[..., dim, dim]</span>
 <span class="sd">            Jacobian of the left/right translation by point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">point</span>
-
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
             <span class="s1">&#39;The jacobian of the Lie group translation is not implemented.&#39;</span>
         <span class="p">)</span></div>
+
+<div class="viewcode-block" id="LieGroup.tangent_translation_map"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.tangent_translation_map">[docs]</a>    <span class="k">def</span> <span class="nf">tangent_translation_map</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the push-forward map by the left/right translation.</span>
+
+<span class="sd">        Compute the push-forward map, of the left/right translation by the</span>
+<span class="sd">        point. It corresponds to the tangent map, or differential of the</span>
+<span class="sd">        group multiplication by the point or its inverse. For groups with a</span>
+<span class="sd">        vector representation, it is only implemented at identity, but it can</span>
+<span class="sd">        be used at other points by passing `inverse=True`. This method wraps</span>
+<span class="sd">        the jacobian translation which actually computes the matrix</span>
+<span class="sd">        representation of the map.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., {dim, [n, n]]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        left_or_right : str, {&#39;left&#39;, &#39;right&#39;}</span>
+<span class="sd">            Whether to calculate the differential of left or right</span>
+<span class="sd">            translations.</span>
+<span class="sd">            Optional, default: &#39;left&#39;</span>
+<span class="sd">        inverse : bool,</span>
+<span class="sd">            Whether to inverse the jacobian matrix. If True, the push forward</span>
+<span class="sd">            by the translation by the inverse of point is returned.</span>
+<span class="sd">            Optional, default: False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_map : callable</span>
+<span class="sd">            Tangent map of the left/right translation by point. It can be</span>
+<span class="sd">            applied to tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
+            <span class="n">left_or_right</span><span class="p">,</span> <span class="s1">&#39;left_or_right&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+                <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="k">lambda</span> <span class="n">tangent_vec</span><span class="p">:</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+                    <span class="n">point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">tangent_vec</span><span class="p">:</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+                <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+            <span class="n">jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">tangent_vec</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...j-&gt;...i&#39;</span><span class="p">,</span> <span class="n">jacobian</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="LieGroup.exp_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.exp_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the group exponential of tangent vector from the identity.</span>
@@ -372,17 +418,13 @@
 <span class="sd">            Group exponential.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
-                <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
-            <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
+            <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+                <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-            <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span>
-                <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">))</span>
+            <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
             <span class="n">exp_from_identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_from_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
-                <span class="n">base_point</span><span class="p">,</span> <span class="n">exp_from_identity</span><span class="p">)</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">exp_from_identity</span><span class="p">)</span>
             <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">exp</span>
 
@@ -451,16 +493,11 @@
 <span class="sd">            Group logarithm.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
+            <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
                 <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
-            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
-            <span class="n">log_from_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span>
-                <span class="n">point</span><span class="o">=</span><span class="n">point_near_id</span><span class="p">)</span>
-
-            <span class="n">log</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span> <span class="n">log_from_id</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jacobian</span><span class="p">))</span>
-
+            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
+            <span class="n">log_from_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point_near_id</span><span class="p">)</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">log_from_id</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">log</span>
 
         <span class="n">lie_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
@@ -614,7 +651,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on May 9, 2020, 4:29:52 PM.
+        Last updated on May 9, 2020, 4:51:26 PM.
       </span>
 
     </p>
