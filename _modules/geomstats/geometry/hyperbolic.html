@@ -1,0 +1,704 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geomstats.geometry.hyperbolic &mdash; Geomstats latest documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Geomstats
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../first-steps.html">First steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Geomstats</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>geomstats.geometry.hyperbolic</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for geomstats.geometry.hyperbolic</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The n-dimensional hyperbolic space.</span>
+
+<span class="sd">The n-dimensional hyperbolic space embedded and its different representations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+
+<span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+
+<div class="viewcode-block" id="Hyperbolic"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic">[docs]</a><span class="k">class</span> <span class="nc">Hyperbolic</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for the n-dimensional hyperbolic space.</span>
+
+<span class="sd">    Class for the n-dimensional hyperbolic space</span>
+<span class="sd">    as embedded in (n+1)-dimensional Minkowski space.</span>
+
+<span class="sd">    The point_type variable allows to choose the</span>
+<span class="sd">    representation of the points as input.</span>
+
+<span class="sd">    If point_type is set to &#39;ball&#39; then points are parametrized</span>
+<span class="sd">    by their coordinates inside the Poincare Ball n-coordinates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dim : int</span>
+<span class="sd">        Dimension of the hyperbolic space.</span>
+<span class="sd">    point_type : str, {&#39;extrinsic&#39;, &#39;intrinsic&#39;, etc}</span>
+<span class="sd">        Default coordinates to represent points in hyperbolic space.</span>
+<span class="sd">        Optional, default: &#39;extrinsic&#39;.</span>
+<span class="sd">    scale : int</span>
+<span class="sd">        Scale of the hyperbolic space, defined as the set of points</span>
+<span class="sd">        in Minkowski space whose squared norm is equal to -scale.</span>
+<span class="sd">        Optional, default: 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_coords_type</span> <span class="o">=</span> <span class="s1">&#39;extrinsic&#39;</span>
+    <span class="n">default_point_type</span> <span class="o">=</span> <span class="s1">&#39;vector&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Hyperbolic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">default_point_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords_type</span> <span class="o">=</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">default_coords_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">HyperbolicMetric</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_extrinsic_to_extrinsic_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the parameterization of a point.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from its extrinsic coordinates, to its intrinsic coordinates</span>
+<span class="sd">        in Minkowski space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_intrinsic : array-like, shape=[..., dim]</span>
+<span class="sd">            Point in hyperbolic space in intrinsic coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">point</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">_intrinsic_to_extrinsic_coordinates</span><span class="p">(</span><span class="n">point_intrinsic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert intrinsic to extrinsic coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from its intrinsic coordinates, to its extrinsic coordinates</span>
+<span class="sd">        in Minkowski space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_intrinsic : array-like, shape=[..., dim]</span>
+<span class="sd">            Point in hyperbolic space in intrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coord_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point_intrinsic</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">coord_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">coord_0</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">coord_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">coord_0</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">point_extrinsic</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">coord_0</span><span class="p">,</span> <span class="n">point_intrinsic</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">point_extrinsic</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_extrinsic_to_intrinsic_coordinates</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert extrinsic to intrinsic coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from its extrinsic coordinates in Minkowski space, to its</span>
+<span class="sd">        intrinsic coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_intrinsic : array-like, shape=[..., dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point_intrinsic</span> <span class="o">=</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">return</span> <span class="n">point_intrinsic</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_extrinsic_to_ball_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert extrinsic to ball coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from its intrinsic coordinates, to the poincare ball model</span>
+<span class="sd">        coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_ball : array-like, shape=[..., dim]</span>
+<span class="sd">            Point in hyperbolic space in Poincare ball coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">_ball_to_extrinsic_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert ball to extrinsic coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from its poincare ball model coordinates, to the extrinsic</span>
+<span class="sd">        coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point in hyperbolic space in Poincare ball coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        extrinsic : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">squared_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">squared_norm</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">squared_norm</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">expanded_denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">denominator</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">expanded_denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span>
+            <span class="n">expanded_denominator</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">intrinsic</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">point</span><span class="p">)</span> <span class="o">/</span> <span class="n">expanded_denominator</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">t</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">_half_plane_to_extrinsic_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert half plane to extrinsic coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in the hyperbolic plane</span>
+<span class="sd">        from its upper half plane model coordinates, to the extrinsic</span>
+<span class="sd">        coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point in hyperbolic space in half-plane coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        extrinsic : array-like, shape=[..., 3]</span>
+<span class="sd">            Point in hyperbolic plane in extrinsic coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">point</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">den</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ball_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">x</span> <span class="o">/</span> <span class="n">den</span><span class="p">,</span> <span class="p">(</span><span class="n">x2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">den</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_ball_to_extrinsic_coordinates</span><span class="p">(</span><span class="n">ball_point</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">_extrinsic_to_half_plane_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert extrinsic to half plane coordinates.</span>
+
+<span class="sd">        Convert the parameterization of a point in the hyperbolic plane</span>
+<span class="sd">        from its intrinsic coordinates, to the poincare upper half plane</span>
+<span class="sd">        coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point in the hyperbolic plane in intrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_half_plane : array-like, shape=[..., 2]</span>
+<span class="sd">            Point in the hyperbolic plane in Poincare upper half-plane</span>
+<span class="sd">            coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point_ball</span> <span class="o">=</span> \
+            <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_extrinsic_to_ball_coordinates</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">point_ball_x</span><span class="p">,</span> <span class="n">point_ball_y</span> <span class="o">=</span> <span class="n">point_ball</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">point_ball</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">point_ball_x2</span> <span class="o">=</span> <span class="n">point_ball_x</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">point_ball_x2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">point_ball_y</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">point_ball_x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">point_ball_x</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">point_ball_y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">point_ball_y</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">point_ball_x2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">point_ball_x2</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">denom</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">point_half_plane</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span>
+            <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">point_ball_x</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">point_ball_x2</span> <span class="o">-</span> <span class="n">point_ball_y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">point_half_plane</span>
+
+<div class="viewcode-block" id="Hyperbolic.change_coordinates_system"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic.change_coordinates_system">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">change_coordinates_system</span><span class="p">(</span><span class="n">point</span><span class="p">,</span>
+                                  <span class="n">from_coordinates_system</span><span class="p">,</span>
+                                  <span class="n">to_coordinates_system</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert coordinates of a point.</span>
+
+<span class="sd">        Convert the parameterization of a point in the hyperbolic space</span>
+<span class="sd">        from current given coordinate system to an other also given in</span>
+<span class="sd">        parameters. The possible coordinates system are &#39;extrinsic&#39;,</span>
+<span class="sd">        &#39;intrinsic&#39;, &#39;ball&#39; and &#39;half-plane&#39; that correspond respectivelly</span>
+<span class="sd">        to extrinsic coordinates in the hyperboloid , intrinsic</span>
+<span class="sd">        coordinates in the hyperboloid, ball coordinates in the Poincare</span>
+<span class="sd">        ball model and coordinates in the Poincare upper half-plane model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., {dim, dim + 1}]</span>
+<span class="sd">            Point in hyperbolic space.</span>
+<span class="sd">        from_coordinates_system : str, {&#39;extrinsic&#39;, &#39;intrinsic&#39;, etc}</span>
+<span class="sd">            Coordinates type.</span>
+<span class="sd">        to_coordinates_system : str, {&#39;extrinsic&#39;, &#39;intrinsic&#39;, etc}</span>
+<span class="sd">            Coordinates type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_to : array-like, shape=[..., dim]</span>
+<span class="sd">                               or shape=[n_sample, dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in coordinates given by to_point_type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coords_transform</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;ball-extrinsic&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_ball_to_extrinsic_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;extrinsic-ball&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_extrinsic_to_ball_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;intrinsic-extrinsic&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_intrinsic_to_extrinsic_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;extrinsic-intrinsic&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_extrinsic_to_intrinsic_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;extrinsic-half-plane&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_extrinsic_to_half_plane_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;half-plane-extrinsic&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_half_plane_to_extrinsic_coordinates</span><span class="p">,</span>
+            <span class="s1">&#39;extrinsic-extrinsic&#39;</span><span class="p">:</span>
+                <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">_extrinsic_to_extrinsic_coordinates</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">from_coordinates_system</span> <span class="o">==</span> <span class="n">to_coordinates_system</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">point</span>
+
+        <span class="n">extrinsic</span> <span class="o">=</span>\
+            <span class="n">coords_transform</span><span class="p">[</span><span class="n">from_coordinates_system</span> <span class="o">+</span>
+                             <span class="s1">&#39;-extrinsic&#39;</span><span class="p">](</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">return</span> \
+            <span class="n">coords_transform</span><span class="p">[</span><span class="s1">&#39;extrinsic-&#39;</span> <span class="o">+</span>
+                             <span class="n">to_coordinates_system</span><span class="p">](</span><span class="n">extrinsic</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Hyperbolic.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if a point belongs to the hyperbolic space.</span>
+
+<span class="sd">        Test if a point belongs to the hyperbolic space in</span>
+<span class="sd">        its hyperboloid representation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point to be tested.</span>
+<span class="sd">        tolerance : float</span>
+<span class="sd">            Tolerance at which to evaluate how close the squared norm</span>
+<span class="sd">            is to the reference value.</span>
+<span class="sd">            Optional, default: TOLERANCE.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        belongs : array-like, shape=[..., 1]</span>
+<span class="sd">            Array of booleans indicating whether the corresponding points</span>
+<span class="sd">            belong to the hyperbolic space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Hyperbolic.to_coordinates"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic.to_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">to_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">to_coords_type</span><span class="o">=</span><span class="s1">&#39;ball&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert coordinates of a point.</span>
+
+<span class="sd">        Convert the parameterization of a point in the hyperbolic space</span>
+<span class="sd">        from current coordinate system to the coordinate system given.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., {dim, dim + 1}]</span>
+<span class="sd">            Point in hyperbolic space.</span>
+<span class="sd">        to_point_type : str, {&#39;extrinsic&#39;, &#39;intrinsic&#39;, etc}</span>
+<span class="sd">            Coordinates type.</span>
+<span class="sd">            Optional, default: &#39;ball&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_to : array-like, shape=[..., {dim, dim + 1}]</span>
+<span class="sd">            Point in hyperbolic space in coordinates given by to_point_type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">change_coordinates_system</span><span class="p">(</span><span class="n">point</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">coords_type</span><span class="p">,</span>
+                                                    <span class="n">to_coords_type</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Hyperbolic.from_coordinates"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic.from_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">from_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">from_coords_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert to a type of coordinates given some type.</span>
+
+<span class="sd">        Convert the parameterization of a point in hyperbolic space</span>
+<span class="sd">        from given coordinate system to the current coordinate system.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., {dim, dim + 1}]</span>
+<span class="sd">            Point in hyperbolic space in coordinates from_point_type.</span>
+<span class="sd">        from_point_type : str, {&#39;ball&#39;, &#39;extrinsic&#39;, &#39;intrinsic&#39;, &#39;half_plane&#39;}</span>
+<span class="sd">            Coordinates type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_current : array-like, shape=[..., {dim, dim + 1}]</span>
+<span class="sd">            Point in hyperbolic space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">change_coordinates_system</span><span class="p">(</span>
+            <span class="n">point</span><span class="p">,</span> <span class="n">from_coords_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords_type</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Hyperbolic.random_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.Hyperbolic.random_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample over the hyperbolic space using uniform distribution.</span>
+
+<span class="sd">        Sample over the hyperbolic space. The sampling is performed</span>
+<span class="sd">        by sampling over uniform distribution, the sampled examples</span>
+<span class="sd">        are considered in the intrinsic coordinates system.</span>
+<span class="sd">        The function then transforms intrinsic samples into system</span>
+<span class="sd">        coordinate selected.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        bound: float</span>
+<span class="sd">            Bound defining the hypersquare in which to sample uniformly.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Samples in hyperbolic space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">*</span> <span class="mf">2.</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">Hyperbolic</span><span class="o">.</span><span class="n">change_coordinates_system</span><span class="p">(</span>
+            <span class="n">samples</span><span class="p">,</span> <span class="s1">&#39;intrinsic&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span></div></div>
+
+
+<div class="viewcode-block" id="HyperbolicMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.HyperbolicMetric">[docs]</a><span class="k">class</span> <span class="nc">HyperbolicMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class that defines operations using a hyperbolic metric.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dim : int</span>
+<span class="sd">        Dimension of the hyperbolic space.</span>
+<span class="sd">    point_type : str, {&#39;extrinsic&#39;, &#39;intrinsic&#39;, etc}, optional</span>
+<span class="sd">        Default coordinates to represent points in hyperbolic space.</span>
+<span class="sd">    scale : int, optional</span>
+<span class="sd">        Scale of the hyperbolic space, defined as the set of points</span>
+<span class="sd">        in Minkowski space whose squared norm is equal to -scale.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_point_type</span> <span class="o">=</span> <span class="s1">&#39;vector&#39;</span>
+    <span class="n">default_coords_type</span> <span class="o">=</span> <span class="s1">&#39;extrinsic&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HyperbolicMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">HyperbolicMetric</span><span class="o">.</span><span class="n">default_point_type</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+
+<div class="viewcode-block" id="HyperbolicMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.HyperbolicMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            First tangent vector at base point.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Second tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[..., 1]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner_product</span><span class="p">(</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">inner_prod</span></div>
+
+<div class="viewcode-block" id="HyperbolicMetric.squared_norm"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hyperbolic.HyperbolicMetric.squared_norm">[docs]</a>    <span class="k">def</span> <span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the squared norm of a vector.</span>
+
+<span class="sd">        Squared norm of a vector associated with the inner-product</span>
+<span class="sd">        at the tangent space at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Vector on the tangent space of the hyperbolic space at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sq_norm : array-like, shape=[..., 1]</span>
+<span class="sd">            Squared norm of the vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="n">sq_norm</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">sq_norm</span></div>
+
+    <span class="k">def</span> <span class="nf">_squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Squared norm with hyperbolic scale 1.</span>
+
+<span class="sd">        Squared norm of a vector associated with the inner-product</span>
+<span class="sd">        at the tangent space at a base point with scale=1.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Vector on the tangent space of the hyperbolic space at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space in extrinsic coordinates.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sq_norm : array-like, shape=[..., 1]</span>
+<span class="sd">            Squared norm of the vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors with scale=1.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            First tangent vector at base point.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Second tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Point in hyperbolic space.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[..., 1]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span>
+                                     <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019-2020, Geomstats, Inc.
+      <span class="lastupdated">
+        Last updated on May 15, 2020, 3:55:10 PM.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

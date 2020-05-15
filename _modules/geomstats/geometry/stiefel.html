@@ -1,0 +1,710 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geomstats.geometry.stiefel &mdash; Geomstats latest documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Geomstats
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../first-steps.html">First steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Geomstats</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>geomstats.geometry.stiefel</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for geomstats.geometry.stiefel</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Stiefel manifold St(n,p).</span>
+
+<span class="sd">A set of all orthonormal p-frames in n-dimensional space, where p &lt;= n</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">import</span> <span class="nn">geomstats.errors</span>
+<span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
+<span class="kn">from</span> <span class="nn">geomstats</span> <span class="kn">import</span> <span class="n">algebra_utils</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.embedded_manifold</span> <span class="kn">import</span> <span class="n">EmbeddedManifold</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">EuclideanMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+
+<span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+
+<div class="viewcode-block" id="Stiefel"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.stiefel.Stiefel">[docs]</a><span class="k">class</span> <span class="nc">Stiefel</span><span class="p">(</span><span class="n">EmbeddedManifold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for Stiefel manifolds St(n,p).</span>
+
+<span class="sd">    A set of all orthonormal p-frames in n-dimensional space,</span>
+<span class="sd">    where p &lt;= n.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Dimension of the ambient vector space.</span>
+<span class="sd">    p : int</span>
+<span class="sd">        Number of basis vectors in the orthonormal frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">)</span>
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;p needs to be smaller than n.&#39;</span><span class="p">)</span>
+
+        <span class="n">dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Stiefel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">embedding_manifold</span><span class="o">=</span><span class="n">Matrices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">canonical_metric</span> <span class="o">=</span> <span class="n">StiefelCanonicalMetric</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if a point belongs to St(n,p).</span>
+
+<span class="sd">        Test whether the point is a p-frame in n-dimensional space,</span>
+<span class="sd">        and it is orthonormal.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        tolerance : float, optional</span>
+<span class="sd">            Tolerance at which to evaluate.</span>
+<span class="sd">            Optional, default: 1e-5.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        belongs : array-like, shape=[...,]</span>
+<span class="sd">            Array of booleans evaluating if the corresponding points</span>
+<span class="sd">            belong to the Stiefel manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_points</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_points</span><span class="p">)</span>
+
+        <span class="n">point_transpose</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">point_transpose</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span> <span class="o">-</span> <span class="n">identity</span>
+
+        <span class="n">diff_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">diff_norm</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
+        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">belongs</span>
+
+<div class="viewcode-block" id="Stiefel.to_grassmannian"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.stiefel.Stiefel.to_grassmannian">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">to_grassmannian</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Project a point of St(n, p) to Gr(n, p).</span>
+
+<span class="sd">        If :math:`U \in St(n, p)` is an orthonormal frame,</span>
+<span class="sd">        return the orthogonal projector :math:`P = U U^T`</span>
+<span class="sd">        onto the subspace of :math:`\mathbb{R}^n` spanned by</span>
+<span class="sd">        :math:`U`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        projected : array-like, shape=[..., n, n]</span>
+<span class="sd">            Projected point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Stiefel.random_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.stiefel.Stiefel.random_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sample on St(n,p) from the uniform distribution.</span>
+
+<span class="sd">        If :math:`Z(p,n) \sim N(0,1)`, then :math:`St(n,p) \sim U`,</span>
+<span class="sd">        according to Haar measure:</span>
+<span class="sd">        :math:`St(n,p) := Z(Z^TZ)^{-1/2}`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., n, p]</span>
+<span class="sd">            Samples on the Stiefel manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+        <span class="n">std_normal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">std_normal_transpose</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">std_normal</span><span class="p">)</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">std_normal_transpose</span><span class="p">,</span> <span class="n">std_normal</span><span class="p">)</span>
+        <span class="n">sqrt_aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="n">aux</span><span class="p">)</span>
+        <span class="n">inv_sqrt_aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">sqrt_aux</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">std_normal</span><span class="p">,</span> <span class="n">inv_sqrt_aux</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">samples</span></div></div>
+
+
+<div class="viewcode-block" id="StiefelCanonicalMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.stiefel.StiefelCanonicalMetric">[docs]</a><span class="k">class</span> <span class="nc">StiefelCanonicalMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class that defines the canonical metric for Stiefel manifolds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Dimension of the ambient vector space.</span>
+<span class="sd">    p : int</span>
+<span class="sd">        Number of basis vectors in the orthonormal frames.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StiefelCanonicalMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span> <span class="o">=</span> <span class="n">EuclideanMetric</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors at a base point.</span>
+
+<span class="sd">        Canonical inner-product on the tangent space at `base_point`,</span>
+<span class="sd">        which is different from the inner-product induced by the embedding</span>
+<span class="sd">        (see [RLSMRZ2017]_).</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \langle\Delta, \tilde{\Delta}\rangle_{U}=\operatorname{tr}</span>
+<span class="sd">            \left(\Delta^{T}\left(I-\frac{1}{2} U U^{T}\right)</span>
+<span class="sd">            \tilde{\Delta}\right)</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [RLSMRZ2017] R Zimmermann. A matrix-algebraic algorithm for the</span>
+<span class="sd">          Riemannian logarithm on the Stiefel manifold under the canonical</span>
+<span class="sd">          metric. SIAM Journal on Matrix Analysis and Applications 38 (2),</span>
+<span class="sd">          322-342, 2017. https://epubs.siam.org/doi/pdf/10.1137/16M1074485</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, p]</span>
+<span class="sd">            First tangent vector at base point.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, p]</span>
+<span class="sd">            Second tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[..., 1]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base_point_transpose</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">base_point_transpose</span><span class="p">))</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">),</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inner_prod</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, p]</span>
+<span class="sd">            Tangent vector at a base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold equal to the Riemannian exponential</span>
+<span class="sd">            of tangent_vec at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_tangent_vecs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">n_base_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">n_tangent_vecs</span> <span class="o">==</span> <span class="n">n_base_points</span>
+                <span class="ow">or</span> <span class="n">n_tangent_vecs</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="ow">or</span> <span class="n">n_base_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="k">if</span> <span class="n">n_tangent_vecs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_base_points</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">n_base_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="n">n_tangent_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">matrix_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nij, njk-&gt;nik&#39;</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">matrix_k</span> <span class="o">=</span> <span class="p">(</span><span class="n">tangent_vec</span>
+                    <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">matrix_a</span><span class="p">))</span>
+
+        <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_r</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">matrix_k</span><span class="p">)</span>
+
+        <span class="n">matrix_ar</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">matrix_a</span><span class="p">,</span>
+             <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">matrix_r</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">n_base_points</span><span class="p">,</span> <span class="n">n_tangent_vecs</span><span class="p">),</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="n">matrix_rz</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">matrix_r</span><span class="p">,</span>
+             <span class="n">zeros</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">matrix_ar</span><span class="p">,</span> <span class="n">matrix_rz</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">matrix_mn_e</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">base_point</span><span class="p">,</span>
+                 <span class="n">matrix_q</span><span class="p">],</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+            <span class="n">matrix_mn_e</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">p</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">exp</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_normal_component_qr</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">matrix_m</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the QR decomposition of the normal component of a point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">        matrix_m : array-like</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix_q : array-like</span>
+<span class="sd">        matrix_n : array-like</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix_k</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">matrix_m</span><span class="p">)</span>
+        <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_n</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">matrix_k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_n</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_orthogonal_completion</span><span class="p">(</span><span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Orthogonal matrix completion.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix_m : array-like</span>
+<span class="sd">        matrix_n : array-like</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix_v : array-like</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix_w</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">matrix_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span>
+            <span class="n">matrix_w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">matrix_w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">matrix_w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">matrix_w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">matrix_w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="p">))</span>
+
+        <span class="n">matrix_v</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">matrix_w</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;complete&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">matrix_v</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_procrustes_preprocessing</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">matrix_v</span><span class="p">,</span> <span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Procrustes preprocessing.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix_v : array-like</span>
+<span class="sd">        matrix_m : array-like</span>
+<span class="sd">        matrix_n : array-like</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix_v : array-like</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">[</span><span class="n">matrix_d</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">matrix_r</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span>
+            <span class="n">matrix_v</span><span class="p">[:,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">])</span>
+
+        <span class="n">matrix_rd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">matrix_r</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">matrix_d</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">sub_matrix_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">matrix_v</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">],</span> <span class="n">matrix_rd</span><span class="p">)</span>
+        <span class="n">matrix_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+             <span class="n">sub_matrix_v</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matrix_v</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
+
+<span class="sd">        Based on [ZR2017]_.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [ZR2017] Zimmermann, Ralf. &quot;A Matrix-Algebraic Algorithm for the</span>
+<span class="sd">          Riemannian Logarithm on the Stiefel Manifold under the Canonical</span>
+<span class="sd">          Metric&quot; SIAM J. Matrix Anal. &amp; Appl., 38(2), 322–342, 2017.</span>
+<span class="sd">          https://arxiv.org/pdf/1604.05054.pdf</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
+<span class="sd">            of point at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">transpose_base_point</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">matrix_m</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">transpose_base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+
+        <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_n</span> <span class="o">=</span> <span class="n">StiefelCanonicalMetric</span><span class="o">.</span><span class="n">_normal_component_qr</span><span class="p">(</span>
+            <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">matrix_m</span><span class="p">)</span>
+
+        <span class="n">matrix_v</span> <span class="o">=</span> <span class="n">StiefelCanonicalMetric</span><span class="o">.</span><span class="n">_orthogonal_completion</span><span class="p">(</span>
+            <span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">)</span>
+
+        <span class="n">matrix_v</span> <span class="o">=</span> <span class="n">StiefelCanonicalMetric</span><span class="o">.</span><span class="n">_procrustes_preprocessing</span><span class="p">(</span>
+            <span class="n">p</span><span class="p">,</span> <span class="n">matrix_v</span><span class="p">,</span> <span class="n">matrix_m</span><span class="p">,</span> <span class="n">matrix_n</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">matrix_lv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">matrix_v</span><span class="p">)</span>
+
+            <span class="n">matrix_c</span> <span class="o">=</span> <span class="n">matrix_lv</span><span class="p">[:,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">]</span>
+
+            <span class="c1"># TODO (nina): Add break condition</span>
+            <span class="c1"># of the form: if gs.all(gs.less_equal(norm_matrix_c, tol)):</span>
+
+            <span class="n">matrix_phi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">matrix_c</span><span class="p">)</span>
+
+            <span class="n">aux_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                <span class="n">matrix_v</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">],</span> <span class="n">matrix_phi</span><span class="p">)</span>
+
+            <span class="n">matrix_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">matrix_v</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">p</span><span class="p">],</span>
+                 <span class="n">aux_matrix</span><span class="p">],</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">matrix_xv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">matrix_lv</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">p</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">p</span><span class="p">])</span>
+        <span class="n">matrix_qv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_lv</span><span class="p">[:,</span> <span class="n">p</span><span class="p">:</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">p</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">matrix_xv</span> <span class="o">+</span> <span class="n">matrix_qv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">retraction</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the retraction of a tangent vector.</span>
+
+<span class="sd">        This computation is based on the QR-decomposition.</span>
+
+<span class="sd">        e.g. :math:`P_x(V) = qf(X + V)`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, p]</span>
+<span class="sd">            Tangent vector at a base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold equal to the retraction</span>
+<span class="sd">            of tangent_vec at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_tangent_vecs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">n_base_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">n_tangent_vecs</span> <span class="o">==</span> <span class="n">n_base_points</span>
+                <span class="ow">or</span> <span class="n">n_tangent_vecs</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="ow">or</span> <span class="n">n_base_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_r</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span><span class="p">)</span>
+
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">matrix_r</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">diagonal</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">algebra_utils</span><span class="o">.</span><span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">matrix_q</span><span class="p">,</span> <span class="n">diag</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">lifting</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the lifting of a point.</span>
+
+<span class="sd">        This computation is based on the QR-decomposion.</span>
+
+<span class="sd">        e.g. :math:`P_x^{-1}(Q) = QR - X`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point in the Stiefel manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log : array-like, shape=[..., dim + 1]</span>
+<span class="sd">            Tangent vector at the base point equal to the lifting</span>
+<span class="sd">            of point at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">n_base_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">n_points</span> <span class="o">==</span> <span class="n">n_base_points</span>
+                <span class="ow">or</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="ow">or</span> <span class="n">n_base_points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+        <span class="n">n_liftings</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">n_base_points</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_make_minor</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">matrix</span><span class="p">[:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">_make_column_r</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;M[0,0] &lt;= 0&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+            <span class="n">matrix_m_i</span> <span class="o">=</span> <span class="n">_make_minor</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix_m_k</span><span class="p">)</span>
+            <span class="n">inv_matrix_m_i</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">matrix_m_i</span><span class="p">)</span>
+            <span class="n">b_i</span> <span class="o">=</span> <span class="n">_make_b</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix_m_k</span><span class="p">,</span> <span class="n">columns_list</span><span class="p">)</span>
+            <span class="n">column_r_i</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inv_matrix_m_i</span><span class="p">,</span> <span class="n">b_i</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">column_r_i</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;(r_i)_i &lt;= 0&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">column_r_i</span>
+
+        <span class="k">def</span> <span class="nf">_make_b</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">list_matrices_r</span><span class="p">):</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+                    <span class="n">matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">list_matrices_r</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+            <span class="k">return</span> <span class="n">b</span>
+
+        <span class="n">matrix_r</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_liftings</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="n">matrix_m</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">point</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_liftings</span><span class="p">):</span>
+            <span class="n">columns_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">matrix_m_k</span> <span class="o">=</span> <span class="n">matrix_m</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">column_r_i</span> <span class="o">=</span> <span class="n">_make_column_r</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">matrix_m_k</span><span class="p">)</span>
+                <span class="n">columns_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column_r_i</span><span class="p">)</span>
+                <span class="n">matrix_r</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">column_r_i</span><span class="p">),</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">column_r_i</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">matrix_r</span><span class="p">)</span> <span class="o">-</span> <span class="n">base_point</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019-2020, Geomstats, Inc.
+      <span class="lastupdated">
+        Last updated on May 15, 2020, 3:55:10 PM.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
