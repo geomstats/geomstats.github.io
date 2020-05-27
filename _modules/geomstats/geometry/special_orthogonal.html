@@ -294,13 +294,41 @@
         <span class="n">skew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">random_mat</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">skew</span><span class="p">)</span>
 
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">skew_matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the skew-symmetric matrix derived from the vector.</span>
 
-<span class="k">class</span> <span class="nc">_SpecialOrthogonal3Vectors</span><span class="p">(</span><span class="n">LieGroup</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for the special orthogonal group SO(3) in vector representation.</span>
+<span class="sd">        In nD, fill a skew-symmetric matrix with the values of the vector.</span>
 
-<span class="sd">    i.e. the Lie group of rotations. This class is specific to the vector</span>
-<span class="sd">    representation of rotations. For the matrix representation use the</span>
-<span class="sd">    SpecialOrthogonal class and set `n=3`.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        skew_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Skew-symmetric matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_vecs</span><span class="p">,</span> <span class="n">vec_dim</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+
+        <span class="n">mat_dim</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
+            <span class="p">((</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">8.</span> <span class="o">*</span> <span class="n">vec_dim</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_vecs</span><span class="p">,)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">upper_triangle_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">mat_dim</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vecs</span><span class="p">):</span>
+            <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">upper_triangle_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">skew_mat</span>
+
+
+<span class="k">class</span> <span class="nc">_SpecialOrthogonalVectors</span><span class="p">(</span><span class="n">LieGroup</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for the special orthogonal groups SO({2,3}) in vector form.</span>
+
+<span class="sd">    i.e. the Lie groups of planar and 3D rotations. This class is specific to</span>
+<span class="sd">    the vector representation of rotations. For the matrix representation use</span>
+<span class="sd">    the SpecialOrthogonal class and set `n=2` or `n=3`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -310,13 +338,13 @@
 <span class="sd">        Optional, default: 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
         <span class="n">LieGroup</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bi_invariant_metric</span> <span class="o">=</span> <span class="n">BiInvariantMetric</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the identity of the group.</span>
@@ -328,13 +356,10 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        identity : array-like, shape=[3,]</span>
+<span class="sd">        identity : array-like, shape=[1,]</span>
 <span class="sd">            Identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">identity</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
 
     <span class="n">identity</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_identity</span><span class="p">)</span>
 
@@ -357,6 +382,393 @@
         <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="n">belongs</span><span class="p">],</span> <span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
         <span class="k">return</span> <span class="n">belongs</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Project a matrix on SO(2) or SO(3) using the Frobenius norm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rot_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">point</span>
+        <span class="n">n_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mat_unitary_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="n">mask_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">algebra_utils</span><span class="o">.</span><span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diag</span><span class="p">),</span>
+            <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">new_mat_diag_s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="p">[</span><span class="n">n_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">aux_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">new_mat_diag_s</span><span class="p">)</span>
+        <span class="n">rot_mat</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;n,njk-&gt;njk&#39;</span><span class="p">,</span> <span class="n">mask_float</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">aux_mat</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rot_mat</span>
+
+    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the group inverse in SO(3).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 3]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inv_point : array-like, shape=[..., 3]</span>
+<span class="sd">            Inverse.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the group exponential of the tangent vector at the identity.</span>
+
+<span class="sd">        As rotations are represented by their rotation vector,</span>
+<span class="sd">        which corresponds to the element `X` in the Lie Algebra such that</span>
+<span class="sd">        `exp(X) = R`, this methods returns its input without change.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dimension]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">            Point type.</span>
+<span class="sd">            Optional, default: self.default_point_type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., dimension]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the group logarithm of the point at the identity.</span>
+
+<span class="sd">        As rotations are represented by their rotation vector,</span>
+<span class="sd">        which corresponds to the element `X` in the Lie Algebra such that</span>
+<span class="sd">        `exp(X) = R`, this methods returns its input after regularization.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dimension]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dimension]</span>
+<span class="sd">            Group logarithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_SpecialOrthogonal2Vectors</span><span class="p">(</span><span class="n">_SpecialOrthogonalVectors</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for the special orthogonal group SO(2) in vector representation.</span>
+
+<span class="sd">    i.e. the Lie group of planar rotations. This class is specific to the</span>
+<span class="sd">    vector representation of rotations. For the matrix representation use the</span>
+<span class="sd">    SpecialOrthogonal class and set `n=2`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        Precision to use for calculations involving potential divison by 0 in</span>
+<span class="sd">        rotations.</span>
+<span class="sd">        Optional, default: 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_SpecialOrthogonal2Vectors</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">regularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Regularize a point to be in accordance with convention.</span>
+
+<span class="sd">        In 2D, regularize the norm of the rotation angle,</span>
+<span class="sd">        to be between -pi and pi, following the axis-angle</span>
+<span class="sd">        representation&#39;s convention.</span>
+
+<span class="sd">        If the angle angle is between pi and 2pi,</span>
+<span class="sd">        the function computes its complementary in 2pi and</span>
+<span class="sd">        inverts the direction of the rotation axis.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[...,1]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Regularized point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">point</span>
+        <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">regularized_point</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">regularized_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">regularized_point</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+            <span class="n">regularized_point</span><span class="p">,</span> <span class="n">regularized_point</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">regularized_point</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">regularize_tangent_vec_at_identity</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Regularize a tangent vector at the identity.</span>
+
+<span class="sd">        In 2D, regularize a tangent_vector by getting its norm at the identity,</span>
+<span class="sd">        to be less than pi.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Regularized tangent vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">(</span>
+        <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">regularize_tangent_vec</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Regularize tangent vector at a base point.</span>
+
+<span class="sd">        In 2D, regularize a tangent_vector by getting the norm of its parallel</span>
+<span class="sd">        transport to the identity, determined by the metric, less than pi.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[...,1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Regularized tangent vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">skew_matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the skew-symmetric matrix derived from the vector.</span>
+
+<span class="sd">        In 3D, compute the skew-symmetric matrix,known as the cross-product of</span>
+<span class="sd">        a vector, associated to the vector `vec`.</span>
+
+<span class="sd">        In nD, fill a skew-symmetric matrix with the values of the vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        skew_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Skew-symmetric matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_vecs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span>
+
+        <span class="n">id_skew</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...i-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">id_skew</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">vec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">skew_mat</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">vector_from_skew_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Derive a vector from the skew-symmetric matrix.</span>
+
+<span class="sd">        In 3D, compute the vector defining the cross product</span>
+<span class="sd">        associated to the skew-symmetric matrix skew mat.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        skew_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Skew-symmetric matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">vec_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">vec_dim</span><span class="p">))</span>
+
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">vec</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">rotation_vector_from_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert rotation matrix (in 2D) to rotation vector (axis-angle).</span>
+
+<span class="sd">        Get the angle through the atan2 function:</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rot_mat : array-like, shape=[..., 2, 2]</span>
+<span class="sd">            Rotation matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_rot_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Rotation vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">rot_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">n_states</span> <span class="o">=</span> <span class="n">rot_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
+
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">matrix_from_rotation_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert rotation vector to rotation matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rot_vec: array-like, shape=[..., 1]</span>
+<span class="sd">            Rotation vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rot_mat: array-like, shape=[..., 2, 2]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rot_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">rot_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">cos_term</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">),</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">cos_matrix</span> <span class="o">=</span> <span class="n">cos_term</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)</span>
+        <span class="n">sin_term</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">),</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">sin_matrix</span> <span class="o">=</span> <span class="o">-</span><span class="n">sin_term</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">skew_matrix_from_vector</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cos_matrix</span> <span class="o">+</span> <span class="n">sin_matrix</span>
+
+    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compose two elements of SO(3).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_a : array-like, shape=[..., 3]</span>
+<span class="sd">        point_b : array-like, shape=[..., 3]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_prod : array-like, shape=[..., 3]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span>
+        <span class="n">point_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span>
+
+        <span class="n">point_prod</span> <span class="o">=</span> <span class="n">point_a</span> <span class="o">+</span> <span class="n">point_b</span>
+        <span class="n">point_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point_prod</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">point_prod</span>
+
+    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample in SO(2) with the uniform distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., 1]</span>
+<span class="sd">            Sample.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">random_point</span> <span class="o">=</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">random_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">random_point</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">random_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">random_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">random_point</span>
+
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the group exponential.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point from which the exponential is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., 1]</span>
+<span class="sd">            Group exponential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">tangent_vec</span> <span class="o">+</span> <span class="n">base_point</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the group logarithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 3]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point from which the log is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Group logarithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_SpecialOrthogonal3Vectors</span><span class="p">(</span><span class="n">_SpecialOrthogonalVectors</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for the special orthogonal group SO(3) in vector representation.</span>
+
+<span class="sd">    i.e. the Lie group of rotations. This class is specific to the vector</span>
+<span class="sd">    representation of rotations. For the matrix representation use the</span>
+<span class="sd">    SpecialOrthogonal class and set `n=3`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        Precision to use for calculations involving potential divison by 0 in</span>
+<span class="sd">        rotations.</span>
+<span class="sd">        Optional, default: 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_SpecialOrthogonal3Vectors</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bi_invariant_metric</span> <span class="o">=</span> <span class="n">BiInvariantMetric</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">regularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Regularize a point to be in accordance with convention.</span>
@@ -413,7 +825,7 @@
         <span class="p">[</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">regularize_tangent_vec_at_identity</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Regularize a tangent vector at the identify.</span>
+        <span class="sd">&quot;&quot;&quot;Regularize a tangent vector at the identity.</span>
 
 <span class="sd">        In 3D, regularize a tangent_vector by getting its norm at the identity,</span>
 <span class="sd">        determined by the metric, to be less than pi.</span>
@@ -512,40 +924,6 @@
 
         <span class="k">return</span> <span class="n">regularized_tangent_vec</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Project a matrix on SO(3) using the Frobenius norm.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        rot_mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Rotation matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">point</span>
-        <span class="n">n_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
-
-        <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mat_unitary_v</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-        <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span>
-        <span class="n">diag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
-            <span class="n">algebra_utils</span><span class="o">.</span><span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diag</span><span class="p">),</span>
-            <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-        <span class="n">new_mat_diag_s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="p">[</span><span class="n">n_mats</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-
-        <span class="n">aux_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">mat_unitary_u</span><span class="p">,</span> <span class="n">new_mat_diag_s</span><span class="p">)</span>
-        <span class="n">rot_mat</span> <span class="o">+=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;n,njk-&gt;njk&#39;</span><span class="p">,</span> <span class="n">mask_float</span><span class="p">,</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;nij,njk-&gt;nik&#39;</span><span class="p">,</span> <span class="n">aux_mat</span><span class="p">,</span> <span class="n">mat_unitary_v</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">rot_mat</span>
-
     <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">skew_matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the skew-symmetric matrix derived from the vector.</span>
@@ -565,75 +943,57 @@
 <span class="sd">        skew_mat : array-like, shape=[..., n, n]</span>
 <span class="sd">            Skew-symmetric matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_vecs</span><span class="p">,</span> <span class="n">vec_dim</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+        <span class="n">n_vecs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">levi_civita_symbol</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span>
+            <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span>
+            <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span>
+            <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+             <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+             <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]</span>
+        <span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
-            <span class="n">id_skew</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
-            <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;...ij,...i-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">id_skew</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">vec</span><span class="p">)</span>
+        <span class="n">levi_civita_symbol</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">levi_civita_symbol</span><span class="p">)</span>
+        <span class="n">levi_civita_symbol</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">levi_civita_symbol</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span>
-                <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span>
-                <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span>
-                <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]</span>
-            <span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># This avoids dividing by 0.</span>
+        <span class="n">basis_vec_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">basis_vec_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">basis_vec_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
 
-            <span class="n">levi_civita_symbol</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">levi_civita_symbol</span><span class="p">)</span>
-            <span class="n">levi_civita_symbol</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+        <span class="n">cross_prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
+            <span class="n">levi_civita_symbol</span><span class="p">,</span>
+            <span class="n">basis_vec_1</span><span class="p">,</span>
+            <span class="n">vec</span><span class="p">)</span>
+        <span class="n">cross_prod_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
+            <span class="n">levi_civita_symbol</span><span class="p">,</span>
+            <span class="n">basis_vec_2</span><span class="p">,</span>
+            <span class="n">vec</span><span class="p">)</span>
+        <span class="n">cross_prod_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
+            <span class="n">levi_civita_symbol</span><span class="p">,</span>
+            <span class="n">basis_vec_3</span><span class="p">,</span>
+            <span class="n">vec</span><span class="p">)</span>
 
-            <span class="c1"># This avoids dividing by 0.</span>
-            <span class="n">basis_vec_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">basis_vec_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-            <span class="n">basis_vec_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]],</span> <span class="p">(</span><span class="n">n_vecs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-
-            <span class="n">cross_prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">levi_civita_symbol</span><span class="p">,</span>
-                <span class="n">basis_vec_1</span><span class="p">,</span>
-                <span class="n">vec</span><span class="p">)</span>
-            <span class="n">cross_prod_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">levi_civita_symbol</span><span class="p">,</span>
-                <span class="n">basis_vec_2</span><span class="p">,</span>
-                <span class="n">vec</span><span class="p">)</span>
-            <span class="n">cross_prod_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;nijk,ni,nj-&gt;nk&#39;</span><span class="p">,</span>
-                <span class="n">levi_civita_symbol</span><span class="p">,</span>
-                <span class="n">basis_vec_3</span><span class="p">,</span>
-                <span class="n">vec</span><span class="p">)</span>
-
-            <span class="n">cross_prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_1</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">cross_prod_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_2</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">cross_prod_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_3</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">cross_prod_1</span><span class="p">,</span> <span class="n">cross_prod_2</span><span class="p">,</span> <span class="n">cross_prod_3</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>  <span class="c1"># SO(n)</span>
-            <span class="n">mat_dim</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
-                <span class="p">((</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">8.</span> <span class="o">*</span> <span class="n">vec_dim</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-            <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_vecs</span><span class="p">,)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="n">upper_triangle_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">mat_dim</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_vecs</span><span class="p">):</span>
-                <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">upper_triangle_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">cross_prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_1</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cross_prod_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_2</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cross_prod_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cross_prod_3</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">cross_prod_1</span><span class="p">,</span> <span class="n">cross_prod_2</span><span class="p">,</span> <span class="n">cross_prod_3</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">skew_mat</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">vector_from_skew_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="s1">&#39;output_point&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">vector_from_skew_matrix</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Derive a vector from the skew-symmetric matrix.</span>
 
 <span class="sd">        In 3D, compute the vector defining the cross product</span>
@@ -649,20 +1009,10 @@
 <span class="sd">        vec : array-like, shape=[..., dim]</span>
 <span class="sd">            Vector.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="o">.</span><span class="n">shape</span>
-
-        <span class="n">vec_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
-        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_skew_mats</span><span class="p">,</span> <span class="n">vec_dim</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># SO(2)</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># SO(3)</span>
-            <span class="n">vec_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">vec_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">vec_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">vec_1</span><span class="p">,</span> <span class="n">vec_2</span><span class="p">,</span> <span class="n">vec_3</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vec_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vec_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vec_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">vec_1</span><span class="p">,</span> <span class="n">vec_2</span><span class="p">,</span> <span class="n">vec_3</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">vec</span>
 
@@ -1398,21 +1748,6 @@
 
         <span class="k">return</span> <span class="n">point_prod</span>
 
-    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the group inverse in SO(3).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 3]</span>
-<span class="sd">            Point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inv_point : array-like, shape=[..., 3]</span>
-<span class="sd">            Inverse.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">jacobian_translation</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the jacobian matrix corresponding to translation.</span>
@@ -1532,50 +1867,6 @@
 
         <span class="k">return</span> <span class="n">random_point</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the group exponential of the tangent vector at the identity.</span>
-
-<span class="sd">        As rotations are represented by their rotation vector,</span>
-<span class="sd">        which corresponds to the element `X` in the Lie Algebra such that</span>
-<span class="sd">        `exp(X) = R`, this methods returns its input without change.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., 3]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            Point type.</span>
-<span class="sd">            Optional, default: self.default_point_type.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., 3]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span>
-
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the group logarithm of the point at the identity.</span>
-
-<span class="sd">        As rotations are represented by their rotation vector,</span>
-<span class="sd">        which corresponds to the element `X` in the Lie Algebra such that</span>
-<span class="sd">        `exp(X) = R`, this methods returns its input after regularization.</span>
-
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 3]</span>
-<span class="sd">            Point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., {dimension, [n, n]}]</span>
-<span class="sd">            Group logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">lie_bracket</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vector_a</span><span class="p">,</span> <span class="n">tangent_vector_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the lie bracket of two tangent vectors.</span>
@@ -1632,8 +1923,9 @@
         <span class="k">return</span> <span class="n">LieGroup</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SpecialOrthogonal"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal">[docs]</a><span class="k">class</span> <span class="nc">SpecialOrthogonal</span><span class="p">(</span>
-        <span class="n">_SpecialOrthogonal3Vectors</span><span class="p">,</span> <span class="n">_SpecialOrthogonalMatrices</span><span class="p">):</span>
+<div class="viewcode-block" id="SpecialOrthogonal"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_orthogonal.SpecialOrthogonal">[docs]</a><span class="k">class</span> <span class="nc">SpecialOrthogonal</span><span class="p">(</span><span class="n">_SpecialOrthogonal2Vectors</span><span class="p">,</span>
+                        <span class="n">_SpecialOrthogonal3Vectors</span><span class="p">,</span>
+                        <span class="n">_SpecialOrthogonalMatrices</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for the special orthogonal groups.</span>
 
 <span class="sd">    Parameters</span>
@@ -1653,12 +1945,14 @@
 
 <span class="sd">        Select the object to instantiate depending on the point_type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_SpecialOrthogonal2Vectors</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_SpecialOrthogonal3Vectors</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="s1">&#39;SO(n) is only implemented in matrix representation&#39;</span>
-                <span class="s1">&#39; when n != 3.&#39;</span><span class="p">)</span>
+                <span class="s1">&#39; when n &gt; 3.&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_SpecialOrthogonalMatrices</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
 </pre></div>
 
@@ -1674,7 +1968,7 @@
     <p>
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on May 26, 2020, 8:00:08 PM.
+        Last updated on May 27, 2020, 2:13:33 PM.
       </span>
 
     </p>
