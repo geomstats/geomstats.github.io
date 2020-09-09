@@ -169,9 +169,9 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 
+<span class="kn">import</span> <span class="nn">geomstats.algebra_utils</span> <span class="k">as</span> <span class="nn">utils</span>
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.embedded_manifold</span> <span class="kn">import</span> <span class="n">EmbeddedManifold</span>
@@ -180,21 +180,7 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 
 <span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-6</span>
-<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-8</span>
-
-<span class="n">COS_TAYLOR_COEFFS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span>
-                     <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span>
-                     <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span>
-                     <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span>
-                     <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span> <span class="mf">0.</span><span class="p">]</span>
-<span class="n">INV_SIN_TAYLOR_COEFFS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">6.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="mf">7.</span> <span class="o">/</span> <span class="mf">360.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="mf">31.</span> <span class="o">/</span> <span class="mf">15120.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="mf">127.</span> <span class="o">/</span> <span class="mf">604800.</span><span class="p">]</span>
-<span class="n">INV_TAN_TAYLOR_COEFFS</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">45.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span> <span class="mf">2.</span> <span class="o">/</span> <span class="mf">945.</span><span class="p">,</span>
-                         <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">/</span> <span class="mf">4725.</span><span class="p">]</span>
+<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
 
 
 <span class="k">class</span> <span class="nc">_Hypersphere</span><span class="p">(</span><span class="n">EmbeddedManifold</span><span class="p">):</span>
@@ -601,8 +587,7 @@
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sq_norm</span></div>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<div class="viewcode-block" id="HypersphereMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.hypersphere.HypersphereMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
 
 <span class="sd">        Parameters</span>
@@ -618,51 +603,21 @@
 <span class="sd">            Point on the hypersphere equal to the Riemannian exponential</span>
 <span class="sd">            of tangent_vec at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">extrinsic_dim</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">n_tangent_vecs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">hypersphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">proj_tangent_vec</span> <span class="o">=</span> <span class="n">hypersphere</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">norm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">proj_tangent_vec</span><span class="p">)</span>
 
-        <span class="n">hypersphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">extrinsic_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">proj_tangent_vec</span> <span class="o">=</span> <span class="n">hypersphere</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">norm_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">proj_tangent_vec</span><span class="p">)</span>
-        <span class="n">norm_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">norm_tangent_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">norm_tangent_vec</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_non0</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_0</span>
-
-        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_tangent_vecs</span><span class="p">,))</span>
-        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_tangent_vecs</span><span class="p">,))</span>
-        <span class="n">norm2</span> <span class="o">=</span> <span class="n">norm_tangent_vec</span><span class="p">[</span><span class="n">mask_0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">norm4</span> <span class="o">=</span> <span class="n">norm2</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">norm6</span> <span class="o">=</span> <span class="n">norm2</span><span class="o">**</span><span class="mi">3</span>
-
-        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">assignment</span><span class="p">(</span>
-            <span class="n">coef_1</span><span class="p">,</span>
-            <span class="mf">1.</span> <span class="o">-</span> <span class="n">norm2</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">+</span> <span class="n">norm4</span> <span class="o">/</span> <span class="mf">24.</span> <span class="o">-</span> <span class="n">norm6</span> <span class="o">/</span> <span class="mf">720.</span><span class="p">,</span>
-            <span class="n">mask_0</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">assignment</span><span class="p">(</span>
-            <span class="n">coef_2</span><span class="p">,</span>
-            <span class="mf">1.</span> <span class="o">-</span> <span class="n">norm2</span> <span class="o">/</span> <span class="mf">6.</span> <span class="o">+</span> <span class="n">norm4</span> <span class="o">/</span> <span class="mf">120.</span> <span class="o">-</span> <span class="n">norm6</span> <span class="o">/</span> <span class="mf">5040.</span><span class="p">,</span>
-            <span class="n">mask_0</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">assignment</span><span class="p">(</span>
-            <span class="n">coef_1</span><span class="p">,</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">norm_tangent_vec</span><span class="p">[</span><span class="n">mask_non0</span><span class="p">]),</span>
-            <span class="n">mask_non0</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">assignment</span><span class="p">(</span>
-            <span class="n">coef_2</span><span class="p">,</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span>
-                <span class="n">norm_tangent_vec</span><span class="p">[</span><span class="n">mask_non0</span><span class="p">])</span> <span class="o">/</span>
-            <span class="n">norm_tangent_vec</span><span class="p">[</span><span class="n">mask_non0</span><span class="p">],</span>
-            <span class="n">mask_non0</span><span class="p">)</span>
-
+        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">norm2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cos_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">norm2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">exp</span> <span class="o">=</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
                <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">proj_tangent_vec</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">exp</span>
+        <span class="k">return</span> <span class="n">exp</span></div>
 
     <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        Parameters</span>
@@ -678,59 +633,15 @@
 <span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">norm_base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">norm_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="n">cos_angle</span> <span class="o">=</span> <span class="n">inner_prod</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm_base_point</span> <span class="o">*</span> <span class="n">norm_point</span><span class="p">)</span>
-        <span class="n">cos_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">)</span>
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_else</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mask_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
-
-        <span class="n">mask_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="mf">1.</span> <span class="o">+</span> <span class="n">INV_SIN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">+</span> <span class="n">INV_SIN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">4</span>
-            <span class="o">+</span> <span class="n">INV_SIN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">6</span>
-            <span class="o">+</span> <span class="n">INV_SIN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">8</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="mf">1.</span> <span class="o">+</span> <span class="n">INV_TAN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">+</span> <span class="n">INV_TAN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">4</span>
-            <span class="o">+</span> <span class="n">INV_TAN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">6</span>
-            <span class="o">+</span> <span class="n">INV_TAN_TAYLOR_COEFFS</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">8</span><span class="p">)</span>
-
-        <span class="c1"># This avoids division by 0.</span>
-        <span class="n">angle</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="mf">1.</span>
-
-        <span class="n">coef_1</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-
-        <span class="n">log</span> <span class="o">=</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-               <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">base_point</span><span class="p">))</span>
-
-        <span class="n">mask_same_values</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">mask_else</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mask_same_values</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="kc">False</span><span class="p">))</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_else_float</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_else_float</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">mask_not_same_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_else_float</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mask_same_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">mask_not_same_points</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_same_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_same_points</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_same_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mask_same_points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">mask_same_points_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_same_points</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="n">log</span> <span class="o">-=</span> <span class="n">mask_same_points_float</span> <span class="o">*</span> <span class="n">log</span>
+        <span class="n">cos_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="n">squared_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">coef_1_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">squared_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">inv_sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">coef_2_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">squared_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">inv_tanc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_1_</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+               <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef_2_</span><span class="p">,</span> <span class="n">base_point</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">log</span>
 
@@ -882,7 +793,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Aug 25, 2020, 4:13:08 PM.
+        Last updated on Sep 9, 2020, 9:39:00 AM.
       </span>
 
     </p>
