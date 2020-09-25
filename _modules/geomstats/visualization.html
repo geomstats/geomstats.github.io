@@ -170,6 +170,7 @@
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hyperboloid</span> <span class="kn">import</span> <span class="n">Hyperboloid</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.poincare_half_space</span> <span class="kn">import</span> <span class="n">PoincareHalfSpace</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.special_euclidean</span> <span class="kn">import</span> <span class="n">SpecialEuclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
 <span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>  <span class="c1"># NOQA</span>
@@ -179,6 +180,7 @@
 <span class="n">S1</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">S2</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">H2</span> <span class="o">=</span> <span class="n">Hyperboloid</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">POINCARE_HALF_PLANE</span> <span class="o">=</span> <span class="n">PoincareHalfSpace</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="n">AX_SCALE</span> <span class="o">=</span> <span class="mf">1.2</span>
 
@@ -403,7 +405,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">point_type</span>
-
         <span class="k">if</span> <span class="n">points</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_points</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
 
@@ -506,29 +507,34 @@
 <div class="viewcode-block" id="PoincareHalfPlane"><a class="viewcode-back" href="../../visualization.html#geomstats.visualization.PoincareHalfPlane">[docs]</a><span class="k">class</span> <span class="nc">PoincareHalfPlane</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class used to plot points in the Poincare Half Plane.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;half-space&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">point_type</span>
         <span class="k">if</span> <span class="n">points</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_points</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">add_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">H2</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">points</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Points do not belong to the hyperbolic space.&#39;</span><span class="p">)</span>
-        <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_half_plane_coordinates</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;extrinsic&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">H2</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">points</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Points do not belong to the hyperbolic space &#39;</span>
+                    <span class="s1">&#39;(extrinsic coordinates)&#39;</span><span class="p">)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_half_plane_coordinates</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;half-space&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">POINCARE_HALF_PLANE</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">points</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Points do not belong to the hyperbolic space &#39;</span>
+                    <span class="s1">&#39;(Poincare half plane coordinates).&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">points</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">set_ax</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_ax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
-        <span class="n">ax_s</span> <span class="o">=</span> <span class="n">AX_SCALE</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span>
-                 <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">ax_s</span><span class="p">,</span> <span class="n">ax_s</span><span class="p">),</span>
-                 <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">ax_s</span><span class="p">),</span>
-                 <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;extrinsic&#39;</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_half_plane_coordinates</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ax</span>
 
     <span class="nd">@staticmethod</span>
@@ -650,11 +656,25 @@
 
 
 <div class="viewcode-block" id="plot"><a class="viewcode-back" href="../../visualization.html#geomstats.visualization.plot">[docs]</a><span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-         <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;extrinsic&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">point_draw_kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Plot points in the 3D Special Euclidean Group.</span>
+         <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">point_draw_kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plot points in one of the implemented manifolds.</span>
 
-<span class="sd">    Plot points in the 3D Special Euclidean Group,</span>
-<span class="sd">    by showing them as trihedrons.</span>
+<span class="sd">    The implemented manifolds are:</span>
+<span class="sd">    - the special orthogonal group SO(3)</span>
+<span class="sd">    - the special Euclidean group SE(3)</span>
+<span class="sd">    - the circle S1 and the sphere S2</span>
+<span class="sd">    - the hyperbolic plane (the Poincare disk, the Poincare</span>
+<span class="sd">      half plane and the Klein disk)</span>
+<span class="sd">    - the Poincare polydisk</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    points : array-like, shape=[..., dim]</span>
+<span class="sd">        Points to be plotted.</span>
+<span class="sd">    space: str, optional, {&#39;SO3_GROUP&#39;, &#39;SE3_GROUP&#39;, &#39;S1&#39;, &#39;S2&#39;,</span>
+<span class="sd">        &#39;H2_poincare_disk&#39;, &#39;H2_poincare_half_plane&#39;, &#39;H2_klein_disk&#39;,</span>
+<span class="sd">        &#39;poincare_polydisk&#39;}</span>
+<span class="sd">    point_type: str, optional, {&#39;extrinsic&#39;, &#39;ball&#39;, &#39;half-space&#39;}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">space</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">IMPLEMENTED</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
@@ -699,6 +719,8 @@
         <span class="n">sphere</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">point_draw_kwargs</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">space</span> <span class="o">==</span> <span class="s1">&#39;H2_poincare_disk&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="s1">&#39;extrinsic&#39;</span>
         <span class="n">poincare_disk</span> <span class="o">=</span> <span class="n">PoincareDisk</span><span class="p">(</span><span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">poincare_disk</span><span class="o">.</span><span class="n">set_ax</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
         <span class="n">poincare_disk</span><span class="o">.</span><span class="n">add_points</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
@@ -706,6 +728,8 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">space</span> <span class="o">==</span> <span class="s1">&#39;poincare_polydisk&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="s1">&#39;extrinsic&#39;</span>
         <span class="n">n_disks</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">poincare_poly_disk</span> <span class="o">=</span> <span class="n">PoincarePolyDisk</span><span class="p">(</span><span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">,</span>
                                               <span class="n">n_disks</span><span class="o">=</span><span class="n">n_disks</span><span class="p">)</span>
@@ -724,8 +748,10 @@
             <span class="n">poincare_poly_disk</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">point_draw_kwargs</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">space</span> <span class="o">==</span> <span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">:</span>
-        <span class="n">poincare_half_plane</span> <span class="o">=</span> <span class="n">PoincareHalfPlane</span><span class="p">()</span>
-        <span class="n">ax</span> <span class="o">=</span> <span class="n">poincare_half_plane</span><span class="o">.</span><span class="n">set_ax</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="s1">&#39;half-space&#39;</span>
+        <span class="n">poincare_half_plane</span> <span class="o">=</span> <span class="n">PoincareHalfPlane</span><span class="p">(</span><span class="n">point_type</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">poincare_half_plane</span><span class="o">.</span><span class="n">set_ax</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
         <span class="n">poincare_half_plane</span><span class="o">.</span><span class="n">add_points</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
         <span class="n">poincare_half_plane</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">point_draw_kwargs</span><span class="p">)</span>
 
@@ -751,7 +777,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Sep 21, 2020, 6:08:31 PM.
+        Last updated on Sep 25, 2020, 7:39:38 AM.
       </span>
 
     </p>
