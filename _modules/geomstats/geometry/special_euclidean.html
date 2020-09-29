@@ -167,6 +167,7 @@
 <span class="sd">i.e. the Lie group of rigid transformations in n dimensions.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">geomstats.algebra_utils</span> <span class="k">as</span> <span class="nn">utils</span>
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
@@ -721,32 +722,12 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_points</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_exp_translation_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">rot_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">base_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)</span>
-        <span class="n">base_2</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">skew_matrix_from_vector</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))]</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)</span>
-
-        <span class="n">mask_close_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_else</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_close_0</span>
-
-        <span class="n">mask_close_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_close_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="n">cos_coef</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
-        <span class="n">sin_coef</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
-
-        <span class="n">cos_coef</span> <span class="o">+=</span> <span class="n">mask_close_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">3</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="n">sin_coef</span> <span class="o">+=</span> <span class="n">mask_close_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="mi">1</span>
-            <span class="o">-</span> <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">-</span> <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">4</span><span class="p">)</span>
-
-        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">rot_vec</span> <span class="o">+</span> <span class="n">mask_close_0_float</span> <span class="o">*</span> <span class="mf">1e-6</span>
-        <span class="n">cos_coef</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">))</span> <span class="o">/</span> <span class="n">rot_vec</span><span class="p">)</span>
-        <span class="n">sin_coef</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span> <span class="o">/</span> <span class="n">rot_vec</span><span class="p">)</span>
+        <span class="n">base_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">base_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">skew_matrix_from_vector</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">cos_coef</span> <span class="o">=</span> <span class="n">rot_vec</span> <span class="o">*</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cosc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">sin_coef</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="n">sin_term</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...jk-&gt;...jk&#39;</span><span class="p">,</span> <span class="n">sin_coef</span><span class="p">,</span> <span class="n">base_1</span><span class="p">)</span>
         <span class="n">cos_term</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...jk-&gt;...jk&#39;</span><span class="p">,</span> <span class="n">cos_coef</span><span class="p">,</span> <span class="n">base_2</span><span class="p">)</span>
@@ -755,31 +736,13 @@
         <span class="k">return</span> <span class="n">transform</span>
 
     <span class="k">def</span> <span class="nf">_log_translation_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
-        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">exp_transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exp_translation_transform</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">rot_vec</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
-            <span class="n">mask_close_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">mask_close_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_else</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_close_0</span>
-
-        <span class="n">mask_close_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_close_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="n">inv_determinant</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
-
-        <span class="n">inv_determinant</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">mask_close_0_float</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">6</span><span class="p">)</span>
-
-        <span class="n">rot_vec</span> <span class="o">=</span> <span class="n">rot_vec</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">mask_close_0_float</span>
-        <span class="n">inv_determinant</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">))))</span>
+        <span class="n">inv_determinant</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cosc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;il, ijk -&gt; ijk&#39;</span><span class="p">,</span> <span class="n">inv_determinant</span><span class="p">,</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">exp_transform</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="s1">&#39;...l, ...jk -&gt; ...jk&#39;</span><span class="p">,</span> <span class="n">inv_determinant</span><span class="p">,</span>
+            <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">exp_transform</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">transform</span>
 
@@ -979,47 +942,18 @@
 <span class="sd">        transform : array-like, shape=[..., 3, 3]</span>
 <span class="sd">            Matrix to be applied to the translation part in exp.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">rot_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
+        <span class="n">sq_angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rot_vec</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">skew_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">skew_matrix_from_vector</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
         <span class="n">sq_skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
 
-        <span class="n">mask_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">mask_close_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask_0</span>
-        <span class="n">mask_else</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_0</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask_close_0</span>
+        <span class="n">coef_1_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">sq_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cosc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">coef_2_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+            <span class="n">sq_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">var_sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
-        <span class="n">mask_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_close_0_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_close_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">mask_else_float</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_else</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">6.</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
-
-        <span class="n">coef_1</span> <span class="o">+=</span> <span class="n">mask_close_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">4</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_1_AT_0</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">6</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_close_0_float</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">4</span>
-            <span class="o">+</span> <span class="n">TAYLOR_COEFFS_2_AT_0</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">6</span><span class="p">)</span>
-
-        <span class="n">angle</span> <span class="o">+=</span> <span class="n">mask_0_float</span> <span class="o">*</span> <span class="mf">1.</span>
-
-        <span class="n">coef_1</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span> <span class="o">/</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">((</span><span class="n">angle</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span> <span class="o">/</span> <span class="n">angle</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
-
-        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...ij-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
-        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...ij-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
-        <span class="n">term_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)</span>
+        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...ij-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">coef_1_</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
+        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...ij-&gt;...ij&#39;</span><span class="p">,</span> <span class="n">coef_2_</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
+        <span class="n">term_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">term_id</span> <span class="o">+</span> <span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span>
 
         <span class="k">return</span> <span class="n">transform</span>
@@ -1136,7 +1070,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Sep 29, 2020, 9:25:04 AM.
+        Last updated on Sep 29, 2020, 5:01:53 PM.
       </span>
 
     </p>

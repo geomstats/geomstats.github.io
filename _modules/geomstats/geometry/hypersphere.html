@@ -232,7 +232,7 @@
             <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="n">belongs</span><span class="p">],</span> <span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
             <span class="k">return</span> <span class="n">belongs</span>
-        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">sq_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sq_norm</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
 
@@ -257,7 +257,6 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Project a point on the hypersphere.</span>
 
@@ -271,12 +270,11 @@
 <span class="sd">        projected_point : array-like, shape=[..., dim + 1]</span>
 <span class="sd">            Point projected on the hypersphere.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">projected_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...i-&gt;...i&#39;</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">projected_point</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Project a vector to the tangent space.</span>
 
@@ -297,14 +295,13 @@
 <span class="sd">            Tangent vector in the tangent space of the hypersphere</span>
 <span class="sd">            at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">sq_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">base_point</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
         <span class="n">coef</span> <span class="o">=</span> <span class="n">inner_prod</span> <span class="o">/</span> <span class="n">sq_norm</span>
         <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...,...j-&gt;...j&#39;</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">tangent_vec</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">spherical_to_extrinsic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_spherical</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert point from spherical to extrinsic coordinates.</span>
 
@@ -328,14 +325,14 @@
                 <span class="s1">&#39; to extrinsic coordinates is implemented&#39;</span>
                 <span class="s1">&#39; only in dimension 2.&#39;</span><span class="p">)</span>
 
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">phi</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="n">point_extrinsic</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
             <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
              <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
              <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)],</span>
-            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Points do not belong to the manifold.&#39;</span><span class="p">)</span>
@@ -373,7 +370,6 @@
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">base_point_spherical</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">theta</span> <span class="o">=</span> <span class="n">base_point_spherical</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">phi</span> <span class="o">=</span> <span class="n">base_point_spherical</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="n">jac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
 
         <span class="n">zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
@@ -390,7 +386,6 @@
 
         <span class="k">return</span> <span class="n">tangent_vec_extrinsic</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">intrinsic_to_extrinsic_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_intrinsic</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert point from intrinsic to extrinsic coordinates.</span>
 
@@ -408,17 +403,16 @@
 <span class="sd">            Point on the hypersphere, in extrinsic coordinates in</span>
 <span class="sd">            Euclidean space.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sq_coord_0</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point_intrinsic</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">sq_coord_0</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point_intrinsic</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">sq_coord_0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Square-root of a negative number.&#39;</span><span class="p">)</span>
         <span class="n">coord_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sq_coord_0</span><span class="p">)</span>
-        <span class="n">coord_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">coord_0</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">point_extrinsic</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">coord_0</span><span class="p">,</span> <span class="n">point_intrinsic</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">point_extrinsic</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
+            <span class="n">coord_0</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">point_intrinsic</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">point_extrinsic</span>
 
-    <span class="nd">@geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">decorator</span><span class="p">([</span><span class="s1">&#39;else&#39;</span><span class="p">,</span> <span class="s1">&#39;vector&#39;</span><span class="p">])</span>
     <span class="k">def</span> <span class="nf">extrinsic_to_intrinsic_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_extrinsic</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert point from extrinsic to intrinsic coordinates.</span>
 
@@ -436,7 +430,7 @@
 <span class="sd">        point_intrinsic : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the hypersphere, in intrinsic coordinates.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point_intrinsic</span> <span class="o">=</span> <span class="n">point_extrinsic</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="n">point_intrinsic</span> <span class="o">=</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
 
         <span class="k">return</span> <span class="n">point_intrinsic</span>
 
@@ -793,7 +787,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Sep 29, 2020, 9:25:04 AM.
+        Last updated on Sep 29, 2020, 5:01:53 PM.
       </span>
 
     </p>
