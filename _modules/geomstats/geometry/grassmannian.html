@@ -162,7 +162,34 @@
            <div itemprop="articleBody">
             
   <h1>Source code for geomstats.geometry.grassmannian</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Module exposing `Grassmannian` and `GrassmannianMetric` classes.&quot;&quot;&quot;</span>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Manifold of linear subspaces.</span>
+
+<span class="sd">The Grassmannian :math:`Gr(n, k)` is the manifold of k-dimensional</span>
+<span class="sd">subspaces in n-dimensional Euclidean space.</span>
+
+<span class="sd">:math:`Gr(n, k)` is represented by</span>
+<span class="sd">:math:`n \times n` matrices</span>
+<span class="sd">of rank :math:`k`  satisfying :math:`P^2 = P` and :math:`P^T = P`.</span>
+<span class="sd">Each :math:`P \in Gr(n, k)` is identified with the unique</span>
+<span class="sd">orthogonal projector onto :math:`{\rm Im}(P)`.</span>
+
+<span class="sd">:math:`Gr(n, k)` is a homogoneous space, quotient of the special orthogonal</span>
+<span class="sd">group by the subgroup of rotations stabilising a k-dimensional subspace:</span>
+
+<span class="sd">.. math::</span>
+
+<span class="sd">    Gr(n, k) \simeq \frac {SO(n)} {SO(k) \times SO(n-k)}</span>
+
+<span class="sd">It is therefore customary to represent the Grassmannian</span>
+<span class="sd">by equivalence classes of orthogonal :math:`k`-frames in :math:`{\mathbb R}^n`.</span>
+<span class="sd">For such a representation, work in the Stiefel manifold instead.</span>
+
+<span class="sd">.. math::</span>
+
+<span class="sd">    Gr(n, k) \simeq St(n, k) / SO(k)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
@@ -178,12 +205,6 @@
 
 <div class="viewcode-block" id="Grassmannian"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.Grassmannian">[docs]</a><span class="k">class</span> <span class="nc">Grassmannian</span><span class="p">(</span><span class="n">EmbeddedManifold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for Grassmann manifolds Gr(n, k).</span>
-
-<span class="sd">    Class for Grassmann manifolds Gr(n, k) of k-dimensional</span>
-<span class="sd">    subspaces in the n-dimensional Euclidean space.</span>
-
-<span class="sd">    The subspaces are represented by their (unique) orthogonal projection</span>
-<span class="sd">    matrix onto themselves.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -214,37 +235,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">GrassmannianCanonicalMetric</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Grassmannian.random_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.Grassmannian.random_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sample random points from a uniform distribution.</span>
-
-<span class="sd">        Following [Chikuse03]_, :math: `n_samples * n * k`scalars are sampled</span>
-<span class="sd">        from a standard normal distribution and reshaped to matrices,</span>
-<span class="sd">        the projectors on their first k columns follow a uniform distribution.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">            The number of points to sample</span>
-<span class="sd">            Optional. default: 1.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        projectors : array-like, shape=[..., n, n]</span>
-<span class="sd">            Points following a uniform distribution.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [Chikuse03] Yasuko Chikuse, Statistics on special manifolds,</span>
-<span class="sd">        New York: Springer-Verlag. 2003, 10.1007/978-0-387-21540-2</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span> <span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
-        <span class="n">full_rank</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">points</span><span class="p">),</span> <span class="n">points</span><span class="p">)</span>
-        <span class="n">projector</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
-            <span class="n">points</span><span class="p">,</span>
-            <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">full_rank</span><span class="p">),</span>
-            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">points</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">projector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">projector</span></div>
-
 <div class="viewcode-block" id="Grassmannian.belongs"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.Grassmannian.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check if the point belongs to the manifold.</span>
 
@@ -273,6 +263,37 @@
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">symm</span><span class="p">,</span> <span class="n">idem</span><span class="p">,</span> <span class="n">rank</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">belongs</span></div>
+
+<div class="viewcode-block" id="Grassmannian.random_uniform"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.Grassmannian.random_uniform">[docs]</a>    <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample random points from a uniform distribution.</span>
+
+<span class="sd">        Following [Chikuse03]_, :math: `n_samples * n * k`scalars are sampled</span>
+<span class="sd">        from a standard normal distribution and reshaped to matrices,</span>
+<span class="sd">        the projectors on their first k columns follow a uniform distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            The number of points to sample</span>
+<span class="sd">            Optional. default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        projectors : array-like, shape=[..., n, n]</span>
+<span class="sd">            Points following a uniform distribution.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Chikuse03] Yasuko Chikuse, Statistics on special manifolds,</span>
+<span class="sd">        New York: Springer-Verlag. 2003, 10.1007/978-0-387-21540-2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+        <span class="n">full_rank</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">points</span><span class="p">),</span> <span class="n">points</span><span class="p">)</span>
+        <span class="n">projector</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">points</span><span class="p">,</span>
+            <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">full_rank</span><span class="p">),</span>
+            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">points</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">projector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">projector</span></div>
 
 <div class="viewcode-block" id="Grassmannian.is_tangent"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.Grassmannian.is_tangent">[docs]</a>    <span class="k">def</span> <span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if a vector is tangent to the manifold at the base point.</span>
@@ -418,7 +439,6 @@
 <span class="sd">            base_point.</span>
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Base point.</span>
-<span class="sd">            `base_point` is a rank p projector of Gr(n, k).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -434,11 +454,14 @@
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of point w.r.t. base_point.</span>
 
 <span class="sd">        Given :math:`P, P&#39;` in Gr(n, k) the logarithm from :math:`P`</span>
-<span class="sd">        to :math:`P&#39;` is given by the infinitesimal rotation [Batzies2015]_:</span>
+<span class="sd">        to :math:`P` is induced by the infinitesimal rotation [Batzies2015]_:</span>
 
 <span class="sd">        .. math::</span>
 
-<span class="sd">            \omega = \frac 1 2 \log \big((2 P&#39; - 1)(2 P - 1)\big)</span>
+<span class="sd">            Y = \frac 1 2 \log \big((2 P&#39; - 1)(2 P - 1)\big)</span>
+
+<span class="sd">        The tangent vector :math:`X` at :math:`P`</span>
+<span class="sd">        is then recovered by :math:`X = [Y, P]`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -481,7 +504,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Oct 6, 2020, 11:34:54 AM.
+        Last updated on Oct 26, 2020, 12:06:15 PM.
       </span>
 
     </p>
