@@ -169,19 +169,17 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
 
-<div class="viewcode-block" id="InvariantMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric">[docs]</a><span class="k">class</span> <span class="nc">InvariantMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for invariant metrics which exist on Lie groups.</span>
+<span class="k">class</span> <span class="nc">_InvariantMetricMatrix</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for invariant metrics on Matrix Lie groups.</span>
 
 <span class="sd">    This class supports both left and right invariant metrics</span>
 <span class="sd">    which exist on Lie groups.</span>
-
-<span class="sd">    Points are parameterized by the Riemannian logarithm</span>
-<span class="sd">    for the canonical left-invariant metric.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -191,89 +189,73 @@
 <span class="sd">        Matrix that defines the metric at identity.</span>
 <span class="sd">        Optional, defaults to identity matrix if None.</span>
 <span class="sd">    left_or_right : str, {&#39;left&#39;, &#39;right&#39;}</span>
-<span class="sd">        Wether to use a left or right invariant metric.</span>
+<span class="sd">        Whether to use a left or right invariant metric.</span>
 <span class="sd">        Optional, default: &#39;left&#39;.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [Milnor]    Milnor, John. “Curvatures of Left Invariant Metrics on Lie</span>
+<span class="sd">                   Groups.” Advances in Mathematics 21, no. 3, 1976:</span>
+<span class="sd">                   293–329. https://doi.org/10.1016/S0001-8708(76)80002-3.</span>
+<span class="sd">    .. [Kolev]     Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
+<span class="sd">                   Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
+<span class="sd">                    480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
+<span class="sd">    .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential Geometry</span>
+<span class="sd">                   and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                   Geonger International Publishing, 2020.</span>
+<span class="sd">                   https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">algebra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span>
                  <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">InvariantMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_InvariantMetricMatrix</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="o">=</span> <span class="n">algebra</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">lie_algebra</span>
         <span class="k">if</span> <span class="n">metric_mat_at_identity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
 
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
             <span class="n">left_or_right</span><span class="p">,</span> <span class="s1">&#39;left_or_right&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">])</span>
 
-        <span class="n">eigenvalues</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
-        <span class="n">mask_pos_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">greater</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">n_pos_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_pos_eigval</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
-        <span class="n">mask_neg_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">n_neg_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_neg_eigval</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
-        <span class="n">mask_null_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">n_null_eigval</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask_null_eigval</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">metric_mat_at_identity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">=</span> <span class="n">left_or_right</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_pos_eigval</span><span class="p">,</span> <span class="n">n_null_eigval</span><span class="p">,</span> <span class="n">n_neg_eigval</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.inner_product_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.inner_product_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute inner product at tangent space at identity.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            First tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Second tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        inner_prod : array-like, shape=[..., dim]</span>
+<span class="sd">        inner_prod : array-like, shape=[...]</span>
 <span class="sd">            Inner-product of the two tangent vectors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span><span class="p">,</span>
-            <span class="s1">&#39;default_point_type&#39;</span><span class="p">,</span>
-            <span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span> <span class="s1">&#39;matrix&#39;</span><span class="p">])</span>
+        <span class="n">aux_prod</span> <span class="o">=</span> <span class="n">tangent_vec_a</span> <span class="o">*</span> <span class="n">tangent_vec_b</span>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">aux_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">reshape_metric_matrix</span><span class="p">(</span>
+                <span class="n">metric_mat</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">aux_prod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">inner_prod</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="n">inner_product_mat_at_identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
-            <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span>
-                <span class="n">tangent_vec_a</span><span class="p">,</span>
-                <span class="n">inner_product_mat_at_identity</span><span class="p">)</span>
-            <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s1">&#39;...j,...j-&gt;...&#39;</span><span class="p">,</span> <span class="n">inner_prod</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">is_vectorized</span> <span class="o">=</span> \
-                <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span>
-            <span class="n">axes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_vectorized</span> <span class="k">else</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">aux_prod</span> <span class="o">=</span> <span class="n">tangent_vec_a</span> <span class="o">*</span> <span class="n">tangent_vec_b</span>
-            <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-                <span class="n">aux_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">reshape_metric_matrix</span><span class="p">(</span>
-                    <span class="n">metric_mat</span><span class="p">)</span>
-            <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">aux_prod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">inner_prod</span></div>
-
-<div class="viewcode-block" id="InvariantMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute inner product of two vectors in tangent space at base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            First tangent vector at base_point.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Second tangent vector at base_point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point in the group.</span>
 <span class="sd">            Optional, defaults to identity if None.</span>
 
@@ -285,11 +267,6 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">InvariantMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
-                <span class="n">tangent_vec_a</span><span class="p">,</span>
-                <span class="n">tangent_vec_b</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -297,45 +274,9 @@
         <span class="n">tangent_vec_b_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
             <span class="n">tangent_vec_a_at_id</span><span class="p">,</span> <span class="n">tangent_vec_b_at_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">inner_prod</span></div>
+        <span class="k">return</span> <span class="n">inner_prod</span>
 
-<div class="viewcode-block" id="InvariantMetric.metric_matrix"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.metric_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute inner product matrix at the tangent space at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim], optional</span>
-<span class="sd">            Point in the group (the default is identity).</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        metric_mat : array-like, shape=[..., dim, dim]</span>
-<span class="sd">            Metric matrix at base_point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s1">&#39;inner_product_matrix not implemented for Lie groups&#39;</span>
-                <span class="s1">&#39; whose elements are represented as matrices.&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">identity</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
-            <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
-
-        <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
-        <span class="n">inv_jacobian_transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">)</span>
-
-        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span>
-            <span class="n">inv_jacobian_transposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
-        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">inv_jacobian</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">metric_mat</span></div>
-
-<div class="viewcode-block" id="InvariantMetric.structure_constant"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.structure_constant">[docs]</a>    <span class="k">def</span> <span class="nf">structure_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">structure_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the structure constant of the metric.</span>
 
 <span class="sd">        For three tangent vectors :math: `x, y, z` at identity,</span>
@@ -343,11 +284,11 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
@@ -355,9 +296,9 @@
 <span class="sd">        structure_constant : array-like, shape=[...,]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">bracket</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">bracket</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">bracket</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.dual_adjoint"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.dual_adjoint">[docs]</a>    <span class="k">def</span> <span class="nf">dual_adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">dual_adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the metric dual adjoint map.</span>
 
 <span class="sd">        For two tangent vectors at identity :math: `x,y`, this corresponds to</span>
@@ -366,15 +307,26 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        ad_star : array-like, shape=[..., dim]</span>
+<span class="sd">        ad_star : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity corresponding to :math: `ad_x^*(y)`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Kolev] Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
+<span class="sd">                   Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
+<span class="sd">                   480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
+
+<span class="sd">        .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential</span>
+<span class="sd">                       Geometry and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                       Geonger International Publishing, 2020.</span>
+<span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
@@ -383,55 +335,69 @@
             <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span>
                     <span class="n">tan</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span> <span class="k">for</span> <span class="n">tan</span> <span class="ow">in</span> <span class="n">basis</span><span class="p">]),</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">basis</span><span class="p">))</span></div>
+            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">basis</span><span class="p">))</span>
 
-<div class="viewcode-block" id="InvariantMetric.connection_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.connection_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">connection_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">connection_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Levi-Civita connection at identity.</span>
 
 <span class="sd">        For two tangent vectors at identity :math: `x,y`, one can associate</span>
 <span class="sd">        left (respectively right) invariant vector fields :math: `\tilde{x},</span>
 <span class="sd">        \tilde{y}`. Then the vector :math: `(\nabla_\tilde{x}(\tilde{x}))_{</span>
 <span class="sd">        Id}` is computed using the lie bracket and the dual adjoint map. This</span>
-<span class="sd">        is a bilinear map that characterizes the connection.</span>
+<span class="sd">        is a bilinear map that characterizes the connection [Gallier]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        nabla : array-like, shape=[..., dim]</span>
+<span class="sd">        nabla : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential</span>
+<span class="sd">                       Geometry and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                       Geonger International Publishing, 2020.</span>
+<span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">GeneralLinear</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
                          <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-                         <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">))</span></div>
+                         <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">))</span>
 
-<div class="viewcode-block" id="InvariantMetric.connection"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.connection">[docs]</a>    <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Levi-Civita connection of invariant vector fields.</span>
 
 <span class="sd">        For two tangent vectors at a base point :math: `p, x,y`, one can</span>
 <span class="sd">        associate left (respectively right) invariant vector fields :math:</span>
 <span class="sd">        `\tilde{x}, \tilde{y}`. Then the vector :math: `(\nabla_\tilde{x}(</span>
 <span class="sd">        \tilde{x}))_{p}` is computed using the invariance of the connection</span>
-<span class="sd">        and its value at identity.</span>
+<span class="sd">        and its value at identity [Gallier]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point in the group.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        nabla : array-like, shape=[..., dim]</span>
+<span class="sd">        nabla : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential</span>
+<span class="sd">                       Geometry and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                       Geonger International Publishing, 2020.</span>
+<span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
@@ -444,9 +410,9 @@
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">value_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span><span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.curvature_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.curvature_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">curvature_at_identity</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">curvature_at_identity</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the curvature at identity.</span>
 
@@ -457,16 +423,16 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        curvature : array-like, shape=[..., dim]</span>
+<span class="sd">        curvature : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">bracket</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
@@ -480,9 +446,9 @@
             <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">bracket_term</span> <span class="o">-</span> <span class="n">left_term</span> <span class="o">+</span> <span class="n">right_term</span></div>
+        <span class="k">return</span> <span class="n">bracket_term</span> <span class="o">-</span> <span class="n">left_term</span> <span class="o">+</span> <span class="n">right_term</span>
 
-<div class="viewcode-block" id="InvariantMetric.curvature"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.curvature">[docs]</a>    <span class="k">def</span> <span class="nf">curvature</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">curvature</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span>
             <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the curvature.</span>
@@ -490,22 +456,23 @@
 <span class="sd">        For three tangent vectors at a base point :math: `x,y,z`,</span>
 <span class="sd">        the curvature is defined by</span>
 <span class="sd">        :math: `R(x, y)z = \nabla_{[x,y]}z</span>
-<span class="sd">        - \nabla_x\nabla_y z + - \nabla_y\nabla_x z`.</span>
+<span class="sd">        - \nabla_x\nabla_y z + - \nabla_y\nabla_x z`. It is computed using</span>
+<span class="sd">        the invariance of the connection and its value at identity.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">        base_point :  array-like, shape=[..., n, n]</span>
 <span class="sd">            Point on the group. Optional, default is the identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        curvature : array-like, shape=[..., dim]</span>
+<span class="sd">        curvature : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -523,9 +490,9 @@
         <span class="n">value_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature_at_identity</span><span class="p">(</span>
             <span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">,</span> <span class="n">tan_c_at_id</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.sectional_curvature_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.sectional_curvature_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">sectional_curvature_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">sectional_curvature_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the sectional curvature at identity.</span>
 
 <span class="sd">        For two orthonormal tangent vectors at identity :math: `x,y`,</span>
@@ -534,15 +501,23 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
 <span class="sd">            Sectional curvature at identity.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Sectional_curvature</span>
+
+<span class="sd">        .. [Milnor]    Milnor, John. “Curvatures of Left Invariant Metrics on</span>
+<span class="sd">                       Lie Groups.” Advances in Mathematics 21, no. 3, 1976:</span>
+<span class="sd">                       293–329. https://doi.org/10.1016/S0001-8708(76)80002-3.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">curvature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature_at_identity</span><span class="p">(</span>
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -553,9 +528,9 @@
             <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">denom</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
         <span class="n">denom</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">EPSILON</span><span class="p">,</span> <span class="n">denom</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">condition</span><span class="p">,</span> <span class="n">num</span> <span class="o">/</span> <span class="n">denom</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">condition</span><span class="p">,</span> <span class="n">num</span> <span class="o">/</span> <span class="n">denom</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.sectional_curvature"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.sectional_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">sectional_curvature</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">sectional_curvature</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the sectional curvature.</span>
 
@@ -565,17 +540,25 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point in the group. Optional, default is the identity</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
 <span class="sd">            Sectional curvature at `base_point`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Sectional_curvature</span>
+
+<span class="sd">        .. [Milnor]    Milnor, John. “Curvatures of Left Invariant Metrics on</span>
+<span class="sd">                       Lie Groups.” Advances in Mathematics 21, no. 3, 1976:</span>
+<span class="sd">                       293–329. https://doi.org/10.1016/S0001-8708(76)80002-3.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sectional_curvature_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span>
@@ -584,9 +567,9 @@
             <span class="n">base_point</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
         <span class="n">tan_a_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
         <span class="n">tan_b_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sectional_curvature_at_identity</span><span class="p">(</span><span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sectional_curvature_at_identity</span><span class="p">(</span><span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.curvature_derivative_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.curvature_derivative_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">curvature_derivative_at_identity</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">curvature_derivative_at_identity</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">tangent_vec_d</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the covariant derivative of the curvature at identity.</span>
 
@@ -596,18 +579,18 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
-<span class="sd">        tangent_vec_d : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_d : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        curvature_derivative : array-like, shape=[..., dim]</span>
+<span class="sd">        curvature_derivative : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">first_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span>
@@ -630,9 +613,9 @@
             <span class="n">tangent_vec_c</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_d</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">first_term</span> <span class="o">-</span> <span class="n">second_term</span> <span class="o">-</span> <span class="n">third_term</span> <span class="o">-</span> <span class="n">fourth_term</span></div>
+        <span class="k">return</span> <span class="n">first_term</span> <span class="o">-</span> <span class="n">second_term</span> <span class="o">-</span> <span class="n">third_term</span> <span class="o">-</span> <span class="n">fourth_term</span>
 
-<div class="viewcode-block" id="InvariantMetric.curvature_derivative"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.curvature_derivative">[docs]</a>    <span class="k">def</span> <span class="nf">curvature_derivative</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">curvature_derivative</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">tangent_vec_d</span><span class="p">,</span>
             <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the covariant derivative of the curvature.</span>
@@ -643,20 +626,20 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_d : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_d : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point on the group.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        curvature_derivative : array-like, shape=[..., dim]</span>
+<span class="sd">        curvature_derivative : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -674,9 +657,199 @@
         <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InvariantMetric.left_exp_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.left_exp_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">left_exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;group_rk4&#39;</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
+
+<span class="sd">        If :math: `\gamma` is a geodesic, then it satisfies the</span>
+<span class="sd">        Euler-Poincare equation [Kolev]_:</span>
+<span class="sd">        .. math:</span>
+
+<span class="sd">                        \dot{\gamma}(t) = (dL_{\gamma(t)}) X(t)</span>
+<span class="sd">                        \dot{X}(t) = ad^*_{X(t)}X(t)</span>
+
+<span class="sd">        where :math: `ad^*` is the dual adjoint map with respect to the</span>
+<span class="sd">        metric. The exponential map is approximated by numerical integration</span>
+<span class="sd">        of this equation, with initial conditions :math: `\dot{\gamma}(0)`</span>
+<span class="sd">        given by the argument `tangent_vec` and :math: `\gamma(0)` by</span>
+<span class="sd">        `base_point`. A Runge-Kutta scheme of order 2 or 4 is used for</span>
+<span class="sd">        integration.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at a base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">            Optional, defaults to identity if None.</span>
+<span class="sd">        n_steps : int,</span>
+<span class="sd">            Number of integration steps.</span>
+<span class="sd">            Optional, default : 15.</span>
+<span class="sd">        step : str, {&#39;group_rk2&#39;, &#39;group_rk4&#39;}</span>
+<span class="sd">            Scheme to use in the integration.</span>
+<span class="sd">            Optional, default : &#39;group_rk4&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group equal to the Riemannian exponential</span>
+<span class="sd">            of tangent_vec at the base point.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Runge–Kutta_methods</span>
+
+<span class="sd">        .. [Kolev]   Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
+<span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
+<span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
+            <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span>
+                <span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span> <span class="k">for</span> <span class="n">basis_vector</span> <span class="ow">in</span> <span class="n">basis</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                <span class="s1">&#39;i...,ijk-&gt;...jk&#39;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
+
+        <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">initial_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">))</span>
+        <span class="n">flow</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span>
+            <span class="n">lie_acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+            <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;group_rk4&#39;</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point from a base point.</span>
+
+<span class="sd">        The log is computed by solving an optimization problem.</span>
+<span class="sd">        The cost function to be optimized is defined by:</span>
+<span class="sd">        .. math:</span>
+
+<span class="sd">                    L(v) = \Vert exp_x(v) - y \Vert^2</span>
+
+<span class="sd">        where :math: `x,y` are respectively `base_point` and `point`,</span>
+<span class="sd">        an extrinsic 2-norm is used, and exp is computed by integration</span>
+<span class="sd">        of the Euler-Poincare equation [Kolev]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group, from which to compute the log.</span>
+<span class="sd">            Optional, default: identity.</span>
+<span class="sd">        n_steps : int,</span>
+<span class="sd">            Number of integration steps to compute the exponential in the</span>
+<span class="sd">            loss.</span>
+<span class="sd">            Optional, default : 15.</span>
+<span class="sd">        step : str, {&#39;group_rk2&#39;, &#39;group_rk4&#39;}</span>
+<span class="sd">            Scheme to use in the integration procedure of the exponential in</span>
+<span class="sd">            the loss.</span>
+<span class="sd">            Optional, default : &#39;group_rk4&#39;.</span>
+<span class="sd">        verbose : bool,</span>
+<span class="sd">            Verbosity level of the optimization procedure.</span>
+<span class="sd">            Optional. default : False.</span>
+<span class="sd">        max_iter : int,</span>
+<span class="sd">            Maximum of iteration of the optimization procedure.</span>
+<span class="sd">            Optional, default : 25.</span>
+<span class="sd">        tol : float,</span>
+<span class="sd">            Tolerance for the stopping criterion of the optimization.</span>
+<span class="sd">            Optional, default : 1e-10.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
+<span class="sd">            of point at the base point.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Kolev]   Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
+<span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
+<span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_InvariantMetricMatrix</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_InvariantMetricVector</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for invariant metrics on Lie groups represented by vectors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    group : LieGroup</span>
+<span class="sd">        Group to equip with the invariant metric</span>
+<span class="sd">    left_or_right : str, {&#39;left&#39;, &#39;right&#39;}</span>
+<span class="sd">        Whether to use a left or right invariant metric.</span>
+<span class="sd">        Optional, default: &#39;left&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_InvariantMetricVector</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">=</span> <span class="n">left_or_right</span>
+
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
+            <span class="n">left_or_right</span><span class="p">,</span> <span class="s1">&#39;left_or_right&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">])</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute inner product at tangent space at identity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">            First tangent vector at identity.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">            Second tangent vector at identity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[..., dim]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...i,...i-&gt;...&#39;</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute inner product matrix at the tangent space at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point in the group (the default is identity).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_mat : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            Metric matrix at base_point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
+
+        <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span>
+            <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)</span>
+
+        <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
+        <span class="n">inv_jacobian_transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">)</span>
+
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span>
+            <span class="n">inv_jacobian_transposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">inv_jacobian</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">metric_mat</span>
+
+    <span class="k">def</span> <span class="nf">left_exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the exponential from identity with the left-invariant metric.</span>
 
 <span class="sd">        Compute Riemannian exponential of a tangent vector at the identity</span>
@@ -699,16 +872,9 @@
         <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
             <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">,</span>
             <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">sqrt_inner_product_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">sqrt_inner_product_mat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tangent_vec</span>
 
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">mat</span><span class="p">)</span>
-
-        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
-
-<div class="viewcode-block" id="InvariantMetric.exp_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.exp_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tangent vector from the identity.</span>
 
 <span class="sd">        Parameters</span>
@@ -729,9 +895,9 @@
             <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">opp_left_exp</span><span class="p">)</span>
 
         <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
+        <span class="k">return</span> <span class="n">exp</span>
 
-<div class="viewcode-block" id="InvariantMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
 
 <span class="sd">        Parameters</span>
@@ -752,7 +918,8 @@
 
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_from_identity</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
@@ -770,10 +937,9 @@
             <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">exp_from_id</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exp</span>
 
-        <span class="k">return</span> <span class="n">exp</span></div>
-
-<div class="viewcode-block" id="InvariantMetric.left_log_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.left_log_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">left_log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">left_log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian log of a point wrt. id of left-invar. metric.</span>
 
 <span class="sd">        Compute Riemannian logarithm of a point wrt the identity associated</span>
@@ -795,15 +961,11 @@
 <span class="sd">            of point at the identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
-        <span class="n">inv_inner_prod_mat</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">)</span>
-        <span class="n">sqrt_inv_inner_prod_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="n">inv_inner_prod_mat</span><span class="p">)</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...i,...ij-&gt;...j&#39;</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">sqrt_inv_inner_prod_mat</span><span class="p">)</span>
         <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">log</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log</span></div>
+            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">log</span>
 
-<div class="viewcode-block" id="InvariantMetric.log_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.log_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt the identity.</span>
 
 <span class="sd">        Parameters</span>
@@ -826,9 +988,9 @@
             <span class="n">left_log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_log_from_identity</span><span class="p">(</span><span class="n">inv_point</span><span class="p">)</span>
             <span class="n">log</span> <span class="o">=</span> <span class="o">-</span> <span class="n">left_log</span>
 
-        <span class="k">return</span> <span class="n">log</span></div>
+        <span class="k">return</span> <span class="n">log</span>
 
-<div class="viewcode-block" id="InvariantMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point from a base point.</span>
 
 <span class="sd">        Parameters</span>
@@ -849,7 +1011,8 @@
 
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
@@ -867,27 +1030,73 @@
         <span class="n">log_from_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
         <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)(</span><span class="n">log_from_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log</span></div></div>
+        <span class="k">return</span> <span class="n">log</span>
 
 
-<div class="viewcode-block" id="BiInvariantMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric">[docs]</a><span class="k">class</span> <span class="nc">BiInvariantMetric</span><span class="p">(</span><span class="n">InvariantMetric</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for bi-invariant metrics which exist on Lie groups.</span>
+<div class="viewcode-block" id="InvariantMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.InvariantMetric">[docs]</a><span class="k">class</span> <span class="nc">InvariantMetric</span><span class="p">(</span><span class="n">_InvariantMetricVector</span><span class="p">,</span> <span class="n">_InvariantMetricMatrix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for invariant metrics on Lie groups.</span>
+
+<span class="sd">    This class supports both left and right invariant metrics</span>
+<span class="sd">    which exist on Lie groups.</span>
+
+<span class="sd">    If `point_type=&#39;vector&#39;`, points are parameterized by the Riemannian</span>
+<span class="sd">    logarithm for the canonical left-invariant metric.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    group : LieGroup</span>
+<span class="sd">        Group to equip with the invariant metric</span>
+<span class="sd">    metric_mat_at_identity : array-like, shape=[dim, dim]</span>
+<span class="sd">        Matrix that defines the metric at identity.</span>
+<span class="sd">        Optional, defaults to identity matrix if None.</span>
+<span class="sd">    left_or_right : str, {&#39;left&#39;, &#39;right&#39;}</span>
+<span class="sd">        Whether to use a left or right invariant metric.</span>
+<span class="sd">        Optional, default: &#39;left&#39;.</span>
+<span class="sd">    point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
+<span class="sd">        Point representation.</span>
+<span class="sd">        Optional, default: group.default_point_type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">left_or_right</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instantiate a special euclidean group.</span>
+
+<span class="sd">        Select the object to instantiate depending on the point_type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">point_type</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span>
+        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_InvariantMetricVector</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="n">left_or_right</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_InvariantMetricMatrix</span><span class="p">(</span>
+            <span class="n">group</span><span class="p">,</span>
+            <span class="n">left_or_right</span><span class="o">=</span><span class="n">left_or_right</span><span class="p">,</span>
+            <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="n">metric_mat_at_identity</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BiInvariantMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric">[docs]</a><span class="k">class</span> <span class="nc">BiInvariantMetric</span><span class="p">(</span><span class="n">_InvariantMetricVector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for bi-invariant metrics on compact Lie groups.</span>
 
 <span class="sd">    Compact Lie groups and direct products of compact Lie groups with vector</span>
-<span class="sd">    spaces admit bi-invariant metrics. Products Lie groups are not</span>
+<span class="sd">    spaces admit bi-invariant metrics [Gallier]_. Products Lie groups are not</span>
 <span class="sd">    implemented. Other groups such as SE(3) admit bi-invariant pseudo-metrics.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    group : LieGroup</span>
 <span class="sd">        The group to equip with the bi-invariant metric</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential Geometry</span>
+<span class="sd">                   and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                   Geonger International Publishing, 2020.</span>
+<span class="sd">                   https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BiInvariantMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span>
-            <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span>
-            <span class="n">default_point_type</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span><span class="p">)</span>
+            <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
         <span class="n">cond</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s1">&#39;SpecialOrthogonal&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
             <span class="ow">and</span> <span class="s1">&#39;SO&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
@@ -896,25 +1105,36 @@
         <span class="k">if</span> <span class="n">cond</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s1">&#39;The bi-invariant metric is only implemented for SO(n)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span>
 
-<div class="viewcode-block" id="BiInvariantMetric.exp_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.exp_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
+<div class="viewcode-block" id="BiInvariantMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tangent vector from the identity.</span>
 
 <span class="sd">        For a bi-invariant metric, this corresponds to the group exponential.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., {dim, [n, n]}]</span>
+<span class="sd">        tangent_vec :</span>
 <span class="sd">            Tangent vector at identity.</span>
+<span class="sd">        base_point : array-like, shape=[..., {dim, [n, n]}]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">            Optional, default : identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        exp : array-like, shape=[..., {dim, [n, n]}]</span>
 <span class="sd">            Point in the group.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BiInvariantMetric.log_from_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.log_from_identity">[docs]</a>    <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential</span>
+<span class="sd">                       Geometry and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                       Geonger International Publishing, 2020.</span>
+<span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BiInvariantMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt the identity.</span>
 
 <span class="sd">        For a bi-invariant metric this corresponds to the group logarithm.</span>
@@ -923,14 +1143,74 @@
 <span class="sd">        ----------</span>
 <span class="sd">        point : array-like, shape=[..., {dim, [n, n]}]</span>
 <span class="sd">            Point in the group.</span>
+<span class="sd">        base_point : array-like, shape=[..., {dim, [n, n]}]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">            Optional, default : identity.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        log : array-like, shape=[..., {dim, [n, n]}]</span>
 <span class="sd">            Tangent vector at the identity equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the identity.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Gallier]   Gallier, Jean, and Jocelyn Quaintance. Differential</span>
+<span class="sd">                       Geometry and Lie Groups: A Computational Perspective.</span>
+<span class="sd">                       Geonger International Publishing, 2020.</span>
+<span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BiInvariantMetric.inner_product_at_identity"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.inner_product_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute inner product at tangent space at identity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., {dim, [n, n]}]</span>
+<span class="sd">            First tangent vector at identity.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., {dim, [n, n]}]</span>
+<span class="sd">            Second tangent vector at identity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[...]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">BiInvariantMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
+                <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...ij,...ij-&gt;...&#39;</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BiInvariantMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute inner product of two vectors in tangent space at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
+<span class="sd">            First tangent vector at base_point.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
+<span class="sd">            Second tangent vector at base_point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">            Optional, defaults to identity if None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod : array-like, shape=[...,]</span>
+<span class="sd">            Inner-product of the two tangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
+                <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+
+        <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tangent_vec_a_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
+        <span class="n">tangent_vec_b_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
+            <span class="n">tangent_vec_a_at_id</span><span class="p">,</span> <span class="n">tangent_vec_b_at_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inner_prod</span></div></div>
 </pre></div>
 
            </div>
@@ -946,7 +1226,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 2, 2020, 7:58:40 AM.
+        Last updated on Nov 10, 2020, 9:20:52 PM.
       </span>
 
     </p>
