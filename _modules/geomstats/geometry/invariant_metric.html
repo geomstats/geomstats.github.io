@@ -365,9 +365,10 @@
 <span class="sd">                       Geonger International Publishing, 2020.</span>
 <span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">GeneralLinear</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-                         <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-                         <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">))</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.</span>
+        <span class="k">return</span> <span class="n">sign</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">GeneralLinear</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+                           <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+                           <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dual_adjoint</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Levi-Civita connection of invariant vector fields.</span>
@@ -671,7 +672,9 @@
 <span class="sd">                        \dot{X}(t) = ad^*_{X(t)}X(t)</span>
 
 <span class="sd">        where :math: `ad^*` is the dual adjoint map with respect to the</span>
-<span class="sd">        metric. The exponential map is approximated by numerical integration</span>
+<span class="sd">        metric. For a right-invariant metric, :math: `dR` is used instead of</span>
+<span class="sd">        :math: `dL` and :math: `ad^*` is replaced by :math: `-ad^*`. The</span>
+<span class="sd">        exponential map is approximated by numerical integration</span>
 <span class="sd">        of this equation, with initial conditions :math: `\dot{\gamma}(0)`</span>
 <span class="sd">        given by the argument `tangent_vec` and :math: `\gamma(0)` by</span>
 <span class="sd">        `base_point`. A Runge-Kutta scheme of order 2 or 4 is used for</span>
@@ -707,16 +710,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
         <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span> <span class="k">else</span> <span class="mf">1.</span>
 
         <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
+            <span class="sd">&quot;&quot;&quot;Compute the right-hand side of the geodesic equation.&quot;&quot;&quot;</span>
+            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+                <span class="n">point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">)(</span><span class="n">vector</span><span class="p">)</span>
             <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span>
                 <span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span> <span class="k">for</span> <span class="n">basis_vector</span> <span class="ow">in</span> <span class="n">basis</span><span class="p">])</span>
             <span class="n">acceleration</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i...,ijk-&gt;...jk&#39;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">velocity</span><span class="p">,</span> <span class="n">acceleration</span>
+            <span class="k">return</span> <span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span>
 
-        <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
-            <span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">initial_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">))</span>
         <span class="n">flow</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">lie_acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
                             <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1226,7 +1233,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 13, 2020, 9:17:18 AM.
+        Last updated on Nov 18, 2020, 10:05:37 PM.
       </span>
 
     </p>
