@@ -173,7 +173,7 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 
 
-<span class="n">ATOL</span> <span class="o">=</span> <span class="mf">1e-8</span>
+<span class="n">ATOL</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
 
 <div class="viewcode-block" id="loss"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.loss">[docs]</a><span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -590,10 +590,6 @@
 
         <span class="k">return</span> <span class="n">first_term</span> <span class="o">-</span> <span class="n">second_term</span></div>
 
-    <span class="k">def</span> <span class="nf">_is_in_lie_algebra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">ATOL</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check wether a tangent vector belongs to the lie algebra.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
-
 <div class="viewcode-block" id="LieGroup.is_tangent"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.is_tangent">[docs]</a>    <span class="k">def</span> <span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">ATOL</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check whether the vector is tangent at base_point.</span>
 
@@ -603,6 +599,10 @@
 <span class="sd">            Vector.</span>
 <span class="sd">        base_point : array-like, shape=[..., dim_embedding]</span>
 <span class="sd">            Point in the Lie group.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Precision at which to evaluate if the rotation part is</span>
+<span class="sd">            skew-symmetric.</span>
+<span class="sd">            Optional. default: 1e-6</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -617,12 +617,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">vector</span><span class="p">)</span>
-        <span class="n">is_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_in_lie_algebra</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
+        <span class="n">is_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">is_tangent</span></div>
-
-    <span class="k">def</span> <span class="nf">_to_lie_algebra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Project a vector onto the lie algebra.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LieGroup.to_tangent"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.lie_group.LieGroup.to_tangent">[docs]</a>    <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Project a vector onto the tangent space at a base point.</span>
@@ -640,10 +636,10 @@
 <span class="sd">            Tangent vector at base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_lie_algebra</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
         <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">vector</span><span class="p">)</span>
-        <span class="n">regularized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_lie_algebra</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
+        <span class="n">regularized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">regularized</span><span class="p">)</span></div></div>
 </pre></div>
 
@@ -660,7 +656,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 19, 2020, 5:09:15 AM.
+        Last updated on Nov 20, 2020, 6:39:36 PM.
       </span>
 
     </p>

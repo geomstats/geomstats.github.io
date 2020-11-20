@@ -222,6 +222,34 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">metric_mat_at_identity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">=</span> <span class="n">left_or_right</span>
 
+    <span class="k">def</span> <span class="nf">reshape_metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reshape diagonal metric matrix to a symmetric matrix of size n.</span>
+
+<span class="sd">        Reshape a diagonal metric matrix of size `dim x dim` into a symmetric</span>
+<span class="sd">        matrix of size `n x n` where :math: `dim= n (n -1) / 2` is the</span>
+<span class="sd">        dimension of the space of skew symmetric matrices. The</span>
+<span class="sd">        non-diagonal coefficients in the output matrix correspond to the</span>
+<span class="sd">        basis matrices of this space. The diagonal is filled with ones.</span>
+<span class="sd">        This useful to compute a matrix inner product.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        metric_matrix : array-like, shape=[dim, dim]</span>
+<span class="sd">            Diagonal metric matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        symmetric_matrix : array-like, shape=[n, n]</span>
+<span class="sd">            Symmetric matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">):</span>
+            <span class="n">metric_coeffs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+            <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">metric_coeffs</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">metric_mat</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;This is only possible for a diagonal matrix&#39;</span><span class="p">)</span>
+    <span class="n">reshaped_metric_matrix</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">reshape_metric_matrix</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute inner product at tangent space at identity.</span>
 
@@ -241,8 +269,7 @@
         <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="n">aux_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">reshape_metric_matrix</span><span class="p">(</span>
-                <span class="n">metric_mat</span><span class="p">)</span>
+            <span class="n">aux_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshaped_metric_matrix</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">aux_prod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">inner_prod</span>
 
@@ -328,8 +355,7 @@
 <span class="sd">                       Geonger International Publishing, 2020.</span>
 <span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
         <span class="k">return</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
             <span class="s1">&#39;i...,ijk-&gt;...jk&#39;</span><span class="p">,</span>
             <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
@@ -709,7 +735,7 @@
 <span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
         <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span> <span class="k">else</span> <span class="mf">1.</span>
 
         <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
@@ -1233,7 +1259,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 19, 2020, 5:09:15 AM.
+        Last updated on Nov 20, 2020, 6:39:36 PM.
       </span>
 
     </p>
