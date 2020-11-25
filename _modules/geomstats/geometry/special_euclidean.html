@@ -172,6 +172,7 @@
 <span class="kn">import</span> <span class="nn">geomstats.vectorization</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">_InvariantMetricMatrix</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.invariant_metric</span> <span class="kn">import</span> <span class="n">InvariantMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_algebra</span> <span class="kn">import</span> <span class="n">MatrixLieAlgebra</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_group</span> <span class="kn">import</span> <span class="n">LieGroup</span>
@@ -252,18 +253,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">_SpecialEuclideanMatrices</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n</span><span class="o">=</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="nb">int</span><span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s1">&#39;matrix&#39;</span><span class="p">,</span>
+            <span class="n">lie_algebra</span><span class="o">=</span><span class="n">SpecialEuclideanMatrixLieAlgebra</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span> <span class="o">=</span> <span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translations</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">translation_mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">))])</span>
-        <span class="n">translation_mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">translation_mask</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">translation_mask</span> <span class="o">=</span> <span class="n">translation_mask</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="o">=</span> <span class="n">SpecialEuclideanMatrixLieAlgebra</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_canonical_metric</span> <span class="o">=</span> \
+            <span class="n">SpecialEuclideanMatrixCannonicalLeftMetric</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the identity matrix.&quot;&quot;&quot;</span>
@@ -297,9 +295,8 @@
 
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">all_but_last_zeros</span><span class="p">)</span>
 
-        <span class="n">last_term</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:]</span>
-        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
-            <span class="n">belongs</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">last_term</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="n">last_term</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">last_term</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">belongs</span><span class="p">)</span>
@@ -1042,6 +1039,143 @@
         <span class="k">return</span> <span class="n">transform</span>
 
 
+<div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric">[docs]</a><span class="k">class</span> <span class="nc">SpecialEuclideanMatrixCannonicalLeftMetric</span><span class="p">(</span><span class="n">_InvariantMetricMatrix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for the canonical left-invariant metric on SE(n).</span>
+
+<span class="sd">    The canonical left-invariant metric is defined by endowing the tangent</span>
+<span class="sd">    space at the identity with the Frobenius inned-product, and to define the</span>
+<span class="sd">    metric at any point by left-translation. This results in a direct product</span>
+<span class="sd">    metric between rotations and translations, whose geodesics are therefore</span>
+<span class="sd">    easily computable with the matrix exponential and straight lines.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    group : SpecialEuclidean</span>
+<span class="sd">        Instance of the class SpecialEuclidean with `point_type=&#39;matrix&#39;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">_SpecialEuclideanMatrices</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">!=</span> <span class="s1">&#39;matrix&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;group must be an instance of the &#39;</span>
+                             <span class="s1">&#39;SpecialEclidean class with `point_type=matrix`.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SpecialEuclideanMatrixCannonicalLeftMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">n</span>
+
+<div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric.exp"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Exponential map associated to the cannonical metric.</span>
+
+<span class="sd">        Exponential map at `base_point` of `tangent_vec`. The geodesics of this</span>
+<span class="sd">        metric correspond to a direct product metric between rotation and</span>
+<span class="sd">        translation: the translation part is a straight line, while the</span>
+<span class="sd">        rotation part has constant angular velocity (which corresponds to one-</span>
+<span class="sd">        parameter subgroups of the rotation group).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        examples.plot_geodesics_se2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">identity</span>
+        <span class="n">inf_rotation</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">rotation_exp</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">inf_rotation</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
+        <span class="n">translation_exp</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="o">+</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">homogeneous_representation</span><span class="p">(</span>
+            <span class="n">rotation_exp</span><span class="p">,</span> <span class="n">translation_exp</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exp</span></div>
+
+<div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric.log"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute logarithm map associated to the canonical metric.</span>
+
+<span class="sd">        Log map at `base_point` of `point`. The geodesics of this</span>
+<span class="sd">        metric correspond to a direct product metric between rotation and</span>
+<span class="sd">        translation: the translation part is a straight line, while the</span>
+<span class="sd">        rotation part has constant angular velocity (which corresponds to one-</span>
+<span class="sd">        parameter subgroups of the rotation group).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [Zefran98]  Zefran, M., V. Kumar, and C.B. Croke.</span>
+<span class="sd">                    “On the Generation of Smooth Three-Dimensional Rigid Body</span>
+<span class="sd">                    Motions.” IEEE Transactions on Robotics and Automation 14,</span>
+<span class="sd">                    no. 4 (August 1998): 576–89.</span>
+<span class="sd">                    https://doi.org/10.1109/70.704225.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_shape</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">rotation_bp</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">rotation_p</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">rotation_log</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rotation_p</span><span class="p">,</span> <span class="n">rotation_bp</span><span class="p">)</span>
+        <span class="n">translation_log</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+
+        <span class="n">log</span> <span class="o">=</span> <span class="n">homogeneous_representation</span><span class="p">(</span>
+            <span class="n">rotation_log</span><span class="p">,</span> <span class="n">translation_log</span><span class="p">,</span> <span class="n">max_shape</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">log</span></div>
+
+<div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        Closed-form solution for the parallel transport of a tangent vector a</span>
+<span class="sd">        along the geodesic defined by :math: `t \mapsto exp_(base_point)(t*</span>
+<span class="sd">        tangent_vec_b)`. As the special Euclidean group endowed with its</span>
+<span class="sd">        canonical left-invariant metric is a symmetric space, parallel</span>
+<span class="sd">        transport is achieved by a geodesic symmetry, or equivalently, one step</span>
+<span class="sd">         of the pole ladder scheme.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the hypersphere.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec: array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">next_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">first_sym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">midpoint</span><span class="p">),</span> <span class="n">midpoint</span><span class="p">)</span>
+        <span class="n">transported_vec</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">first_sym</span><span class="p">,</span> <span class="n">next_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">transported_vec</span></div></div>
+
+
 <div class="viewcode-block" id="SpecialEuclidean"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean">[docs]</a><span class="k">class</span> <span class="nc">SpecialEuclidean</span><span class="p">(</span><span class="n">_SpecialEuclidean2Vectors</span><span class="p">,</span>
                        <span class="n">_SpecialEuclidean3Vectors</span><span class="p">,</span>
                        <span class="n">_SpecialEuclideanMatrices</span><span class="p">):</span>
@@ -1176,9 +1310,9 @@
 <span class="sd">            Representation in the basis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">skew_part</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skew</span><span class="o">.</span><span class="n">basis_representation</span><span class="p">(</span>
-            <span class="n">matrix_representation</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
-        <span class="n">translation_part</span> <span class="o">=</span> <span class="n">matrix_representation</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">skew_part</span><span class="p">,</span> <span class="n">translation_part</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div></div>
+            <span class="n">matrix_representation</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">translation_part</span> <span class="o">=</span> <span class="n">matrix_representation</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">skew_part</span><span class="p">,</span> <span class="n">translation_part</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:]],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -1194,7 +1328,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 24, 2020, 9:55:31 AM.
+        Last updated on Nov 25, 2020, 3:08:02 PM.
       </span>
 
     </p>

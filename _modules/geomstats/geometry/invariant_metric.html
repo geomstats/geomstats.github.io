@@ -686,7 +686,7 @@
 
         <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;rk4&#39;</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s1">&#39;rk4&#39;</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
 
@@ -736,7 +736,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
         <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orthonormal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
-        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span> <span class="k">else</span> <span class="mf">1.</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.</span>
 
         <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Compute the right-hand side of the geodesic equation.&quot;&quot;&quot;</span>
@@ -747,9 +747,13 @@
             <span class="n">acceleration</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i...,ijk-&gt;...jk&#39;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span>
 
-        <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="p">,</span>
-            <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">identity</span>
+            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">tangent_vec</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+                <span class="n">base_point</span><span class="p">,</span>
+                <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">initial_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">))</span>
         <span class="n">flow</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">lie_acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
                             <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1259,7 +1263,7 @@
         
         &copy; Copyright 2019-2020, Geomstats, Inc.
       <span class="lastupdated">
-        Last updated on Nov 24, 2020, 9:55:31 AM.
+        Last updated on Nov 25, 2020, 3:08:02 PM.
       </span>
 
     </p>
