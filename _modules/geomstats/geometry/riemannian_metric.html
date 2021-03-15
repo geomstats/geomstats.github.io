@@ -568,7 +568,46 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">norms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i, ikl-&gt;ikl&#39;</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">norms</span><span class="p">),</span> <span class="n">basis</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i, ikl-&gt;ikl&#39;</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">norms</span><span class="p">),</span> <span class="n">basis</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.sectional_curvature"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.sectional_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">sectional_curvature</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the sectional curvature.</span>
+
+<span class="sd">        For two orthonormal tangent vectors at a base point :math: `x,y`,</span>
+<span class="sd">        the sectional curvature is defined by :math: `&lt;R(x, y)x,</span>
+<span class="sd">        y&gt;`. Non-orthonormal vectors can be given.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group. Optional, default is the identity</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
+<span class="sd">            Sectional curvature at `base_point`.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Sectional_curvature</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">curvature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">sectional</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">curvature</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">norm_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">norm_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">inner_ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">normalization_factor</span> <span class="o">=</span> <span class="n">norm_a</span> <span class="o">*</span> <span class="n">norm_b</span> <span class="o">-</span> <span class="n">inner_ab</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="n">condition</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">normalization_factor</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="n">normalization_factor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">condition</span><span class="p">,</span> <span class="n">EPSILON</span><span class="p">,</span> <span class="n">normalization_factor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">condition</span><span class="p">,</span> <span class="n">sectional</span> <span class="o">/</span> <span class="n">normalization_factor</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -582,7 +621,7 @@
     <p>
         &#169; Copyright 2019-2020, Geomstats, Inc..
       <span class="lastupdated">
-        Last updated on Mar 12, 2021, 6:54:17 PM.
+        Last updated on Mar 15, 2021, 3:22:23 PM.
       </span>
 
     </p>
