@@ -260,8 +260,9 @@
     <span class="k">return</span> <span class="n">mean</span></div>
 
 
-<span class="k">def</span> <span class="nf">_default_gradient_descent</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
-                              <span class="n">max_iter</span><span class="p">,</span> <span class="n">point_type</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_default_gradient_descent</span><span class="p">(</span>
+        <span class="n">points</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">max_iter</span><span class="p">,</span> <span class="n">point_type</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span>
+        <span class="n">initial_step_size</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Perform default gradient descent.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
         <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -286,7 +287,7 @@
     <span class="n">var</span> <span class="o">=</span> <span class="mf">0.</span>
 
     <span class="n">norm_old</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
-    <span class="n">step</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="n">initial_step_size</span>
 
     <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iter</span><span class="p">:</span>
         <span class="n">logs</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">mean</span><span class="p">)</span>
@@ -302,7 +303,7 @@
         <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">)</span>
 
         <span class="n">var_is_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
-        <span class="n">sq_dist_is_small</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">var</span><span class="p">)</span>
+        <span class="n">sq_dist_is_small</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">sq_dist</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">metric</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">var_is_0</span><span class="p">,</span> <span class="n">sq_dist_is_small</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">condition</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">break</span>
@@ -367,27 +368,25 @@
         <span class="k">while</span> <span class="n">convergence</span> <span class="o">&gt;</span> <span class="n">tau</span> <span class="ow">and</span> <span class="n">max_iter</span> <span class="o">&gt;</span> <span class="n">iteration</span><span class="p">:</span>
 
             <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
-
-            <span class="n">barycenter_flattened</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">barycenter</span><span class="p">,</span>
-                                             <span class="nb">len</span><span class="p">(</span><span class="n">points_gs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">barycenter_flattened</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+                <span class="n">barycenter</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">points_gs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">barycenter_flattened</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
                 <span class="n">barycenter_flattened</span><span class="p">,</span>
                 <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">barycenter_flattened</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
 
-            <span class="n">grad_tangent</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">points_flattened</span><span class="p">,</span>
-                                          <span class="n">barycenter_flattened</span><span class="p">)</span>
-            <span class="n">grad_tangent</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">grad_tangent</span><span class="p">,</span>
-                                      <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">grad_tangent</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                <span class="n">points_flattened</span><span class="p">,</span> <span class="n">barycenter_flattened</span><span class="p">)</span>
+            <span class="n">grad_tangent</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="n">grad_tangent</span><span class="p">,</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="n">grad_tangent</span> <span class="o">=</span> <span class="n">grad_tangent</span> <span class="o">*</span> <span class="n">weights</span>
 
             <span class="n">lr_grad_tangent</span> <span class="o">=</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">grad_tangent</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">lr_grad_tangent_s</span> <span class="o">=</span> <span class="n">lr_grad_tangent</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
-            <span class="n">cc_barycenter</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">barycenter_gs</span><span class="p">,</span>
-                                       <span class="n">lr_grad_tangent_s</span><span class="p">)</span>
-
-            <span class="n">convergence</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cc_barycenter</span><span class="p">,</span>
-                                      <span class="n">barycenter_gs</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">cc_barycenter</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="n">barycenter_gs</span><span class="p">,</span> <span class="n">lr_grad_tangent_s</span><span class="p">)</span>
+            <span class="n">convergence</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                <span class="n">cc_barycenter</span><span class="p">,</span> <span class="n">barycenter_gs</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
             <span class="n">barycenter_gs</span> <span class="o">=</span> <span class="n">cc_barycenter</span>
             <span class="n">barycenter</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">cc_barycenter</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -407,8 +406,10 @@
                                <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                <span class="n">max_iter</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
                                <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+                               <span class="n">initial_tau</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
                                <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                               <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">):</span>
+                               <span class="n">point_type</span><span class="o">=</span><span class="s1">&#39;vector&#39;</span><span class="p">,</span>
+                               <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Perform adaptive gradient descent.</span>
 
 <span class="sd">    Frechet mean of (weighted) points using adaptive time-steps</span>
@@ -436,20 +437,18 @@
 <span class="sd">    current_mean: array-like, shape=[..., dim]</span>
 <span class="sd">        Weighted Frechet mean of the points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;matrix&#39;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s1">&#39;The Frechet mean with adaptive gradient descent is only&#39;</span>
-            <span class="s1">&#39; implemented for lists of vectors, and not matrices.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">einsum_str</span> <span class="o">=</span> <span class="s1">&#39;n,nj-&gt;j&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">einsum_str</span> <span class="o">=</span> <span class="s1">&#39;n,nij-&gt;ij&#39;</span>
+    <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">points</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">tau_max</span> <span class="o">=</span> <span class="mf">1e6</span>
     <span class="n">tau_mul_up</span> <span class="o">=</span> <span class="mf">1.6511111</span>
     <span class="n">tau_min</span> <span class="o">=</span> <span class="mf">1e-6</span>
     <span class="n">tau_mul_down</span> <span class="o">=</span> <span class="mf">0.1</span>
-
-    <span class="n">n_points</span> <span class="o">=</span> <span class="n">geomstats</span><span class="o">.</span><span class="n">vectorization</span><span class="o">.</span><span class="n">get_n_points</span><span class="p">(</span>
-        <span class="n">points</span><span class="p">,</span> <span class="n">point_type</span><span class="p">)</span>
-
-    <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
     <span class="n">current_mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">init_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">init_point</span>
 
@@ -460,11 +459,12 @@
         <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,))</span>
     <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-    <span class="n">tau</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="n">initial_tau</span>
     <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="n">logs</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">current_mean</span><span class="p">)</span>
-    <span class="n">current_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;n,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
+
+    <span class="n">current_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">einsum_str</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
     <span class="n">current_tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
     <span class="n">sq_norm_current_tangent_mean</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span>
         <span class="n">current_tangent_mean</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">current_mean</span><span class="p">)</span>
@@ -478,7 +478,11 @@
             <span class="n">tangent_vec</span><span class="o">=</span><span class="n">shooting_vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">current_mean</span><span class="p">)</span>
 
         <span class="n">logs</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">points</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">next_mean</span><span class="p">)</span>
-        <span class="n">next_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;n,nj-&gt;j&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+            <span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">logs</span><span class="p">,</span> <span class="n">current_mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="n">next_tangent_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">einsum_str</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span>
         <span class="n">next_tangent_mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
         <span class="n">sq_norm_next_tangent_mean</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span>
             <span class="n">next_tangent_mean</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">next_mean</span><span class="p">)</span>
@@ -495,6 +499,13 @@
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
             <span class="s1">&#39;Maximum number of iterations </span><span class="si">{}</span><span class="s1"> reached. &#39;</span>
             <span class="s1">&#39;The mean may be inaccurate&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_iter</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s1">&#39;n_iter: </span><span class="si">{}</span><span class="s1">, final variance: </span><span class="si">{}</span><span class="s1">, final dist: </span><span class="si">{}</span><span class="s1">,&#39;</span>
+            <span class="s1">&#39; final_step_size: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">iteration</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">sq_norm_current_tangent_mean</span><span class="p">,</span> <span class="n">tau</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="n">current_mean</span>
 
 
@@ -524,8 +535,7 @@
                  <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">,</span>
                  <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
-                 <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-                 <span class="n">tau</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span>
+                 <span class="n">lr</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
                  <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
@@ -534,7 +544,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">point_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">tau</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -577,18 +586,19 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">_default_gradient_descent</span><span class="p">(</span>
                 <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
-                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
+                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">initial_step_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span>
                 <span class="n">point_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">point_type</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;adaptive&#39;</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">_adaptive_gradient_descent</span><span class="p">(</span>
                 <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
-                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
-                <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">point_type</span><span class="p">,</span>
+                <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
+                <span class="n">initial_tau</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;frechet-poincare-ball&#39;</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">_ball_gradient_descent</span><span class="p">(</span>
                 <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
-                <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
+                <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">mean</span>
 
@@ -606,7 +616,7 @@
     <p>
         &#169; Copyright 2019-2020, Geomstats, Inc..
       <span class="lastupdated">
-        Last updated on Mar 17, 2021, 2:19:48 PM.
+        Last updated on Mar 18, 2021, 2:23:27 PM.
       </span>
 
     </p>
