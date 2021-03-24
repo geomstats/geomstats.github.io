@@ -263,12 +263,12 @@
 <span class="sd">        inner_prod : array-like, shape=[...]</span>
 <span class="sd">            Inner-product of the two tangent vectors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">aux_prod</span> <span class="o">=</span> <span class="n">tangent_vec_a</span> <span class="o">*</span> <span class="n">tangent_vec_b</span>
+        <span class="n">tan_b</span> <span class="o">=</span> <span class="n">tangent_vec_b</span>
         <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="n">aux_prod</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshaped_metric_matrix</span>
-        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">aux_prod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">tan_b</span> <span class="o">=</span> <span class="n">tangent_vec_b</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshaped_metric_matrix</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tan_b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inner_prod</span>
 
     <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -877,11 +877,8 @@
         <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
         <span class="n">inv_jacobian_transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">)</span>
 
-        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span>
-            <span class="n">inv_jacobian_transposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
-        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s1">&#39;...ij,...jk-&gt;...ik&#39;</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">inv_jacobian</span><span class="p">)</span>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">inv_jacobian_transposed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">,</span> <span class="n">inv_jacobian</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">metric_mat</span>
 
     <span class="k">def</span> <span class="nf">left_exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
@@ -1215,7 +1212,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">BiInvariantMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;...ij,...ij-&gt;...&#39;</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BiInvariantMetric.inner_product"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute inner product of two vectors in tangent space at base point.</span>
@@ -1259,7 +1256,7 @@
     <p>
         &#169; Copyright 2019-2020, Geomstats, Inc..
       <span class="lastupdated">
-        Last updated on Mar 20, 2021, 12:25:40 AM.
+        Last updated on Mar 24, 2021, 4:05:59 PM.
       </span>
 
     </p>
