@@ -1,0 +1,867 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Tutorial: Information geometry &mdash; Geomstats latest documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+    <link rel="canonical" href="geomstats.github.io/notebooks/06_information_geometry.html" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial: Hand gesture classification with EMG data using Riemannian metrics" href="usecase_emg_sign_classification_in_spd_manifold.html" />
+    <link rel="prev" title="Tutorial: K-Means clustering on a Riemannian Manifold" href="05_riemannian_kmeans.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Geomstats
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../first-steps.html">First steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="01_data_on_manifolds.html">Tutorial: Data on Manifolds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_from_vector_spaces_to_manifolds.html">Tutorial: From vector spaces to manifolds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_simple_machine_learning_on_tangent_spaces.html">Tutorial: Learning on Tangent Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04_riemannian_frechet_mean_and_tangent_pca.html">Tutorial: Fréchet Mean and Tangent PCA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05_riemannian_kmeans.html">Tutorial: K-Means clustering on a Riemannian Manifold</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial: Information geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Normal-distributions">Normal distributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Beta-distributions">Beta distributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#References">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usecase_emg_sign_classification_in_spd_manifold.html">Tutorial: Hand gesture classification with EMG data using Riemannian metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecase_graph_embedding_and_clustering_in_hyperbolic_space.html">Tutorial: Hyperbolic Embedding of Graphs and Clustering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecase_optic_nerve_heads_analysis_in_kendall_shape_space.html">Tutorial: Computing with shapes of landmarks in Kendall shape spaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecase_hand_poses_analysis_in_kendall_shape_space.html">Tutorial: Classifying hands poses with Kendall shape spaces</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Geomstats</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Tutorial: Information geometry</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/notebooks/06_information_geometry.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="admonition note">
+  <p>Notebook source code:
+    <a class="reference external"
+    href="https://github.com/geomstats/geomstats/blob/master/\
+        notebooks/06_information_geometry.ipynb">notebooks/06_information_geometry.ipynb</a>
+    <br>Run it yourself on binder\
+    <a href="https://mybinder.org/v2/gh/geomstats/geomstats/master?filepath=\
+                        notebooks/06_information_geometry.ipynb"><img alt="Binder badge" \
+                        src="https://mybinder.org/badge_logo.svg" \
+                        style="vertical-align:text-bottom"></a>
+  </p>
+</div><div class="section" id="Tutorial:-Information-geometry">
+<h1>Tutorial: Information geometry<a class="headerlink" href="#Tutorial:-Information-geometry" title="Permalink to this headline">¶</a></h1>
+<p>Disclaimer: this notebook requires the use of the <code class="docutils literal notranslate"><span class="pre">numpy</span></code> backend.</p>
+<div class="section" id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline">¶</a></h2>
+<p>Information geometry is a branch of mathematics at the crossroad of statistics and differential geometry, focused on the study of probability distributions from a geometric point of view. Although it has been extended to the non parametric case, this framework is foremost concerned with parameteric families of probability distributions. The space of parameters, an open subset of the Euclidean space, is seen as a differential manifold and the Fisher information matrix is used to define a
+Riemannian metric on it, called the Fisher-Rao metric or Fisher information metric. This metric is invariant under change of parameterization, which makes it a natural choice. Moreover it is the only Riemannian metric compatible with the notion of information contained by the model on the parameter, in the sense that it is the only metric that preserves the geometry of a parametric model after transformation by a sufficient statistic (Cencov’s theorem). For an overview, see [1].</p>
+</div>
+<div class="section" id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
+<p>Before starting this tutorial, we set the working directory to be the root of the geomstats repository. In order to have the code working on your machine, you need to change this path to the path of your geomstats repository.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="n">geomstats_gitroot_path</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;git&#39;</span><span class="p">,</span> <span class="s1">&#39;rev-parse&#39;</span><span class="p">,</span> <span class="s1">&#39;--show-toplevel&#39;</span><span class="p">],</span>
+    <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">geomstats_gitroot_path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Working directory: &#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Working directory:  /Users/alicelebrigant/ownCloud/Python/SpyderProjects/geomstats
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.image</span> <span class="k">as</span> <span class="nn">mpimg</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.lines</span> <span class="kn">import</span> <span class="n">Line2D</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">import</span> <span class="nn">geomstats.visualization</span> <span class="k">as</span> <span class="nn">visualization</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO: Using numpy backend
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Normal-distributions">
+<h2>Normal distributions<a class="headerlink" href="#Normal-distributions" title="Permalink to this headline">¶</a></h2>
+<p>The Fisher-Rao geometry of the family of normal distributions is arguably the simplest example of two-dimensional information geometry. The space of parameters is the upper half-plane where the x-coordinate encodes the mean and the y-coordinate the standard deviation. Quite remarkably, the Fisher-Rao metric induces the hyperbolic geometry of the Poincare half plane [2]. To start, we need an instance of the class <code class="docutils literal notranslate"><span class="pre">NormalDistributions</span></code> and its Fisher-Rao metric.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.normal_distributions</span> <span class="kn">import</span> <span class="n">NormalDistributions</span>
+
+<span class="n">normal</span> <span class="o">=</span> <span class="n">NormalDistributions</span><span class="p">()</span>
+<span class="n">fisher_metric</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">metric</span>
+</pre></div>
+</div>
+</div>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">visualization</span></code> module, we can plot the geodesic between two points, each defining the parameters (mean and standard deviation) for a normal distribution. We recognise the shape of a geodesic of the Poincare half-plane, namely a half-circle orthogonal to the x-axis.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">])</span>
+<span class="n">point_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">])</span>
+
+<span class="n">geodesic_ab_fisher</span> <span class="o">=</span> <span class="n">fisher_metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+
+<span class="n">n_points</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">cc</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">cc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
+
+<span class="n">visualization</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">geodesic_ab_fisher</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;point on geodesic&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cc</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Geodesic between two normal distributions for the Fisher-Rao metric&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_12_0.png" src="../_images/notebooks_06_information_geometry_12_0.png" />
+</div>
+</div>
+<p>Each point of the geodesic defines a normal distribution, and so we obtain an optimal interpolation between the distributions corresponding to <code class="docutils literal notranslate"><span class="pre">point_a</span></code> and <code class="docutils literal notranslate"><span class="pre">point_b</span></code>, which we can visualize in terms of probability density functions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pdfs</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">geodesic_ab_fisher</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_points</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pdfs</span><span class="p">(</span><span class="n">x</span><span class="p">)[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">cc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Corresponding interpolation between pdfs&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_14_0.png" src="../_images/notebooks_06_information_geometry_14_0.png" />
+</div>
+</div>
+<p>Another possibility to compare probability distributions is given by the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric, central in optimal transport. In the case of normal distributions, the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric induces the Euclidean geometry on the upper half plane [3]. Therefore, the Wasserstein distance between two normal distributions with different means and same variance (<code class="docutils literal notranslate"><span class="pre">point_a</span></code> and <code class="docutils literal notranslate"><span class="pre">point_b</span></code>) will not change when this common variance is increased (<code class="docutils literal notranslate"><span class="pre">point_c</span></code> and <code class="docutils literal notranslate"><span class="pre">point_d</span></code>), while the
+corresponding Fisher-Rao distance will decrease, as can be deduced from the shape of the geodesic. This can be interpreted as a consequence of the increasing overlap of the corresponding probability densities.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
+
+<span class="n">plane</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">wasserstein_metric</span> <span class="o">=</span> <span class="n">plane</span><span class="o">.</span><span class="n">metric</span>
+
+<span class="n">point_c</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">])</span>
+<span class="n">point_d</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">])</span>
+
+<span class="n">geodesic_cd_fisher</span> <span class="o">=</span> <span class="n">fisher_metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">point_c</span><span class="p">,</span> <span class="n">point_d</span><span class="p">)</span>
+<span class="n">geodesic_ab_wasserstein</span> <span class="o">=</span> <span class="n">wasserstein_metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+<span class="n">geodesic_cd_wasserstein</span> <span class="o">=</span> <span class="n">wasserstein_metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">point_c</span><span class="p">,</span> <span class="n">point_d</span><span class="p">)</span>
+
+<span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">point_c</span><span class="p">,</span> <span class="n">point_d</span><span class="p">))</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+
+<span class="n">visualization</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">geodesic_ab_fisher</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">geodesic_cd_fisher</span><span class="p">(</span><span class="n">t</span><span class="p">))),</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fisher-Rao geodesic&#39;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">visualization</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">geodesic_ab_wasserstein</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">geodesic_cd_wasserstein</span><span class="p">(</span><span class="n">t</span><span class="p">))),</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wasserstein geodesic&#39;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">visualization</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;points a and b&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">visualization</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">point_c</span><span class="p">,</span> <span class="n">point_d</span><span class="p">)),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s1">&#39;H2_poincare_half_plane&#39;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;points c and d&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">),</span>
+         <span class="n">Line2D</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C1&#39;</span><span class="p">)]</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pdfs</span><span class="p">(</span><span class="n">x</span><span class="p">)[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pdfs</span><span class="p">(</span><span class="n">x</span><span class="p">)[:,</span> <span class="mi">2</span><span class="p">:],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;C1&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pdfs a and b&#39;</span><span class="p">,</span> <span class="s1">&#39;pdfs c and d&#39;</span><span class="p">]);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_17_0.png" src="../_images/notebooks_06_information_geometry_17_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="Beta-distributions">
+<h2>Beta distributions<a class="headerlink" href="#Beta-distributions" title="Permalink to this headline">¶</a></h2>
+<p>Let us now consider the example of beta distributions, where the space of parameters is the first quadrant. In this case, the geodesics for the Fisher-Rao metric do not have a closed form, but can be found numerically [4]. Here we plot an example of geodesic ball.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.beta_distributions</span> <span class="kn">import</span> <span class="n">BetaDistributions</span>
+
+<span class="n">beta</span> <span class="o">=</span> <span class="n">BetaDistributions</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">n_rays</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">])</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n_rays</span><span class="p">)</span>
+<span class="n">directions</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">))))</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+<span class="n">ray_length</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">direction_norms</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">directions</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">unit_vectors</span> <span class="o">=</span> <span class="n">directions</span><span class="o">/</span><span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">direction_norms</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">initial_vectors</span> <span class="o">=</span> <span class="n">ray_length</span> <span class="o">*</span> <span class="n">unit_vectors</span>
+
+<span class="n">n_points</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rays</span><span class="p">):</span>
+    <span class="n">geod</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+        <span class="n">initial_point</span><span class="o">=</span><span class="n">center</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">initial_vectors</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">geod</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">t</span><span class="p">])))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Geodesic ball of the space of beta distributions&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_21_0.png" src="../_images/notebooks_06_information_geometry_21_0.png" />
+</div>
+</div>
+<p>Now we consider the dataset <code class="docutils literal notranslate"><span class="pre">leaves</span></code>, which contains parameters of beta distributions fitted to inclination angles of leaves of different plant species (<em>A dataset of leaf inclination angles for temperate and boreal broadleaf woody species</em>, <a class="reference external" href="https://doi.org/10.17632/4rmc7r8zvy.2">https://doi.org/10.17632/4rmc7r8zvy.2</a>). These species are divided into 5 categories according to inclination angle distribution type: spherical, erectophile, uniform, planophile and plagiophile. For each species, a beta distribution is fitted to the set of
+inclination angle measurements. Each species can therefore be represented by a point in the manifold of beta distributions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">geomstats.datasets.utils</span> <span class="k">as</span> <span class="nn">data_utils</span>
+
+<span class="n">beta_param</span><span class="p">,</span> <span class="n">distrib_type</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">load_leaves</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">distrib</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">distrib_type</span><span class="p">):</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">beta_param</span><span class="p">[</span><span class="n">distrib_type</span><span class="o">==</span><span class="n">distrib</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">distrib</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Beta parameters of the leaf inclination angle distributions of 172 different species&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_24_0.png" src="../_images/notebooks_06_information_geometry_24_0.png" />
+</div>
+</div>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">FrechetMean</span></code> learning class, we can compute the leaf inclination angle mean distribution among the species of type ‘planophile’.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
+
+<span class="n">points_plan</span> <span class="o">=</span> <span class="n">beta_param</span><span class="p">[</span><span class="n">distrib_type</span><span class="o">==</span><span class="s1">&#39;planophile&#39;</span><span class="p">,</span> <span class="p">:]</span>
+
+<span class="n">mean</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
+<span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">points_plan</span><span class="p">)</span>
+
+<span class="n">mean_estimate</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">estimate_</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points_plan</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points_plan</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;planophile&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">mean_estimate</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;mean planophile&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Beta parameters of the leaf inclination angle mean distribution &#39;</span>
+          <span class="s1">&#39;of species of planophile type&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_06_information_geometry_27_0.png" src="../_images/notebooks_06_information_geometry_27_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="References">
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<p>[1] S. Amari. Information geometry and its applications. Vol. 194. Springer, 2016.</p>
+<p>[2] C. Atkinson and A. FS Mitchell. Rao’s distance measure. Sankhya: The Indian Journal of Statistics. Series A, pp. 345–365, 1981.</p>
+<p>[3] J. Bigot, R. Gouet, T. Klein and A. López. Geodesic PCA in the Wasserstein space by convex PCA. In Annales de l’Institut Henri Poincaré, Probabilités et Statistiques. Vol. 53. No. 1. Institut Henri Poincaré, 2017.</p>
+<p>[4] A. Le Brigant, N. Guigui, S. Rebbah and S. Puechmorel, Classifying histograms of medical data using information geometry of beta distributions. arXiv preprint arXiv:2006.04511.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="usecase_emg_sign_classification_in_spd_manifold.html" class="btn btn-neutral float-right" title="Tutorial: Hand gesture classification with EMG data using Riemannian metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="05_riemannian_kmeans.html" class="btn btn-neutral float-left" title="Tutorial: K-Means clustering on a Riemannian Manifold" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019-2020, Geomstats, Inc..
+      <span class="lastupdated">
+        Last updated on Mar 30, 2021, 3:23:32 PM.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
