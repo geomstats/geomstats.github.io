@@ -194,9 +194,6 @@
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
 
-<span class="n">TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-6</span>
-<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
-
 
 <span class="k">class</span> <span class="nc">_Hypersphere</span><span class="p">(</span><span class="n">EmbeddedManifold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Private class for the n-dimensional hypersphere.</span>
@@ -219,7 +216,7 @@
             <span class="n">embedding_manifold</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_manifold</span><span class="o">.</span><span class="n">metric</span>
 
-    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Test if a point belongs to the hypersphere.</span>
 
 <span class="sd">        This tests whether the point&#39;s squared norm in Euclidean space is 1.</span>
@@ -228,7 +225,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        point : array-like, shape=[..., dim + 1]</span>
 <span class="sd">            Point in Euclidean space.</span>
-<span class="sd">        tolerance : float</span>
+<span class="sd">        atol : float</span>
 <span class="sd">            Tolerance at which to evaluate norm == 1.</span>
 <span class="sd">            Optional, default: 1e-6.</span>
 
@@ -249,7 +246,7 @@
             <span class="k">return</span> <span class="n">belongs</span>
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sq_norm</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">regularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Regularize a point to the canonical representation.</span>
@@ -317,7 +314,7 @@
 
         <span class="k">return</span> <span class="n">tangent_vec</span>
 
-    <span class="k">def</span> <span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check whether the vector is tangent at base_point.</span>
 
 <span class="sd">        Parameters</span>
@@ -513,7 +510,7 @@
         <span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">norms</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">indcs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">norms</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">TOLERANCE</span><span class="p">)</span>
+            <span class="n">indcs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">norms</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">)</span>
             <span class="n">num_bad_samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">indcs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">num_bad_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">break</span>
@@ -918,7 +915,7 @@
     <p>
         &#169; Copyright 2019-2020, Geomstats, Inc..
       <span class="lastupdated">
-        Last updated on Apr 13, 2021, 4:04:09 PM.
+        Last updated on Apr 14, 2021, 4:46:16 PM.
       </span>
 
     </p>
