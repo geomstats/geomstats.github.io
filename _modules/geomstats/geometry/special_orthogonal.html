@@ -228,8 +228,10 @@
 <span class="sd">        belongs : array-like, shape=[...,]</span>
 <span class="sd">            Boolean evaluating if point belongs to SO(n).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span>
+        <span class="n">is_orthogonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+        <span class="n">has_positive_det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">is_orthogonal</span><span class="p">,</span> <span class="n">has_positive_det</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -263,8 +265,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">aux_mat</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
         <span class="n">inv_sqrt_mat</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">aux_mat</span><span class="p">,</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">rot_mat</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_mat</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">rot_mat</span>
+        <span class="n">rotation_mat</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_mat</span><span class="p">)</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">flip_determinant</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sample in SO(n) from the uniform distribution.</span>
@@ -287,7 +290,8 @@
             <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">random_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
         <span class="n">rotation_mat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">random_mat</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">rotation_mat</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">flip_determinant</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">skew_matrix_from_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the skew-symmetric matrix derived from the vector.</span>
@@ -1740,7 +1744,7 @@
     <p>
         &#169; Copyright 2019-2020, Geomstats, Inc..
       <span class="lastupdated">
-        Last updated on Apr 15, 2021, 2:55:14 PM.
+        Last updated on Apr 16, 2021, 7:45:09 AM.
       </span>
 
     </p>
