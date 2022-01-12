@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>geomstats.geometry.graphspace &mdash; Geomstats latest documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/sg_gallery.css" type="text/css" />
+    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/geometry/graphspace.html" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Geomstats
+          </a>
+              <div class="version">
+                latest
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../first-steps.html">First steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Code Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api-reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Geomstats</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>geomstats.geometry.graphspace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for geomstats.geometry.graphspace</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Graph Space.</span>
+
+<span class="sd">Lead author: Anna Calissano.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span><span class="p">,</span> <span class="n">MatricesMetric</span>
+
+
+<span class="k">class</span> <span class="nc">_GraphSpace</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for the Graph Space.</span>
+
+<span class="sd">    Graph Space to analyse populations of labelled and unlabelled graphs.</span>
+<span class="sd">    The space focuses on graphs with scalar euclidean attributes on nodes and edges,</span>
+<span class="sd">    with a finite number of nodes and both directed and undirected edges.</span>
+<span class="sd">    For undirected graphs, use symmeric adjacency matrices. The space is a quotient</span>
+<span class="sd">    space obtained by applying the permutation action of nodes to the space</span>
+<span class="sd">    of adjacency matrices.</span>
+
+<span class="sd">    Points are represented by :math:`nodes \times nodes` adjacency matrices.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodes : int</span>
+<span class="sd">        Number of graph nodes</span>
+<span class="sd">    p : int</span>
+<span class="sd">        Dimension of euclidean parameter or label associated to a graph.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ..[Calissano2020]  Calissano, A., Feragen, A., Vantini, S.</span>
+<span class="sd">              “Graph Space: Geodesic Principal Components for a Population of</span>
+<span class="sd">              Network-valued Data.”</span>
+<span class="sd">              Mox report 14, 2020.</span>
+<span class="sd">              https://mox.polimi.it/reports-and-theses/publication-results/?id=855.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjmat</span> <span class="o">=</span> <span class="n">Matrices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if the matrix is an adjacency matrix associated to the</span>
+<span class="sd">        graph with n nodes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        graph : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix to be checked.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        belongs : array-like, shape=[...,n]</span>
+<span class="sd">            Boolean denoting if graph belongs to the space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjmat</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sample in Graph Space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        bound : float</span>
+<span class="sd">            Bound of the interval in which to sample in the tangent space.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        graph_samples : array-like, shape=[..., n, n]</span>
+<span class="sd">            Points sampled in GraphSpace(n).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjmat</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">permute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">,</span> <span class="n">permutation</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Permutation action applied to graph observation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        graph_to_permute : array-like, shape=[..., n, n]</span>
+<span class="sd">            Input graphs to be permuted.</span>
+<span class="sd">        permutation: array-like, shape=[..., n]</span>
+<span class="sd">            Node permutations where in position i we have the value j meaning</span>
+<span class="sd">            the node i should be permuted with node j.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        graphs_permuted : array-like, shape=[..., n, n]</span>
+<span class="sd">            Graphs permuted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span>
+        <span class="n">single_graph</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span>
+        <span class="k">if</span> <span class="n">single_graph</span><span class="p">:</span>
+            <span class="n">graph_to_permute</span> <span class="o">=</span> <span class="p">[</span><span class="n">graph_to_permute</span><span class="p">]</span>
+            <span class="n">permutation</span> <span class="o">=</span> <span class="p">[</span><span class="n">permutation</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">permutation</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gtype</span> <span class="o">=</span> <span class="n">graph_to_permute</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+                <span class="n">permutation_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array_from_sparse</span><span class="p">(</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">),</span>
+                    <span class="n">indices</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nodes</span><span class="p">)),</span> <span class="n">p</span><span class="p">)),</span>
+                    <span class="n">target_shape</span><span class="o">=</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">nodes</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">adjmat</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+                        <span class="n">permutation_matrix</span><span class="p">,</span>
+                        <span class="n">graph_to_permute</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">permutation_matrix</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">single_graph</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="GraphSpaceMetric"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.graphspace.GraphSpaceMetric">[docs]</a><span class="k">class</span> <span class="nc">GraphSpaceMetric</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Quotient metric on the graph space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodes : int</span>
+<span class="sd">        Number of nodes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_space_metric</span> <span class="o">=</span> <span class="n">MatricesMetric</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">_GraphSpace</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GraphSpaceMetric.dist"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.graphspace.GraphSpaceMetric.dist">[docs]</a>    <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">,</span> <span class="n">matcher</span><span class="o">=</span><span class="s2">&quot;ID&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the distance between two equivalence classes of</span>
+<span class="sd">        adjacency matrices [Jain2009]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_graph : array-like, shape=[..., n, n]</span>
+<span class="sd">            First graph.</span>
+<span class="sd">        graph_to_permute : array-like, shape=[..., n, n]</span>
+<span class="sd">            Second graph to align to the first graph.</span>
+<span class="sd">        matcher : selecting which matcher to use</span>
+<span class="sd">            &#39;FAQ&#39;: [Vogelstein2015]_ Fast Quadratic Assignment</span>
+<span class="sd">            note: use Frobenius metric in background.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        distance : array-like, shape=[...,]</span>
+<span class="sd">            distance between equivalence classes.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ..[Jain2009]  Jain, B., Obermayer, K.</span>
+<span class="sd">                  &quot;Structure Spaces.&quot; Journal of Machine Learning Research 10.11 (2009).</span>
+<span class="sd">                  https://www.jmlr.org/papers/v10/jain09a.html.</span>
+<span class="sd">        ..[Vogelstein2015] Vogelstein JT, Conroy JM, Lyzinski V, Podrazik LJ,</span>
+<span class="sd">                Kratzer SG, Harley ET, Fishkind DE, Vogelstein RJ, Priebe CE.</span>
+<span class="sd">                “Fast approximate quadratic programming for graph matching.“</span>
+<span class="sd">                PLoS One. 2015 Apr 17; doi: 10.1371/journal.pone.0121002.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">matcher</span> <span class="o">==</span> <span class="s2">&quot;FAQ&quot;</span><span class="p">:</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">faq_matching</span><span class="p">(</span><span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">matcher</span> <span class="o">==</span> <span class="s2">&quot;ID&quot;</span><span class="p">:</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_matching</span><span class="p">(</span><span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+            <span class="n">base_graph</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="o">=</span><span class="n">graph_to_permute</span><span class="p">,</span> <span class="n">permutation</span><span class="o">=</span><span class="n">perm</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GraphSpaceMetric.faq_matching"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.graphspace.GraphSpaceMetric.faq_matching">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">faq_matching</span><span class="p">(</span><span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fast Quadratic Assignment for graph matching.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_graph : array-like, shape=[..., n, n]</span>
+<span class="sd">        First graph.</span>
+<span class="sd">        graph_to_permute : array-like, shape=[..., n, n]</span>
+<span class="sd">        Second graph to align.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        permutation : array-like, shape=[...,n]</span>
+<span class="sd">            node permutation indexes of the second graph.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ..[Vogelstein2015] Vogelstein JT, Conroy JM, Lyzinski V, Podrazik LJ,</span>
+<span class="sd">                Kratzer SG, Harley ET, Fishkind DE, Vogelstein RJ, Priebe CE.</span>
+<span class="sd">                “Fast approximate quadratic programming for graph matching.“</span>
+<span class="sd">                PLoS One. 2015 Apr 17; doi: 10.1371/journal.pone.0121002.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">l_base</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_graph</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">l_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l_base</span> <span class="o">==</span> <span class="n">l_obj</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">quadratic_assignment</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maximize&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="n">l_base</span> <span class="o">==</span> <span class="n">l_obj</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">quadratic_assignment</span><span class="p">(</span>
+                <span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maximize&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">l_base</span> <span class="o">&lt;</span> <span class="n">l_obj</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">quadratic_assignment</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maximize&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_graph</span><span class="p">]</span> <span class="o">*</span> <span class="n">graph_to_permute</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">graph_to_permute</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The method can align a set of graphs to one graphs,&quot;</span>
+            <span class="s2">&quot;but the single graphs should be passed as base_graph&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GraphSpaceMetric.id_matching"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.graphspace.GraphSpaceMetric.id_matching">[docs]</a>    <span class="k">def</span> <span class="nf">id_matching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_graph</span><span class="p">,</span> <span class="n">graph_to_permute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Identity matching.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_graph : array-like, shape=[..., n, n]</span>
+<span class="sd">        First graph.</span>
+<span class="sd">        graph_to_permute : array-like, shape=[..., n, n]</span>
+<span class="sd">        Second graph to align.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        permutation : array-like, shape=[...,n]</span>
+<span class="sd">            node permutation indexes of the second graph.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">l_base</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_graph</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">l_obj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l_base</span> <span class="o">==</span> <span class="n">l_obj</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">l_base</span> <span class="o">&lt;</span> <span class="n">l_obj</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">))]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">graph_to_permute</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l_base</span> <span class="o">==</span> <span class="n">l_obj</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="p">(</span>
+            <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The method can align a set of graphs to one graphs,&quot;</span>
+                <span class="s2">&quot;but the single graphs should be passed as base_graph&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="GraphSpace"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.graphspace.GraphSpace">[docs]</a><span class="k">class</span> <span class="nc">GraphSpace</span><span class="p">(</span><span class="n">_GraphSpace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for Graph Space.</span>
+
+<span class="sd">    Graphs are represented as adjacency matrices. The total space</span>
+<span class="sd">    is an Euclidean space. The group action is the permutation</span>
+<span class="sd">    node action applied to the total space to analyse set of</span>
+<span class="sd">    node unlabelled graphs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodes : int</span>
+<span class="sd">        Number of nodes.</span>
+
+<span class="sd">    p : int</span>
+<span class="sd">        Dimension of the graph label or regressor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GraphSpace</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">GraphSpaceMetric</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020-2021, Geomstats, Inc..
+      <span class="lastupdated">Last updated on Jan 12, 2022, 2:53:53 AM.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
