@@ -257,6 +257,120 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis_representation</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">rotation_vector_from_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert rotation matrix (in 2D or 3D) to rotation vector.</span>
+
+<span class="sd">        Get the angle through the atan2 function:</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rot_mat : array-like, shape=[..., 2, 2]</span>
+<span class="sd">            Rotation matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_rot_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Rotation vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The function matrix_from_rotation_vector is not &quot;</span>
+                <span class="s2">&quot;implemented if n is not in 2 or 3.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">so_vector</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_SpecialOrthogonal2Vectors</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="k">else</span> <span class="n">_SpecialOrthogonal3Vectors</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">so_vector</span><span class="o">.</span><span class="n">rotation_vector_from_matrix</span><span class="p">(</span><span class="n">rot_mat</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">matrix_from_rotation_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rot_vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert rotation vector (2D or 3D) to rotation matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rot_vec: array-like, shape=[..., 1]</span>
+<span class="sd">            Rotation vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rot_mat: array-like, shape=[..., 2, 2]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The function matrix_from_rotation_vector is not &quot;</span>
+                <span class="s2">&quot;implemented if n is not in 2 or 3.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">so_vector</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_SpecialOrthogonal2Vectors</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="k">else</span> <span class="n">_SpecialOrthogonal3Vectors</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">so_vector</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">are_antipodals</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if two rotation matrices are antipodals.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rotation_mat1 : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        rotation_mat2 : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _ : array-like, shape=[...,]</span>
+<span class="sd">            Boolean determining if each pair of rotation</span>
+<span class="sd">            matrices corresponds to a pair of antipodal rotation</span>
+<span class="sd">            matrices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sq_rot_mat1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat1</span><span class="p">)</span>
+        <span class="n">sq_rot_mat2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_mat2</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">)</span>
+        <span class="n">are_different</span> <span class="o">=</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">are_different</span> <span class="o">&amp;</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">sq_rot_mat1</span><span class="p">,</span> <span class="n">sq_rot_mat2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the group logarithm of point at base_point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Rotation matrix.</span>
+<span class="sd">            Optional, defaults to identity if None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix such that `exp(tangent_vec, base_point) = point`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Denoting `point` by :math:`g` and `base_point` by :math:`h`,</span>
+<span class="sd">        the output satisfies:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            g = \exp(\log(g, h), h)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">are_antipodals</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The Group Logarithm is not well-defined for&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; antipodal rotation matrices: </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2"> and&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_point</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
 
 <span class="k">class</span> <span class="nc">_SpecialOrthogonalVectors</span><span class="p">(</span><span class="n">LieGroup</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for the special orthogonal groups SO({2,3}) in vector form.</span>
@@ -1724,7 +1838,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Jan 21, 2022, 3:08:20 PM.
+      <span class="lastupdated">Last updated on Jan 21, 2022, 4:03:53 PM.
       </span></p>
   </div>
 
