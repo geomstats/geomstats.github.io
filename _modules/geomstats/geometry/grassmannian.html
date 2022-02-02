@@ -480,22 +480,30 @@
         <span class="n">rot</span> <span class="o">=</span> <span class="n">GLn</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">sym2</span><span class="p">,</span> <span class="n">sym1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">GLn</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GrassmannianCanonicalMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<div class="viewcode-block" id="GrassmannianCanonicalMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
 
-<span class="sd">        Closed-form solution for the parallel transport of a tangent vector a</span>
-<span class="sd">        along the geodesic defined by :math: `t \mapsto exp_(base_point)(t*</span>
-<span class="sd">        tangent_vec_b)`.</span>
+<span class="sd">        Closed-form solution for the parallel transport of a tangent vector</span>
+<span class="sd">        along the geodesic between two points `base_point` and `end_point`</span>
+<span class="sd">        or alternatively defined by :math:`t\mapsto exp_(base_point)(</span>
+<span class="sd">        t*direction)`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the Grassmann manifold. Point to transport from.</span>
 <span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point, along which the parallel transport</span>
 <span class="sd">            is computed.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point on the Grassmann manifold.</span>
+<span class="sd">            Optional, default: None</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the Grassmann manifold to transport to. Unused if `tangent_vec_b`</span>
+<span class="sd">            is given.</span>
+<span class="sd">            Optional, default: None</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -511,10 +519,18 @@
 <span class="sd">                    https://arxiv.org/abs/2011.13699.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tangent_vec_b</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Either an end_point or a tangent_vec_b must be given to define the&quot;</span>
+                    <span class="s2">&quot; geodesic along which to transport.&quot;</span>
+                <span class="p">)</span>
         <span class="n">expm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span>
         <span class="n">mul</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span>
-        <span class="n">rot</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="o">-</span><span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">rot</span><span class="p">),</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">rot</span><span class="p">))</span></div>
+        <span class="n">rot</span> <span class="o">=</span> <span class="o">-</span><span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">rot</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">rot</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="GrassmannianCanonicalMetric.private_squared_dist"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.private_squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">private_squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute geodesic distance between two points.</span>
@@ -570,7 +586,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Jan 28, 2022, 2:11:41 AM.
+      <span class="lastupdated">Last updated on Feb 2, 2022, 3:49:49 PM.
       </span></p>
   </div>
 

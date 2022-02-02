@@ -806,9 +806,10 @@
 
     <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">tangent_vec_a</span><span class="p">,</span>
-        <span class="n">tangent_vec_b</span><span class="p">,</span>
+        <span class="n">tangent_vec</span><span class="p">,</span>
         <span class="n">base_point</span><span class="p">,</span>
+        <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
         <span class="n">step</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">,</span>
         <span class="n">return_endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -816,19 +817,25 @@
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vec along a geodesic.</span>
 
 <span class="sd">        Approximate solution for the parallel transport of a tangent vector a</span>
-<span class="sd">        along the geodesic defined by :math: `t \mapsto exp_(base_point)(t*</span>
-<span class="sd">        tangent_vec_b)`. The parallel transport equation is written entirely</span>
+<span class="sd">        along the geodesic between two points `base_point` and `end_point`</span>
+<span class="sd">        or alternatively defined by :math:`t\mapsto exp_(base_point)(</span>
+<span class="sd">        t*direction)`. The parallel transport equation is written entirely</span>
 <span class="sd">        in the Lie algebra and solved with an integration scheme.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point to be transported.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        direction : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point, along which the parallel transport</span>
 <span class="sd">            is computed.</span>
-<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
-<span class="sd">            Point on the hypersphere.</span>
+<span class="sd">            Optional, default: None</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold. Point to transport to.</span>
+<span class="sd">            Unused if `tangent_vec_b` is given</span>
+<span class="sd">            Optional, default: None</span>
 <span class="sd">        n_steps : int</span>
 <span class="sd">            Number of integration steps to take.</span>
 <span class="sd">            Optional, default : 10.</span>
@@ -841,9 +848,9 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        transported_tangent_vec: array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        transported_tangent_vec: array-like, shape=[..., n, n]</span>
 <span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
-<span class="sd">        end_point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            `exp_(base_point)(tangent_vec_b)`, only returned if</span>
 <span class="sd">            `return_endpoint` is set to `True`.</span>
 
@@ -859,12 +866,23 @@
 <span class="sd">                   Paris 2021. Springer. Lecture Notes in Computer Science.</span>
 <span class="sd">                   https://hal.inria.fr/hal-03154318.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tangent_vec_b_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Either an end_point or a tangent_vec_b must be given to define the&quot;</span>
+                    <span class="s2">&quot; geodesic along which to transport.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tangent_vec_b_</span> <span class="o">=</span> <span class="n">direction</span>
+
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
         <span class="n">translation_map</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left_or_right</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_or_right</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-        <span class="n">left_angular_vel_a</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">))</span>
-        <span class="n">left_angular_vel_b</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">))</span>
+        <span class="n">left_angular_vel_a</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span>
+        <span class="n">left_angular_vel_b</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b_</span><span class="p">))</span>
 
         <span class="k">def</span> <span class="nf">acceleration</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Compute the right-hand-side of the parallel transport eq.&quot;&quot;&quot;</span>
@@ -874,12 +892,12 @@
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gam_dot</span><span class="p">,</span> <span class="n">omega_dot</span><span class="p">,</span> <span class="n">zeta_dot</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="mi">3</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+            <span class="mi">3</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">tangent_vec_b_</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="n">n_sample</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span>
-                <span class="k">else</span> <span class="n">tangent_vec_b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span>
+                <span class="k">else</span> <span class="n">tangent_vec_b_</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_sample</span><span class="p">)</span>
 
@@ -1396,33 +1414,47 @@
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="BiInvariantMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<div class="viewcode-block" id="BiInvariantMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vec along a geodesic.</span>
 
 <span class="sd">        Closed-form solution for the parallel transport of a tangent vector a</span>
-<span class="sd">        along the geodesic defined by :math: `t \mapsto exp_(base_point)(t*</span>
-<span class="sd">        tangent_vec_b)`. As a compact Lie group endowed with its</span>
-<span class="sd">        canonical bi-invariant metric is a symmetric space, parallel</span>
-<span class="sd">        transport is achieved by a geodesic symmetry, or equivalently, one step</span>
-<span class="sd">         of the pole ladder scheme.</span>
+<span class="sd">        along the geodesic between the base point and an end point, or alternatively</span>
+<span class="sd">        defined by :math: `t \mapsto exp_(base_point)(t*direction)`.</span>
+<span class="sd">        As a compact Lie group endowed with its canonical bi-invariant metric is a</span>
+<span class="sd">        symmetric space, parallel transport is achieved by a geodesic symmetry, or</span>
+<span class="sd">        equivalently, one step of the pole ladder scheme.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point to be transported.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        direction : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point, along which the parallel transport</span>
 <span class="sd">            is computed.</span>
-<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
-<span class="sd">            Point on the hypersphere.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold. Point to transport to.</span>
+<span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        transported_tangent_vec: array-like, shape=[..., n + 1, n + 1]</span>
-<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
+<span class="sd">        transported_tangent_vec: array-like, shape=[..., n, n]</span>
+<span class="sd">            Transported tangent vector at `end_point=exp_(base_point)(tangent_vec_b)`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">midpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Either an end_point or a tangent_vec_b must be given to define the&quot;</span>
+                    <span class="s2">&quot; geodesic along which to transport.&quot;</span>
+                <span class="p">)</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">direction</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">transported_vec</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">midpoint</span><span class="p">,</span> <span class="n">transposed</span><span class="p">,</span> <span class="n">midpoint</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">transported_vec</span></div></div>
 </pre></div>
@@ -1435,7 +1467,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Jan 28, 2022, 2:11:41 AM.
+      <span class="lastupdated">Last updated on Feb 2, 2022, 3:49:49 PM.
       </span></p>
   </div>
 
