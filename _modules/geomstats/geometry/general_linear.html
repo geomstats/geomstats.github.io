@@ -103,6 +103,7 @@
 <span class="kn">import</span> <span class="nn">geomstats.algebra_utils</span> <span class="k">as</span> <span class="nn">utils</span>
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">OpenSet</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.lie_algebra</span> <span class="kn">import</span> <span class="n">MatrixLieAlgebra</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.lie_group</span> <span class="kn">import</span> <span class="n">MatrixLieGroup</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 
@@ -126,7 +127,9 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">positive_det</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="s2">&quot;dim&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">**</span><span class="mi">2</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">GeneralLinear</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ambient_space</span><span class="o">=</span><span class="n">Matrices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GeneralLinear</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">ambient_space</span><span class="o">=</span><span class="n">Matrices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">lie_algebra</span><span class="o">=</span><span class="n">SquareMatrices</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">positive_det</span> <span class="o">=</span> <span class="n">positive_det</span>
 
 <div class="viewcode-block" id="GeneralLinear.projection"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.GeneralLinear.projection">[docs]</a>    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -259,6 +262,60 @@
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vecs</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">path</span></div></div>
+
+
+<div class="viewcode-block" id="SquareMatrices"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.SquareMatrices">[docs]</a><span class="k">class</span> <span class="nc">SquareMatrices</span><span class="p">(</span><span class="n">MatrixLieAlgebra</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Lie algebra of the general linear group.</span>
+
+<span class="sd">    This is the space of matrices.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Integer representing the shape of the matrices: n x n.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SquareMatrices</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">n</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mat_space</span> <span class="o">=</span> <span class="n">Matrices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_basis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the canonical basis of the space of matrices.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mat_space</span><span class="o">.</span><span class="n">basis</span>
+
+<div class="viewcode-block" id="SquareMatrices.basis_representation"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.SquareMatrices.basis_representation">[docs]</a>    <span class="k">def</span> <span class="nf">basis_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the coefficient in the usual matrix basis.</span>
+
+<span class="sd">        This simply flattens the input.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix_representation : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        basis_representation : array-like, shape=[..., dim]</span>
+<span class="sd">            Representation in the basis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mat_space</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">matrix_representation</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SquareMatrices.matrix_representation"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.general_linear.SquareMatrices.matrix_representation">[docs]</a>    <span class="k">def</span> <span class="nf">matrix_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_representation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the matrix representation for the given basis coefficients.</span>
+
+<span class="sd">        This simply reshapes the input into a square matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        basis_representation : array-like, shape=[..., dim]</span>
+<span class="sd">            Coefficients in the basis.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix_representation : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mat_space</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">basis_representation</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -269,7 +326,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Feb 22, 2022, 9:35:49 PM.
+      <span class="lastupdated">Last updated on Feb 23, 2022, 12:23:43 AM.
       </span></p>
   </div>
 
