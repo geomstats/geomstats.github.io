@@ -113,6 +113,7 @@
 
 <span class="sd">Lead authors: Nicolas Guigui and Nina Miolane.</span>
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.algebra_utils</span> <span class="k">as</span> <span class="nn">utils</span>
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
@@ -1263,7 +1264,7 @@
         <span class="k">return</span> <span class="n">log</span></div>
 
 <div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
 
@@ -1359,7 +1360,34 @@
 <span class="sd">            Squared distance.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dist</span> <span class="o">=</span> <span class="n">_squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">dist</span></div></div>
+        <span class="k">return</span> <span class="n">dist</span></div>
+
+<div class="viewcode-block" id="SpecialEuclideanMatrixCannonicalLeftMetric.injectivity_radius"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclideanMatrixCannonicalLeftMetric.injectivity_radius">[docs]</a>    <span class="k">def</span> <span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the radius of the injectivity domain.</span>
+
+<span class="sd">        This is is the supremum of radii r for which the exponential map is a</span>
+<span class="sd">        diffeomorphism from the open ball of radius r centered at the base point onto</span>
+<span class="sd">        its image.</span>
+<span class="sd">        In this case, it does not depend on the base point. If the rotation part is</span>
+<span class="sd">        null, then the radius is infinite, otherwise it is the same as the special</span>
+<span class="sd">        orthonormal group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., n + 1, n + 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        radius : float</span>
+<span class="sd">            Injectivity radius.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">rotation_radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rotation</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">rotation_radius</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">radius</span></div></div>
 
 
 <div class="viewcode-block" id="SpecialEuclidean"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.special_euclidean.SpecialEuclidean">[docs]</a><span class="k">class</span> <span class="nc">SpecialEuclidean</span><span class="p">(</span>
@@ -1540,7 +1568,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Apr 2, 2022, 7:21:45 PM.
+      <span class="lastupdated">Last updated on Apr 4, 2022, 5:11:34 PM.
       </span></p>
   </div>
 
