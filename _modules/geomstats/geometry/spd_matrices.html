@@ -124,6 +124,7 @@
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 
 
 <div class="viewcode-block" id="SPDMatrices"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMatrices">[docs]</a><span class="k">class</span> <span class="nc">SPDMatrices</span><span class="p">(</span><span class="n">OpenSet</span><span class="p">):</span>
@@ -989,6 +990,95 @@
 
         <span class="k">return</span> <span class="n">trace_a</span> <span class="o">+</span> <span class="n">trace_b</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">trace_prod</span></div>
 
+<div class="viewcode-block" id="SPDMetricBuresWasserstein.parallel_transport"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMetricBuresWasserstein.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tangent_vec_a</span><span class="p">,</span>
+        <span class="n">base_point</span><span class="p">,</span>
+        <span class="n">tangent_vec_b</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vec along a geodesic.</span>
+
+<span class="sd">        Approximation of the solution of the parallel transport of a tangent</span>
+<span class="sd">        vector a along the geodesic defined by :math:`t \mapsto exp_(</span>
+<span class="sd">        base_point)(t* tangent_vec_b)`. The parallel transport equation is formulated</span>
+<span class="sd">        in this case in [TP2021]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at `base_point` to transport.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector ar `base_point`, initial velocity of the geodesic to</span>
+<span class="sd">            transport  along.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point to transport to.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">        n_steps : int</span>
+<span class="sd">            Number of steps to use to approximate the solution of the</span>
+<span class="sd">            ordinary differential equation.</span>
+<span class="sd">            Optional, default: 100</span>
+<span class="sd">        step : str, {&#39;euler&#39;, &#39;rk2&#39;, &#39;rk4&#39;}</span>
+<span class="sd">            Scheme to use in the integration scheme.</span>
+<span class="sd">            Optional, default: &#39;rk4&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported :  array-like, shape=[..., n, n]</span>
+<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ..[TP2021]      Yann Thanwerdas, Xavier Pennec. O(n)-invariant Riemannian /</span>
+<span class="sd">        metrics on SPD matrices. 2021. ⟨hal-03338601v2⟩</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        Integration module: geomstats.integrator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">horizontal_lift_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_sylvester</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec_a</span>
+        <span class="p">)</span>
+
+        <span class="n">square_root_bp</span><span class="p">,</span> <span class="n">inverse_square_root_bp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">end_point_lift</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">square_root_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
+        <span class="n">square_root_lift</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">end_point_lift</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="n">horizontal_velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inverse_square_root_bp</span><span class="p">,</span> <span class="n">square_root_lift</span><span class="p">)</span>
+        <span class="n">partial_horizontal_velocity</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">horizontal_velocity</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
+        <span class="n">partial_horizontal_velocity</span> <span class="o">+=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">partial_horizontal_velocity</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">force</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+            <span class="n">horizontal_geodesic_t</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="n">time</span>
+            <span class="p">)</span> <span class="o">*</span> <span class="n">square_root_bp</span> <span class="o">+</span> <span class="n">time</span> <span class="o">*</span> <span class="n">horizontal_velocity</span>
+            <span class="n">geodesic_t</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">time</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">base_point</span>
+                <span class="o">+</span> <span class="n">time</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">time</span><span class="p">)</span> <span class="o">*</span> <span class="n">partial_horizontal_velocity</span>
+                <span class="o">+</span> <span class="n">time</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">end_point</span>
+            <span class="p">)</span>
+
+            <span class="n">align</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+                <span class="n">horizontal_geodesic_t</span><span class="p">,</span>
+                <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">horizontal_velocity</span> <span class="o">-</span> <span class="n">square_root_bp</span><span class="p">),</span>
+                <span class="n">state</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">align</span> <span class="o">+</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_sylvester</span><span class="p">(</span><span class="n">geodesic_t</span><span class="p">,</span> <span class="n">geodesic_t</span><span class="p">,</span> <span class="o">-</span><span class="n">right</span><span class="p">)</span>
+
+        <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">force</span><span class="p">,</span> <span class="n">horizontal_lift_a</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+        <span class="n">final_align</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">final_align</span> <span class="o">+</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">final_align</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="SPDMetricBuresWasserstein.injectivity_radius"><a class="viewcode-back" href="../../../geometry.html#geomstats.geometry.spd_matrices.SPDMetricBuresWasserstein.injectivity_radius">[docs]</a>    <span class="k">def</span> <span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the upper bound of the injectivity domain.</span>
 
@@ -1328,7 +1418,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on Apr 8, 2022, 9:04:55 PM.
+      <span class="lastupdated">Last updated on Apr 11, 2022, 2:25:58 PM.
       </span></p>
   </div>
 
