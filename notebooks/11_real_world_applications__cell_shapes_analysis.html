@@ -75,13 +75,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#Setup">Setup</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#2.-Dataset-Description">2. Dataset Description</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Removing-&quot;Bad&quot;-Cells">Removing “Bad” Cells</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="#2.-Dataset-Description">2. Dataset Description</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#3.-Preprocessing">3. Preprocessing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Interpolation:-Encoding-Discrete-Curves-With-Same-Number-of-Points">Interpolation: Encoding Discrete Curves With Same Number of Points</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Visualization-of-Interpolated-Dataset-of-Curves">Visualization of Interpolated Dataset of Curves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Remove-duplicate-samples-in-curves">Remove duplicate samples in curves</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Alignment">Alignment</a></li>
 </ul>
 </li>
@@ -497,55 +495,13 @@ Total number of cells : 650
 [&#39;dlm8&#39; &#39;dunn&#39;]
 </pre></div></div>
 </div>
-<div class="section" id="Removing-&quot;Bad&quot;-Cells">
-<h2>Removing “Bad” Cells<a class="headerlink" href="#Removing-"Bad"-Cells" title="Permalink to this headline"></a></h2>
-<p>We remove specific cells, called “bad cells” because they make the computation of the Frechet mean fail (see later in the notebook). We stipulate that the protuberance on the upper left side of cell 62, and on the lower right side of cell 524, where the cell’s boundaries are closing on themself, were the reason for the failure mode of the Frechet mean. Since the cells’ boundaries do not actually close on themselves, this is a limitation of the contour extraction method used to generate the raw
-dataset of curve shapes.</p>
-<p>To better visualize the problem, we plot below these bad cells in red, and compare them with a regular cell from the dataset in blue.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-
-<span class="k">for</span> <span class="n">i_bad_cell</span><span class="p">,</span> <span class="n">bad_cell_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="mi">62</span><span class="p">,</span> <span class="mi">523</span><span class="p">]):</span>
-    <span class="n">bad_cell_idx</span> <span class="o">=</span> <span class="mi">62</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i_bad_cell</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">bad_cell_idx</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">bad_cell_idx</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i_bad_cell</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-        <span class="n">cells</span><span class="p">[</span><span class="n">bad_cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">bad_cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span>
-    <span class="p">)</span>
-
-    <span class="n">cells</span> <span class="o">=</span> <span class="n">cells</span><span class="p">[:</span><span class="n">bad_cell_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">cells</span><span class="p">[</span><span class="n">bad_cell_idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
-    <span class="n">treatments</span> <span class="o">=</span> <span class="n">treatments</span><span class="p">[:</span><span class="n">bad_cell_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">treatments</span><span class="p">[</span><span class="n">bad_cell_idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
-    <span class="n">lines</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[:</span><span class="n">bad_cell_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">lines</span><span class="p">[</span><span class="n">bad_cell_idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span><span class="si">}</span><span class="s2"> cells left in dataset...&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-649 cells left in dataset...
-648 cells left in dataset...
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_16_1.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_16_1.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">normal_cell_idx</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">normal_cell_idx</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">normal_cell_idx</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">normal_cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">normal_cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_idx</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -553,12 +509,12 @@ dataset of curve shapes.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_17_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_17_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_14_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_14_0.png" />
 </div>
 </div>
 <p>The size of each class is displayed below:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="p">{}</span>
@@ -596,7 +552,7 @@ dataset of curve shapes.</p>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 control :
-         112 dlm8
+         114 dlm8
          204 dunn
 cytd :
          82 dlm8
@@ -635,7 +591,7 @@ jasp :
   <tbody>
     <tr>
       <th>control</th>
-      <td>112.0</td>
+      <td>114.0</td>
       <td>204.0</td>
     </tr>
     <tr>
@@ -654,7 +610,7 @@ jasp :
 </div>
 <p>The above code also created a dictionnary <code class="docutils literal notranslate"><span class="pre">ds</span></code>, that contains the cell boundaries data sorted by <code class="docutils literal notranslate"><span class="pre">treatment</span></code> and cell <code class="docutils literal notranslate"><span class="pre">line</span></code>. To access all the cells corresponding to a given treatment and a given cell line, we use the syntax <code class="docutils literal notranslate"><span class="pre">ds[treatment][line]</span></code> as in the following code that computes the number of cells in the cytd-dlm8 class.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;cytd&quot;</span><span class="p">][</span><span class="s2">&quot;dlm8&quot;</span><span class="p">])</span>
@@ -662,7 +618,7 @@ jasp :
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -672,7 +628,7 @@ jasp :
 </div>
 <p>We have organized the cell data into the dictionnary <code class="docutils literal notranslate"><span class="pre">ds</span></code>. Before proceeding to the actual data analysis, we provide an auxiliary function <code class="docutils literal notranslate"><span class="pre">apply_func_to_ds</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_func_to_ds</span><span class="p">(</span><span class="n">input_ds</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
@@ -711,7 +667,6 @@ jasp :
 </div>
 <p>Now we can move on to the actual data analysis, starting with a preprocessing of the cell boundaries.</p>
 </div>
-</div>
 <div class="section" id="3.-Preprocessing">
 <h1>3. Preprocessing<a class="headerlink" href="#3.-Preprocessing" title="Permalink to this headline"></a></h1>
 <div class="section" id="Interpolation:-Encoding-Discrete-Curves-With-Same-Number-of-Points">
@@ -719,7 +674,7 @@ jasp :
 <p>As we need discrete curves with the same number of sampled points to compute pairwise distances, the following interpolation is applied to each curve, after setting the number of sampling points.</p>
 <p>To set up the number of sampling points, you can edit the following line in the next cell:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">nb_points</span><span class="p">):</span>
@@ -748,7 +703,7 @@ jasp :
 </div>
 <p>To illustrate the result of this interpolation, we compare for a randomly chosen cell the original curve with the correponding interpolated one (to visualize another cell, you can simply re-run the code).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_rand</span> <span class="o">=</span> <span class="n">cells</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">))]</span>
@@ -776,13 +731,13 @@ jasp :
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_28_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_28_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_25_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_25_0.png" />
 </div>
 </div>
 <p>As the interpolation is working as expected, we use the auxiliary function <code class="docutils literal notranslate"><span class="pre">apply_func_to_ds</span></code> to apply the function <code class="docutils literal notranslate"><span class="pre">func=interpolate</span></code> to the dataset <code class="docutils literal notranslate"><span class="pre">ds</span></code>, i.e. the dictionnary containing the cells boundaries.</p>
 <p>We obtain a new dictionnary, <code class="docutils literal notranslate"><span class="pre">ds_interp</span></code>, with the interpolated cell boundaries.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_interp</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
@@ -793,7 +748,7 @@ jasp :
 </div>
 <p>For each key treatment-control, we check that the number of sampling points is the one expected, i.e. <code class="docutils literal notranslate"><span class="pre">N_SAMPLING_POINTS</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ds_interp</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -814,7 +769,7 @@ jasp :
 <h2>Visualization of Interpolated Dataset of Curves<a class="headerlink" href="#Visualization-of-Interpolated-Dataset-of-Curves" title="Permalink to this headline"></a></h2>
 <p>We visualize the curves obtained, for a sample of control cells and treated cells (top row shows control, i.e. non-treated cells; bottom rows shows treated cells) across cell lines (left and blue for dlm8 and right and orange for dunn).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_cells_to_plot</span> <span class="o">=</span> <span class="mi">10</span>
@@ -841,10 +796,40 @@ jasp :
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_36_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_36_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_33_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_33_0.png" />
 </div>
 </div>
 <p>Visual inspection of these curves seems to indicate more protusions appearing in treated cells, compared with control ones. This is in agreement with the physiological impact of the drugs, which are known to perturb the internal cytoskeleton connected to the cell membrane. Using the elastic metric, our goal will be to see if we can quantitatively confirm these differences.</p>
+</div>
+<div class="section" id="Remove-duplicate-samples-in-curves">
+<h2>Remove duplicate samples in curves<a class="headerlink" href="#Remove-duplicate-samples-in-curves" title="Permalink to this headline"></a></h2>
+<p>During interpolation it is likely that some of the discrete curves in the dataset are downsampled from higher number of discrete data points to lower number of data points. Hence, two sampled data points that are close enough may end up overlapping after interpolation and hence such data points have to be dealt with specifically.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Preprocess curve to ensure that there are no consecutive duplicate points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    curve : discrete curve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">dist_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span> <span class="n">dist_norm</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">curve</span>
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="Alignment">
 <h2>Alignment<a class="headerlink" href="#Alignment" title="Permalink to this headline"></a></h2>
@@ -896,7 +881,9 @@ them</a> or the notebooks using them.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_proj</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_interp</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">projection</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_proc</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_interp</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="n">ds_proj</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_proc</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">projection</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
 <span class="n">BASE_CURVE</span> <span class="o">=</span> <span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
@@ -954,7 +941,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_43_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_43_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_42_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_42_0.png" />
 </div>
 </div>
 <p>In the plot above, the red dot shows the start of the parametrization of each curve. The right curve has been rotated from the curve in the middle, to be aligned with the left (reference) curve, which represents the first cell of the dataset. The starting point (in red) of this right curve has been also set to align with the reference.</p>
@@ -989,7 +976,7 @@ Shape of BASE_CURVE: (200, 2)
 <p>We import the manifold of discrete curves, and the metric on it.</p>
 <p>We compute a geodesic between the two curves selected above, and sample points along this geodesic (where a given point represents a cell) at some input <code class="docutils literal notranslate"><span class="pre">times</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">R2</span><span class="p">,</span> <span class="n">DiscreteCurves</span><span class="p">,</span> <span class="n">SRVMetric</span>
@@ -1007,7 +994,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>This code shows the geodesic, which is a trajectory in the space of curves, between the two selected cells.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
@@ -1027,12 +1014,12 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_50_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_50_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_49_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_49_0.png" />
 </div>
 </div>
 <p>The following code is a different visualization of the same geodesic.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
@@ -1052,7 +1039,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_52_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_52_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_51_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_51_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1065,7 +1052,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>We want to compute the mean cell shape of the whole dataset. Thus, we first combine all the cell shape data into a single array.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_shapes_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1083,14 +1070,14 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(648, 200, 2)
+(650, 200, 2)
 </pre></div></div>
 </div>
 <p>We compute the mean cell shape by using the SRV metric defined on the space of curves’ shapes. The space of curves’ shape is a manifold: we use the Frechet mean, associated to the SRV metric, to get the mean cell shape.</p>
 <p>We need to use the <code class="docutils literal notranslate"><span class="pre">point_type=&quot;matrix&quot;</span></code> because one cell shape is represented by an array of shape n_sampling_points x 2, which is a matrix.</p>
 <p>We only use the first 500 cells of the dataset, for numerical reasons: the FrechetMean is failing upon incorporating shapes from the remainder of the dataset.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [49]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
@@ -1108,13 +1095,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_58_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_58_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_57_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_57_0.png" />
 </div>
 </div>
 <p>The mean cell shape does indeed look like a cell shape. We note that there is a discontinuity in the cell because we have modeled the curves’ boundaries as open curves. The space of curves considered here is also the space of (open) discrete curves.</p>
 <p>Unfortunately, sometimes there could be Nans in the values of the mean shape. If this is the case, this code removes them manually, and re-interpolate the mean shape.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [50]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">)))</span>
@@ -1139,7 +1126,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>We plot the mean cell shape, superimposed on top of the dataset of cells (displayed in light grey underneath).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [51]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">cell_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -1158,19 +1145,19 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(648, 200, 2)
+(650, 200, 2)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_62_1.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_62_1.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_61_1.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_61_1.png" />
 </div>
 </div>
 <p>We see that the scale and alignment of the mean shape is slightly off. This makes sense, as our computations have quotiented out scale and alignment. We correct it manually.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [52]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned</span> <span class="o">=</span> <span class="mf">1.55</span> <span class="o">*</span> <span class="p">(</span>
@@ -1191,13 +1178,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_64_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_64_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_63_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_63_0.png" />
 </div>
 </div>
 <p>We visualize the same plot, but now: - closing the mean shape that becomes a closed curve - plotting underneath the mean shape the distribution of the sampling points of all the curves of the dataset, through a kernel density estimation.</p>
 <p>Visualizing the full datasets of 640+ cells takes a long time. Therefore, we also select only 200 cells, randomly, within the dataset.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [53]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned_bis</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
@@ -1207,7 +1194,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [54]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">gaussian_kde</span>
@@ -1236,7 +1223,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_67_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_67_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_66_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_66_0.png" />
 </div>
 </div>
 <p>This plot allows to verify that the mean shape that has been computed makes sense.</p>
@@ -1245,7 +1232,7 @@ Shape of BASE_CURVE: (200, 2)
 <h1>Analyze Distances to the “Global” Mean Shape<a class="headerlink" href="#Analyze-Distances-to-the-"Global"-Mean-Shape" title="Permalink to this headline"></a></h1>
 <p>We consider each of the subgroups of cells, defined by their treatment and cell line. We wish to study how far each of this group is from the global mean shape. We compute the list of distances to the global mean shape.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [155]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
@@ -1261,7 +1248,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>As an example, the following code shows the 5 first distances of cell shapes.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [156]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean_list</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
@@ -1269,21 +1256,21 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [156]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [29]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[0.4933503207690902,
- 0.458157783876701,
- 0.39753696511049447,
- 0.41027450734705595,
- 0.3694631758090094]
+[0.4933959475000852,
+ 0.4581603474862174,
+ 0.39749591971043446,
+ 0.4103200985741522,
+ 0.3695051182290453]
 </pre></div></div>
 </div>
 <p>We compute a few statistics about this list of distances to the global mean shape, checking: - that there are no NaNs, - what are the values of the min and max distances.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [157]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">))</span>
@@ -1291,16 +1278,16 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [157]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [30]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(array([513, 522, 551]),)
+(array([], dtype=int64),)
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [158]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [31]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">)</span>
@@ -1314,11 +1301,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.32759636795104585 1.2657231559429578
+0.32767936217402055 1.265422921180121
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [159]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xx</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">min_dists</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_dists</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
@@ -1327,7 +1314,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>We plot the distances to the mean global shape, by splitting them into the three treatment groups.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [160]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [33]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
@@ -1335,7 +1322,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [161]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -1368,12 +1355,12 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_80_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_80_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_79_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_79_0.png" />
 </div>
 </div>
 <p>We observe that each of these distributions seems to be bimodal, which might corresponds to the fact that we have actually two cell lines per treatment. We verify this hypothesis.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [162]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [35]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -1404,13 +1391,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_82_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_82_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_81_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_81_0.png" />
 </div>
 </div>
 <p>For the treatments jasp and cytd, it seems indeed that the bimodality is explained by the two cell lines.</p>
 <p>In order to better understand which cells correspond to which distance, on the above plot, we run the following code. This code find a given number of quantiles within the distance’s histogram, and plots the corresponding cell, for each treatment and each cell line.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [163]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [36]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">10</span>
@@ -1461,7 +1448,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_85_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_85_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_84_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_84_0.png" />
 </div>
 </div>
 </div>
@@ -1470,7 +1457,7 @@ Shape of BASE_CURVE: (200, 2)
 <p>What happens if we change the metric on the space of cell shapes? E.g. if we penalize bending more, such that paths (of cell shapes) that bend the boundary of the cells have a longer “length” in th shape space.</p>
 <p>We define the elastic metric, as a generalization of the srv metric — with two hyperparameters a and b that penalize bending and stretching. The case a=1 and b=1/2 corresponds to the srv metric we have used until now.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [242]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [37]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticCurves</span><span class="p">,</span> <span class="n">ElasticMetric</span>
@@ -1483,7 +1470,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [243]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [38]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
@@ -1498,7 +1485,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [244]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [39]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean_list</span><span class="p">)</span>
@@ -1513,11 +1500,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.8636416718492519 3.096118221922136
+0.8639906334939036 3.0954972636439364
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [245]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -1550,11 +1537,11 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [246]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [41]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -1585,11 +1572,11 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_91_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_91_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [247]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [42]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">10</span>
@@ -1640,7 +1627,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_92_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_92_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_91_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_91_0.png" />
 </div>
 </div>
 </div>
@@ -1650,7 +1637,7 @@ Shape of BASE_CURVE: (200, 2)
 <p>To evaluate this fact quantitatively, we perform a hypothesis test. Specifically, we test the null hypothesis that two subgroups are at the same distance to the mean global shape.</p>
 <p>This is realized through a t-test with unequal variances. We choose a significance level of 0.01. The p-values that are lower than this significance level, after correction for multiple hypothesis testing, correspond to the tests that reject the null hypothesis and thus demonstrate an inequality of means at 0.01.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">scipy</span>
@@ -1658,7 +1645,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [38]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [44]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line_1</span><span class="p">,</span> <span class="n">line_2</span> <span class="o">=</span> <span class="n">LINES</span>
@@ -1692,11 +1679,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
+Ttest_indResult(statistic=-7.1196419270836255, pvalue=3.095402159409669e-12)
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [39]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1740,7 +1727,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=-18.89262138243988, pvalue=1.6365428356536287e-51)
+Ttest_indResult(statistic=-18.910331168398848, pvalue=1.5942047693179265e-51)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1757,7 +1744,7 @@ Ttest_indResult(statistic=-18.89262138243988, pvalue=1.6365428356536287e-51)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
+Ttest_indResult(statistic=-9.029282700140124, pvalue=2.0182138940342863e-17)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1774,7 +1761,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
+Ttest_indResult(statistic=10.293250508487523, pvalue=1.2621209911041894e-21)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1786,7 +1773,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TREATMENT_LINE_CLASSES</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([(</span><span class="n">t</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TREATMENTS</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">])</span>
@@ -1794,7 +1781,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [47]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1827,7 +1814,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: jasp-dlm8 vs jasp-dunn
+ --- Test equality of means: jasp-dunn vs control-dunn
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1835,92 +1822,7 @@ Ttest_indResult(statistic=nan, pvalue=nan)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dlm8 vs cytd-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dlm8 vs cytd-dunn
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dlm8 vs control-dunn
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dlm8 vs control-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=nan, pvalue=nan)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dunn vs cytd-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=-0.45951962914851924, pvalue=0.646744247546525)
+Ttest_indResult(statistic=12.505967524150536, pvalue=1.2633229491332504e-28)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1937,7 +1839,7 @@ Ttest_indResult(statistic=-0.45951962914851924, pvalue=0.646744247546525)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=-10.624191748587354, pvalue=2.6237051072686857e-20)
+Ttest_indResult(statistic=-10.620144035734329, pvalue=2.6930383406540247e-20)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1946,7 +1848,7 @@ Ttest_indResult(statistic=-10.624191748587354, pvalue=2.6237051072686857e-20)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: jasp-dunn vs control-dunn
+ --- Test equality of means: jasp-dunn vs cytd-dlm8
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1954,7 +1856,7 @@ Ttest_indResult(statistic=-10.624191748587354, pvalue=2.6237051072686857e-20)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=12.50523714720858, pvalue=1.2696335516173863e-28)
+Ttest_indResult(statistic=-0.4573842766431678, pvalue=0.6482733344380085)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1971,7 +1873,7 @@ Ttest_indResult(statistic=12.50523714720858, pvalue=1.2696335516173863e-28)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=19.23963794264273, pvalue=6.81241652958937e-47)
+Ttest_indResult(statistic=19.22981943021984, pvalue=6.473316760278259e-47)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1980,7 +1882,7 @@ Ttest_indResult(statistic=19.23963794264273, pvalue=6.81241652958937e-47)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dlm8 vs cytd-dunn
+ --- Test equality of means: jasp-dunn vs jasp-dlm8
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1988,24 +1890,7 @@ Ttest_indResult(statistic=19.23963794264273, pvalue=6.81241652958937e-47)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=-6.7136661696963875, pvalue=4.0004724420403683e-10)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: cytd-dlm8 vs control-dunn
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=7.882001256195115, pvalue=1.6006570578759773e-12)
+Ttest_indResult(statistic=13.823886158709533, pvalue=1.3180986251510838e-27)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2014,7 +1899,7 @@ Ttest_indResult(statistic=7.882001256195115, pvalue=1.6006570578759773e-12)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dlm8 vs control-dlm8
+ --- Test equality of means: control-dunn vs cytd-dunn
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2022,24 +1907,7 @@ Ttest_indResult(statistic=7.882001256195115, pvalue=1.6006570578759773e-12)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=11.095994378232207, pvalue=2.0678485614138814e-19)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: cytd-dunn vs control-dunn
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Ttest_indResult(statistic=20.31817431782552, pvalue=2.1783988909996305e-49)
+Ttest_indResult(statistic=-20.314327251473724, pvalue=2.2529389038201213e-49)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2048,7 +1916,7 @@ Ttest_indResult(statistic=20.31817431782552, pvalue=2.1783988909996305e-49)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dunn vs control-dlm8
+ --- Test equality of means: control-dunn vs cytd-dlm8
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2056,7 +1924,7 @@ Ttest_indResult(statistic=20.31817431782552, pvalue=2.1783988909996305e-49)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=25.745261025324304, pvalue=9.635709466471377e-57)
+Ttest_indResult(statistic=-7.880739330613509, pvalue=1.6113498589931188e-12)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2073,7 +1941,126 @@ Ttest_indResult(statistic=25.745261025324304, pvalue=9.635709466471377e-57)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Ttest_indResult(statistic=5.068762224785476, pvalue=6.871772669731401e-07)
+Ttest_indResult(statistic=5.024339985563297, pvalue=8.483653891852167e-07)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dunn vs jasp-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=1.8913523475476453, pvalue=0.06028562535773203)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dunn vs cytd-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=6.713758706735648, pvalue=3.9971153027508713e-10)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dunn vs control-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=25.73307271623291, pvalue=1.214718834965059e-56)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dunn vs jasp-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=21.225328407947373, pvalue=1.9868071249629496e-47)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dlm8 vs control-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=11.07085358919525, pvalue=2.4267876823265845e-19)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dlm8 vs jasp-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=8.932180097318083, pvalue=5.7842919303754856e-15)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dlm8 vs jasp-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Ttest_indResult(statistic=-2.6620427578386794, pvalue=0.008802500812866453)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -2088,8 +2075,8 @@ Ttest_indResult(statistic=5.068762224785476, pvalue=6.871772669731401e-07)
 <div class="section" id="Visualization-of-the-Mean-of-each-Treatment">
 <h1>Visualization of the Mean of each Treatment<a class="headerlink" href="#Visualization-of-the-Mean-of-each-Treatment" title="Permalink to this headline"></a></h1>
 <p>The mean distances to the global mean shape differ. We also plot the mean shape for each of the subgroup, to get intuition on how the mean shape of each subgroup looks like.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [42]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [48]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_treatment_cells</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2103,16 +2090,8 @@ Ttest_indResult(statistic=5.068762224785476, pvalue=6.871772669731401e-07)
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
-</pre></div></div>
-</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [49]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -2133,11 +2112,11 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_103_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_103_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_102_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_102_0.png" />
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [44]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [50]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_line_cells</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2151,16 +2130,8 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
-</pre></div></div>
-</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [51]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -2181,11 +2152,11 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_105_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_105_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_104_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_104_0.png" />
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [52]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_cells</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2199,7 +2170,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [53]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -2221,7 +2192,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_107_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_107_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_106_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_106_0.png" />
 </div>
 </div>
 <p>While the mean shapes of the control groups (for both cell lines) look regular, we observe that: - the mean shape for cytd is the most irregular (for both cell lines) - while the mean shape for jasp is more elongated for dlm8 cell line, and more irregular for dunn cell line.</p>
@@ -2230,7 +2201,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 <h1>Distance of the Cell Shapes to their Own Mean Shape<a class="headerlink" href="#Distance-of-the-Cell-Shapes-to-their-Own-Mean-Shape" title="Permalink to this headline"></a></h1>
 <p>Lastly, we evaluate how each subgroup of cell shapes is distributed around the mean shape of their specific subgroup.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [54]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_own_mean</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2253,7 +2224,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [49]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [55]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -2281,7 +2252,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_112_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_112_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_111_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_111_0.png" />
 </div>
 </div>
 <p>Qualitatively, it seems that the control cells and the cells treated with cytd show the most variability in shape. The distributions of distances are more peaked for the cells treated with jasp, which indicates a lower variability in shape. We can hypothesize that the treatment jasp has an effect on the cell’s cytoskeleton, in that it will constrain it, closer to its subgroup’s mean shape.</p>
@@ -2299,7 +2270,7 @@ WARNING: Maximum number of iterations 32 reached. The mean may be inaccurate
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, Geomstats, Inc..
-      <span class="lastupdated">Last updated on May 16, 2022, 9:26:38 AM.
+      <span class="lastupdated">Last updated on May 16, 2022, 11:14:35 AM.
       </span></p>
   </div>
 
