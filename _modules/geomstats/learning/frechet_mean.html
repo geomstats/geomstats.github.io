@@ -288,6 +288,46 @@
     <span class="k">return</span> <span class="n">mean</span></div>
 
 
+<div class="viewcode-block" id="srv_mean"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.frechet_mean.srv_mean">[docs]</a><span class="k">def</span> <span class="nf">srv_mean</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the weighted mean of SRV representations of curves.</span>
+
+<span class="sd">    SRV: Square Root Velocity.</span>
+
+<span class="sd">    The computation of the mean goes as follows:</span>
+<span class="sd">    - Transform the curves into their SRVs,</span>
+<span class="sd">    - Compute the linear mean of the SRVs,</span>
+<span class="sd">    - Transform the srv mean in curve space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    points : array-like, shape=[..., n_sampling_points, dim]</span>
+<span class="sd">        Points on the manifold of curves (i.e. curves) to be averaged.</span>
+<span class="sd">    weights : array-like, shape=[...,]</span>
+<span class="sd">        Weights associated to the points (i.e. curves).</span>
+<span class="sd">        Optional, default: None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean : array-like, shape=[n_sampling_points, dim]</span>
+<span class="sd">        Weighted linear mean of the points (i.e. of the curves).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">srvs</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">srv_transform</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+    <span class="n">srv_linear_mean</span> <span class="o">=</span> <span class="n">linear_mean</span><span class="p">(</span><span class="n">srvs</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="s2">&quot;matrix&quot;</span><span class="p">)</span>
+
+    <span class="n">starting_point</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="n">ambient_metric</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">estimate_</span>
+    <span class="p">)</span>
+    <span class="n">starting_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">starting_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">srv_transform_inverse</span><span class="p">(</span><span class="n">srv_linear_mean</span><span class="p">,</span> <span class="n">starting_point</span><span class="o">=</span><span class="n">starting_point</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean</span></div>
+
+
 <span class="k">def</span> <span class="nf">_default_gradient_descent</span><span class="p">(</span>
     <span class="n">points</span><span class="p">,</span>
     <span class="n">metric</span><span class="p">,</span>
@@ -745,6 +785,7 @@
             <span class="ow">or</span> <span class="s2">&quot;MatricesMetric&quot;</span> <span class="ow">in</span> <span class="n">metric_str</span>
             <span class="ow">or</span> <span class="s2">&quot;MinkowskiMetric&quot;</span> <span class="ow">in</span> <span class="n">metric_str</span>
         <span class="p">)</span>
+        <span class="n">is_srv_metric</span> <span class="o">=</span> <span class="s2">&quot;SRVMetric&quot;</span> <span class="ow">in</span> <span class="n">metric_str</span>
 
         <span class="k">if</span> <span class="s2">&quot;HypersphereMetric&quot;</span> <span class="ow">in</span> <span class="n">metric_str</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="o">.</span><span class="n">angle_to_extrinsic</span><span class="p">(</span><span class="n">_circle_mean</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
@@ -755,6 +796,9 @@
 
         <span class="k">if</span> <span class="n">is_linear_metric</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">linear_mean</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">point_type</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">is_srv_metric</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">srv_mean</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">_default_gradient_descent</span><span class="p">(</span>
