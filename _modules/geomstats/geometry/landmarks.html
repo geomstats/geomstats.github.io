@@ -201,12 +201,11 @@
 <span class="sd">Lead author: Nicolas Guigui.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.product_manifold</span> <span class="kn">import</span> <span class="n">ProductManifold</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.product_riemannian_metric</span> <span class="kn">import</span> <span class="n">ProductRiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.product_manifold</span> <span class="kn">import</span> <span class="n">NFoldManifold</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.product_riemannian_metric</span> <span class="kn">import</span> <span class="n">NFoldMetric</span>
 
 
-<div class="viewcode-block" id="Landmarks"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.landmarks.Landmarks">[docs]</a><span class="k">class</span> <span class="nc">Landmarks</span><span class="p">(</span><span class="n">ProductManifold</span><span class="p">):</span>
+<div class="viewcode-block" id="Landmarks"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.landmarks.Landmarks">[docs]</a><span class="k">class</span> <span class="nc">Landmarks</span><span class="p">(</span><span class="n">NFoldManifold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for space of landmarks.</span>
 
 <span class="sd">    The landmark space is a product manifold where all manifolds in the</span>
@@ -222,96 +221,37 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="n">L2Metric</span><span class="p">(</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="p">))</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
+            <span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="n">L2LandmarksMetric</span><span class="p">(</span><span class="n">ambient_manifold</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Landmarks</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">manifolds</span><span class="o">=</span><span class="p">[</span><span class="n">ambient_manifold</span><span class="p">]</span> <span class="o">*</span> <span class="n">k_landmarks</span><span class="p">,</span>
-            <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;matrix&quot;</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">base_manifold</span><span class="o">=</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">n_copies</span><span class="o">=</span><span class="n">k_landmarks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ambient_manifold</span> <span class="o">=</span> <span class="n">ambient_manifold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_landmarks</span> <span class="o">=</span> <span class="n">k_landmarks</span></div>
 
 
-<div class="viewcode-block" id="L2Metric"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.landmarks.L2Metric">[docs]</a><span class="k">class</span> <span class="nc">L2Metric</span><span class="p">(</span><span class="n">ProductRiemannianMetric</span><span class="p">):</span>
+<div class="viewcode-block" id="L2LandmarksMetric"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.landmarks.L2LandmarksMetric">[docs]</a><span class="k">class</span> <span class="nc">L2LandmarksMetric</span><span class="p">(</span><span class="n">NFoldMetric</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;L2 Riemannian metric on the space of landmarks.</span>
+
+<span class="sd">    This is the NFoldMetric of the n-fold manifold made out</span>
+<span class="sd">    of k_landmarks copies of the ambient manifold of each landmark.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ambient_manifold : Manifold</span>
-<span class="sd">        Manifold in which landmarks lie</span>
-<span class="sd">    n_landmarks: int</span>
-<span class="sd">            Number of landmarks.</span>
+<span class="sd">    ambient_metric : RiemannianMetric</span>
+<span class="sd">        Riemannian metric of the manifold to which the landmarks belong.</span>
+<span class="sd">    k_landmarks: int</span>
+<span class="sd">        Number of landmarks.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">n_landmarks</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">L2Metric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">ambient_manifold</span><span class="o">.</span><span class="n">metric</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_landmarks</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;matrix&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ambient_metric</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">L2LandmarksMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">base_metric</span><span class="o">=</span><span class="n">ambient_metric</span><span class="p">,</span> <span class="n">n_copies</span><span class="o">=</span><span class="n">k_landmarks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ambient_manifold</span> <span class="o">=</span> <span class="n">ambient_manifold</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ambient_metric</span> <span class="o">=</span> <span class="n">ambient_manifold</span><span class="o">.</span><span class="n">metric</span>
-
-<div class="viewcode-block" id="L2Metric.geodesic"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.landmarks.L2Metric.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
-
-<span class="sd">        Geodesic curve defined by either:</span>
-
-<span class="sd">        - an initial landmark set and an initial tangent vector,</span>
-<span class="sd">        - an initial landmark set and an end landmark set.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Landmark set, initial point of the geodesic.</span>
-<span class="sd">        end_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Landmark set, end point of the geodesic. If None,</span>
-<span class="sd">            an initial tangent vector must be given.</span>
-<span class="sd">            Optional, default : None</span>
-<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
-<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
-<span class="sd">            Optional, default : None</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            Time parameterized geodesic curve.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Specify an end landmark set or an initial tangent&quot;</span>
-                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">shooting_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">shooting_tangent_vec</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s2">&quot;The shooting tangent vector is too&quot;</span>
-                        <span class="s2">&quot; far from the initial tangent vector.&quot;</span>
-                    <span class="p">)</span>
-            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">shooting_tangent_vec</span>
-        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">landmarks_on_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-            <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...ij-&gt;...ij&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
-
-            <span class="k">def</span> <span class="nf">point_on_landmarks</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span>
-                <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">exp</span>
-
-            <span class="n">landmarks_at_time_t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span>
-                <span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">point_on_landmarks</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(i,j)-&gt;(i,j)&quot;</span>
-            <span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">landmarks_at_time_t</span>
-
-        <span class="k">return</span> <span class="n">landmarks_on_geodesic</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ambient_metric</span> <span class="o">=</span> <span class="n">ambient_metric</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_landmarks</span> <span class="o">=</span> <span class="n">k_landmarks</span></div>
 </pre></div>
 
               </article>
