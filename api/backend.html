@@ -1479,6 +1479,77 @@ exponent (Tensor): the exponent tensor</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="geomstats._backend.pytorch.quantile">
+<span class="sig-prename descclassname"><span class="pre">geomstats._backend.pytorch.</span></span><span class="sig-name descname"><span class="pre">quantile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#geomstats._backend.pytorch.quantile" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes the q-th quantiles of each row of the <code class="xref py py-attr docutils literal notranslate"><span class="pre">input</span></code> tensor along the dimension <code class="xref py py-attr docutils literal notranslate"><span class="pre">dim</span></code>.</p>
+<p>To compute the quantile, we map q in [0, 1] to the range of indices [0, n] to find the location
+of the quantile in the sorted input. If the quantile lies between two data points <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">&lt;</span> <span class="pre">b</span></code> with
+indices <code class="docutils literal notranslate"><span class="pre">i</span></code> and <code class="docutils literal notranslate"><span class="pre">j</span></code> in the sorted order, result is computed according to the given
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">interpolation</span></code> method as follows:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">linear</span></code>: <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">(b</span> <span class="pre">-</span> <span class="pre">a)</span> <span class="pre">*</span> <span class="pre">fraction</span></code>, where <code class="docutils literal notranslate"><span class="pre">fraction</span></code> is the fractional part of the computed quantile index.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lower</span></code>: <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">higher</span></code>: <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nearest</span></code>: <code class="docutils literal notranslate"><span class="pre">a</span></code> or <code class="docutils literal notranslate"><span class="pre">b</span></code>, whichever’s index is closer to the computed quantile index (rounding down for .5 fractions).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">midpoint</span></code>: <code class="docutils literal notranslate"><span class="pre">(a</span> <span class="pre">+</span> <span class="pre">b)</span> <span class="pre">/</span> <span class="pre">2</span></code>.</p></li>
+</ul>
+<p>If <code class="xref py py-attr docutils literal notranslate"><span class="pre">q</span></code> is a 1D tensor, the first dimension of the output represents the quantiles and has size
+equal to the size of <code class="xref py py-attr docutils literal notranslate"><span class="pre">q</span></code>, the remaining dimensions are what remains from the reduction.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default <code class="xref py py-attr docutils literal notranslate"><span class="pre">dim</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> resulting in the <code class="xref py py-attr docutils literal notranslate"><span class="pre">input</span></code> tensor being flattened before computation.</p>
+</div>
+<dl>
+<dt>Args:</dt><dd><p>input (Tensor): the input tensor.
+q (float or Tensor): a scalar or 1D tensor of values in the range [0, 1].
+dim (int): the dimension to reduce.
+keepdim (bool): whether the output tensor has <code class="xref py py-attr docutils literal notranslate"><span class="pre">dim</span></code> retained or not.</p>
+</dd>
+<dt>Keyword arguments:</dt><dd><dl class="simple">
+<dt>interpolation (string): interpolation method to use when the desired quantile lies between two data points.</dt><dd><p>Can be <code class="docutils literal notranslate"><span class="pre">linear</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span></code>, <code class="docutils literal notranslate"><span class="pre">higher</span></code>, <code class="docutils literal notranslate"><span class="pre">midpoint</span></code> and <code class="docutils literal notranslate"><span class="pre">nearest</span></code>.
+Default is <code class="docutils literal notranslate"><span class="pre">linear</span></code>.</p>
+</dd>
+</dl>
+<p>out (Tensor, optional): the output tensor.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="go">tensor([[ 0.0795, -1.2117,  0.9765],</span>
+<span class="go">        [ 1.1707,  0.6706,  0.4884]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">tensor([[[-0.5661],</span>
+<span class="go">        [ 0.5795]],</span>
+
+<span class="go">        [[ 0.0795],</span>
+<span class="go">        [ 0.6706]],</span>
+
+<span class="go">        [[ 0.5280],</span>
+<span class="go">        [ 0.9206]]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">torch.Size([3, 2, 1])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">4.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="go">tensor([0., 1., 2., 3.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+<span class="go">tensor(1.8000)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="go">tensor(1.)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;higher&#39;</span><span class="p">)</span>
+<span class="go">tensor(2.)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;midpoint&#39;</span><span class="p">)</span>
+<span class="go">tensor(1.5000)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+<span class="go">tensor(2.)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+<span class="go">tensor(1.)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="geomstats._backend.pytorch.real">
 <span class="sig-prename descclassname"><span class="pre">geomstats._backend.pytorch.</span></span><span class="sig-name descname"><span class="pre">real</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#geomstats._backend.pytorch.real" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a new tensor containing real values of the <code class="xref py py-attr docutils literal notranslate"><span class="pre">self</span></code> tensor.
