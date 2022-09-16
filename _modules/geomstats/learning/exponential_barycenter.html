@@ -395,9 +395,9 @@
 <span class="sd">    ----------</span>
 <span class="sd">    group : LieGroup</span>
 <span class="sd">        Instance of the class LieGroup.</span>
-<span class="sd">    points : array-like, shape=[..., [n,n]]</span>
+<span class="sd">    points : array-like, shape=[n_samples, dim, dim]</span>
 <span class="sd">        Input points lying in the Lie Group.</span>
-<span class="sd">    weights : array-like, shape=[...,]</span>
+<span class="sd">    weights : array-like, shape=[n_samples,]</span>
 <span class="sd">        Weights associated to the points.</span>
 <span class="sd">        Optional, defaults to 1 for each point if None.</span>
 <span class="sd">    max_iter : int</span>
@@ -416,8 +416,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    exp_bar : array-like, shape=[n,n]</span>
-<span class="sd">        Exponential_barycenter of the input points.</span>
+<span class="sd">    exp_bar : array-like, shape=[dim, dim]</span>
+<span class="sd">        Exponential barycenter of the input points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ndim</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span> <span class="k">else</span> <span class="mi">3</span>
     <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">ndim</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -432,10 +432,9 @@
     <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">sq_dists_between_iterates</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">grad_norm</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iter</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">grad_norm</span> <span class="o">&gt;</span> <span class="n">epsilon</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">break</span>
         <span class="n">inv_mean</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
@@ -450,21 +449,20 @@
         <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">grad_norm</span><span class="p">)</span>
 
         <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
-        <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">max_iter</span><span class="p">:</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Maximum number of iterations </span><span class="si">{}</span><span class="s2"> reached. &quot;</span>
-            <span class="s2">&quot;The mean may be inaccurate&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_iter</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached. &quot;</span>
+            <span class="s2">&quot;The mean may be inaccurate&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;n_iter: </span><span class="si">{}</span><span class="s2">, final gradient norm: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">grad_norm</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_iter: </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">, final gradient norm: </span><span class="si">{</span><span class="n">grad_norm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mean</span>
 
 
 <div class="viewcode-block" id="ExponentialBarycenter"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.ExponentialBarycenter">[docs]</a><span class="k">class</span> <span class="nc">ExponentialBarycenter</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Empirical Exponential Barycenter for Matrix groups.</span>
+    <span class="sd">&quot;&quot;&quot;Empirical exponential barycenter for matrix groups.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -474,7 +472,7 @@
 <span class="sd">        Maximum number of iterations to perform in the gradient descent.</span>
 <span class="sd">        Optional, default: 32.</span>
 <span class="sd">    epsilon : float</span>
-<span class="sd">        Tolerance to reach convergence. The exstrinsic norm of the</span>
+<span class="sd">        Tolerance to reach convergence. The extrinsic norm of the</span>
 <span class="sd">        gradient is used as criterion.</span>
 <span class="sd">        Optional, default: 1e-6.</span>
 <span class="sd">    init_step_size : float</span>
@@ -487,6 +485,7 @@
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    estimate_ : array-like, shape=[dim, dim]</span>
+<span class="sd">        If fit, exponential barycenter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -495,7 +494,7 @@
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
         <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">,</span>
         <span class="n">init_step_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># TODO: undocumented and unused parameter</span>
         <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
@@ -507,19 +506,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="ExponentialBarycenter.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.ExponentialBarycenter.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the empirical Exponential Barycenter mean.</span>
+        <span class="sd">&quot;&quot;&quot;Compute the empirical weighted exponential barycenter.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : {array-like, sparse matrix}, shape=[..., n_features]</span>
+<span class="sd">        X : array-like, shape=[n_samples, dim, dim]</span>
 <span class="sd">            Training input samples.</span>
-<span class="sd">        y : array-like, shape=[...,] or [..., n_outputs]</span>
-<span class="sd">            Target values (class labels in classification, real numbers in</span>
-<span class="sd">            regression).</span>
-<span class="sd">            Ignored.</span>
-<span class="sd">        weights : array-like, shape=[...,]</span>
-<span class="sd">            Weights associated to the points.</span>
-<span class="sd">            Optional, default: None.</span>
+<span class="sd">        y : None</span>
+<span class="sd">            Target values. Ignored.</span>
+<span class="sd">        weights : array-like, shape=[n_samples,]</span>
+<span class="sd">            Weights associated to the samples.</span>
+<span class="sd">            Optional, default: None, in which case it is equally weighted.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
