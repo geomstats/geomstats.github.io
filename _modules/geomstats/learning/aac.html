@@ -413,6 +413,8 @@
 <span class="sd">        Stopping criterion on the maximum number of iterations.</span>
 <span class="sd">    init_point: array-like, shape=[n_nodes, n_nodes] or GraphPoint, default random.</span>
 <span class="sd">        Algorithm initialization.</span>
+<span class="sd">    save_last_X: bool, default = True</span>
+<span class="sd">        Flag to save the data as aligned in the last algorithm iteration.</span>
 <span class="sd">    total_space_estimator_kwargs : dict</span>
 <span class="sd">        Total space estimator keyword arguments.</span>
 
@@ -424,6 +426,9 @@
 <span class="sd">        Mean.</span>
 <span class="sd">    n_iter_ : int</span>
 <span class="sd">        Number of performed iterations.</span>
+<span class="sd">    aligned_X_: array-like, shape=[n_samples, n_nodes, n_nodes] or set of GraphPoint.</span>
+<span class="sd">        Set of aligned data as after the last call of fit.</span>
+<span class="sd">        Saved if ``save_last_X is True``.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -441,11 +446,13 @@
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">total_space_estimator_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_last_X</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="o">=</span> <span class="n">init_point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span> <span class="o">=</span> <span class="n">save_last_X</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span> <span class="o">=</span> <span class="n">total_space_estimator_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span>
@@ -454,6 +461,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aligned_X_</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fit the Frechet Mean.</span>
@@ -486,7 +494,8 @@
             <span class="n">previous_estimate</span> <span class="o">=</span> <span class="n">new_estimate</span>
 
         <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
-
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aligned_X_</span> <span class="o">=</span> <span class="n">aligned_X</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">new_estimate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="n">iteration</span>
 
@@ -521,6 +530,8 @@
 <span class="sd">    n_components: int</span>
 <span class="sd">        Number of principal components to be estimated. Notice that the convergence is</span>
 <span class="sd">        ensured only for the first principal component.</span>
+<span class="sd">    save_last_X: bool, default = True</span>
+<span class="sd">        Flag to save the data as aligned in the last algorithm iteration.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -530,6 +541,9 @@
 <span class="sd">        Default: ``sklearn.decomposition.PCA``.</span>
 <span class="sd">    n_iter_ : int</span>
 <span class="sd">        Number of performed iterations.</span>
+<span class="sd">    aligned_X_: array-like, shape=[n_samples, n_nodes, n_nodes] or set of GraphPoint.</span>
+<span class="sd">        Set of aligned data as after the last call of fit.</span>
+<span class="sd">        Saved if ``save_last_X is True``.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -540,13 +554,22 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">metric</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_last_X</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="o">=</span> <span class="n">init_point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span> <span class="o">=</span> <span class="n">save_last_X</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator</span> <span class="o">=</span> <span class="n">WrappedPCA</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -615,6 +638,8 @@
             <span class="n">error</span> <span class="o">=</span> <span class="n">expl_</span> <span class="o">-</span> <span class="n">previous_expl</span>
             <span class="n">previous_expl</span> <span class="o">=</span> <span class="n">expl_</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aligned_X_</span> <span class="o">=</span> <span class="n">aligned_X</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="n">iteration</span>
         <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
@@ -649,6 +674,8 @@
 <span class="sd">        Stopping criterion on the maximum number of iterations.</span>
 <span class="sd">    init_point: array-like, shape=[n_nodes, n_nodes] or GraphPoint, default random.</span>
 <span class="sd">        Algorithm initialization.</span>
+<span class="sd">    save_last_y: bool, default=True</span>
+<span class="sd">        Flag to save the data as aligned in the last algorithm iteration.</span>
 <span class="sd">    total_space_estimator_kwargs : dict</span>
 <span class="sd">        Total space estimator keyword arguments.</span>
 
@@ -659,6 +686,9 @@
 <span class="sd">        matrices in the total space.</span>
 <span class="sd">        Check geomstats.learning._sklearn_wrapper for details.</span>
 <span class="sd">        Default: ``sklearn.linear_model.LinearRegression``.</span>
+<span class="sd">    aligned_y_: array-like, shape=[n_samples, n_nodes, n_nodes] or set of GraphPoint.</span>
+<span class="sd">        Set of aligned data as after the last call of fit.</span>
+<span class="sd">        Saved if ``self.save_last_y is True``.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -676,17 +706,20 @@
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">total_space_estimator_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_last_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="o">=</span> <span class="n">init_point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_last_y</span> <span class="o">=</span> <span class="n">save_last_y</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span> <span class="o">=</span> <span class="n">total_space_estimator_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator</span> <span class="o">=</span> <span class="n">WrappedLinearRegression</span><span class="p">(</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aligned_y_</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_compute_pred_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the prediction error.&quot;&quot;&quot;</span>
@@ -732,6 +765,8 @@
             <span class="n">previous_y_pred</span> <span class="o">=</span> <span class="n">y_pred</span>
             <span class="n">previous_pred_dist</span> <span class="o">=</span> <span class="n">pred_dist</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_last_y</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aligned_y_</span> <span class="o">=</span> <span class="n">aligned_y</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="n">iteration</span>
         <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
