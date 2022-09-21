@@ -394,6 +394,15 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
+            <span class="n">default_point_type</span><span class="p">,</span> <span class="s2">&quot;default_point_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]),)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">),</span> <span class="o">*</span><span class="n">metrics</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
         <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
         <span class="n">signatures</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">signature</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
@@ -403,7 +412,7 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">ProductRiemannianMetric</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">dim</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">dims</span><span class="p">),</span>
             <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">sig_pos</span><span class="p">,</span> <span class="n">sig_neg</span><span class="p">),</span>
-            <span class="n">default_point_type</span><span class="o">=</span><span class="n">default_point_type</span><span class="p">,</span>
+            <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
@@ -411,7 +420,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">signatures</span> <span class="o">=</span> <span class="n">signatures</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
 
-<div class="viewcode-block" id="ProductRiemannianMetric.metric_matrix"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.metric_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ProductRiemannianMetric.metric_matrix"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.metric_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the matrix of the inner-product.</span>
 
 <span class="sd">        Matrix of the inner-product defined by the Riemmanian metric</span>
@@ -423,9 +432,6 @@
 <span class="sd">            [..., dim]</span>
 <span class="sd">            Point on the manifold at which to compute the inner-product matrix.</span>
 <span class="sd">            Optional, default: None.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            Type of representation used for points.</span>
-<span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -434,9 +440,6 @@
 <span class="sd">            Matrix of the inner-product at the base point.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-
         <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
@@ -444,17 +447,13 @@
         <span class="n">cum_dim</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">):</span>
             <span class="n">cum_dim_next</span> <span class="o">=</span> <span class="n">cum_dim</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span><span class="p">:</span>
-                <span class="n">matrix_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
-            <span class="k">elif</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
                 <span class="n">matrix_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span>
                     <span class="n">base_point</span><span class="p">[:,</span> <span class="n">cum_dim</span><span class="p">:</span><span class="n">cum_dim_next</span><span class="p">,</span> <span class="n">cum_dim</span><span class="p">:</span><span class="n">cum_dim_next</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;invalid point_type argument: </span><span class="si">{}</span><span class="s2">, expected &quot;</span>
-                    <span class="s2">&quot;either matrix of vector&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">point_type</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">matrix_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+
             <span class="n">matrix</span><span class="p">[:,</span> <span class="n">cum_dim</span><span class="p">:</span><span class="n">cum_dim_next</span><span class="p">,</span> <span class="n">cum_dim</span><span class="p">:</span><span class="n">cum_dim_next</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_next</span>
             <span class="n">cum_dim</span> <span class="o">=</span> <span class="n">cum_dim_next</span>
         <span class="k">return</span> <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">matrix</span></div>
@@ -462,7 +461,7 @@
 <div class="viewcode-block" id="ProductRiemannianMetric.is_intrinsic"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.is_intrinsic">[docs]</a>    <span class="k">def</span> <span class="nf">is_intrinsic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Test in a point is represented in intrinsic coordinates.</span>
 
-<span class="sd">        This method is only useful for `point_type=vector`.</span>
+<span class="sd">        This method is only useful for `point_type == vector`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -509,7 +508,10 @@
         <span class="k">return</span> <span class="n">out</span>
 
 <div class="viewcode-block" id="ProductRiemannianMetric.inner_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tangent_vec_a</span><span class="p">,</span>
+        <span class="n">tangent_vec_b</span><span class="p">,</span>
+        <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors at a base point.</span>
 
@@ -525,9 +527,6 @@
 <span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">            Optional, default: None.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            Type of representation used for points.</span>
-<span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -537,13 +536,7 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="n">point_type</span><span class="p">,</span> <span class="s2">&quot;point_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_intrinsic</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
             <span class="n">args</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;tangent_vec_a&quot;</span><span class="p">:</span> <span class="n">tangent_vec_a</span><span class="p">,</span>
@@ -563,7 +556,7 @@
         <span class="p">]</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">inner_products</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ProductRiemannianMetric.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ProductRiemannianMetric.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
 
 <span class="sd">        Parameters</span>
@@ -572,9 +565,6 @@
 <span class="sd">            Tangent vector at a base point.</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            Type of representation used for points.</span>
 <span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
@@ -588,13 +578,7 @@
                 <span class="kc">None</span><span class="p">,</span>
             <span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span>
 
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="n">point_type</span><span class="p">,</span> <span class="s2">&quot;point_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_intrinsic</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
             <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tangent_vec&quot;</span><span class="p">:</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="s2">&quot;base_point&quot;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
             <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_metrics</span><span class="p">(</span><span class="s2">&quot;exp&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">)</span>
@@ -609,7 +593,7 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">exp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">exp</span></div>
 
-<div class="viewcode-block" id="ProductRiemannianMetric.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ProductRiemannianMetric.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        Parameters</span>
@@ -618,9 +602,6 @@
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">        point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">            Type of representation used for points.</span>
 <span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
@@ -632,13 +613,7 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metrics</span>
 
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="n">point_type</span><span class="p">,</span> <span class="s2">&quot;point_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="n">intrinsic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_intrinsic</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
             <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;point&quot;</span><span class="p">:</span> <span class="n">point</span><span class="p">,</span> <span class="s2">&quot;base_point&quot;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
             <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_metrics</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">intrinsic</span><span class="p">)</span>
