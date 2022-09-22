@@ -370,33 +370,30 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">softmax</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">accuracy_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClassifierMixin</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
 
 
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMeanClassifier"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMeanClassifier">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMinimumDistanceToMeanClassifier</span><span class="p">:</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Minimum Distance to Mean (MDM) classifier on manifolds.</span>
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMinimumDistanceToMean</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Minimum Distance to Mean (MDM) classifier on manifolds.</span>
 
 <span class="sd">    Classification by nearest centroid. For each of the given classes, a</span>
 <span class="sd">    centroid is estimated according to the chosen metric. Then, for each new</span>
-<span class="sd">    point, the class is affected according to the nearest centroid (see</span>
-<span class="sd">    [BBCJ2012]_).</span>
+<span class="sd">    point, the class is affected according to the nearest centroid [BBCJ2012]_.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    riemannian_metric : RiemannianMetric</span>
 <span class="sd">        Riemannian metric to be used.</span>
-<span class="sd">    n_classes : int</span>
-<span class="sd">        Number of classes.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">    mean_estimates_ : list</span>
+<span class="sd">    classes_ : array-like, shape=[n_classes,]</span>
+<span class="sd">        If fit, labels of training set.</span>
+<span class="sd">    mean_estimates_ : array-like, shape=[n_classes, *metric.shape]</span>
 <span class="sd">        If fit, centroids computed on training set.</span>
-<span class="sd">    classes_ : list</span>
-<span class="sd">        If fit, classes of training set.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -405,52 +402,67 @@
 <span class="sd">        Trans. Biomed. Eng., vol. 59, pp. 920-928, 2012.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">riemannian_metric</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">riemannian_metric</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span> <span class="o">=</span> <span class="n">riemannian_metric</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">=</span> <span class="n">n_classes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMeanClassifier.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMeanClassifier.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute Frechet mean of each class.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
-<span class="sd">            Training data, where n_samples is the number of samples</span>
-<span class="sd">            and n_features is the number of features.</span>
+<span class="sd">            Training input samples.</span>
 <span class="sd">        y : array-like, shape=[n_samples,]</span>
 <span class="sd">            Training labels.</span>
+<span class="sd">        weights : array-like, shape=[n_samples,]</span>
+<span class="sd">            Weights associated to the samples.</span>
+<span class="sd">            Optional, default: None, in which case it is equally weighted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_classes_</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">weights</span> <span class="o">/=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
         <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="p">)</span>
         <span class="n">frechet_means</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">:</span>
             <span class="n">X_c</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span>
-            <span class="n">frechet_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_c</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span><span class="p">)</span>
+            <span class="n">weights_c</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span>
+            <span class="n">mean_c</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_c</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weights_c</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span>
+            <span class="n">frechet_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_c</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">frechet_means</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMeanClassifier.predict"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMeanClassifier.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean.predict"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute closest neighbor according to riemannian_metric.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
-<span class="sd">            Test data, where n_samples is the number of samples</span>
-<span class="sd">            and n_features is the number of features.</span>
+<span class="sd">            Test samples.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        y : array-like, shape=[n_samples,]</span>
 <span class="sd">            Predicted labels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span>
+            <span class="n">X</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMeanClassifier.predict_proba"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMeanClassifier.predict_proba">[docs]</a>    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean.predict_proba"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.predict_proba">[docs]</a>    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute probabilities.</span>
 
 <span class="sd">        Compute probabilities to belong to classes according to</span>
@@ -459,8 +471,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
-<span class="sd">            Test data, where n_samples is the number of samples</span>
-<span class="sd">            and n_features is the number of features.</span>
+<span class="sd">            Test samples.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -470,32 +481,12 @@
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">probas</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
-            <span class="n">dist2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">)</span>
+            <span class="n">dist2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span>
+                <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">probas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="n">dist2</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMeanClassifier.score"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMeanClassifier.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute score on the given test data and labels.</span>
-
-<span class="sd">        Compute the score defined as accuracy.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
-<span class="sd">            Test data, where n_samples is the number of samples</span>
-<span class="sd">            and n_features is the number of features.</span>
-<span class="sd">        y : array-like, shape=[n_samples,]</span>
-<span class="sd">            True labels for `X`.</span>
-<span class="sd">        weights : array-like, shape=[n_samples,]</span>
-<span class="sd">            Weights associated to the samples.</span>
-<span class="sd">            Optional, default: None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        score : float</span>
-<span class="sd">            Mean accuracy of ``self.predict(X)`` wrt. `y`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">accuracy_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div></div>
 </pre></div>
 
             </article>
