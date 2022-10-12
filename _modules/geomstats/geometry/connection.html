@@ -421,6 +421,8 @@
 <div class="viewcode-block" id="Connection.christoffels"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.christoffels">[docs]</a>    <span class="k">def</span> <span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Christoffel symbols associated with the connection.</span>
 
+<span class="sd">        The contravariant index is on the first dimension.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
@@ -790,40 +792,138 @@
             <span class="s2">&quot;trajectory&quot;</span><span class="p">:</span> <span class="n">trajectory</span><span class="p">,</span>
         <span class="p">}</span></div>
 
-<div class="viewcode-block" id="Connection.curvature"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.curvature">[docs]</a>    <span class="k">def</span> <span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the curvature.</span>
+<div class="viewcode-block" id="Connection.riemann_tensor"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.riemann_tensor">[docs]</a>    <span class="k">def</span> <span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian tensor at base_point.</span>
 
-<span class="sd">        For three vectors fields :math:`X|_P = tangent\_vec\_a,</span>
-<span class="sd">        Y|_P = tangent\_vec\_b, Z|_P = tangent\_vec\_c` with tangent vector</span>
-<span class="sd">        specified in argument at the base point :math:`P`,</span>
-<span class="sd">        the curvature is defined by :math:`R(X,Y)Z = \nabla_{[X,Y]}Z</span>
-<span class="sd">        - \nabla_X\nabla_Y Z + \nabla_Y\nabla_X Z`.</span>
+<span class="sd">        In the literature the riemannian curvature tensor is noted :math:`R_{ijk}^l`.</span>
+
+<span class="sd">        Following tensor index convention (ref. Wikipedia), we have:</span>
+<span class="sd">        :math:`R_{ijk}^l = dx^l(R(X_j, X_k)X_i)`</span>
+
+<span class="sd">        which gives :math:`R_{ijk}^lk` as a sum of four terms:</span>
+<span class="sd">        :math:`R_{ijk}^l =</span>
+<span class="sd">        :math:`\partial_j \Gamma^l_{ki}`</span>
+<span class="sd">        :math:`- \partial_k \Gamma^l_{ji}`</span>
+<span class="sd">        :math:`+ \Gamma^l_{jm} \Gamma^m_{ki}`</span>
+<span class="sd">        :math:`- \Gamma^l_{km} \Gamma^m_{ji}`</span>
+
+<span class="sd">        Note that geomstats puts the contravariant index on</span>
+<span class="sd">        the first dimension of the Christoffel symbols.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., {dim, [n, m]}]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., {dim, [n, m]}]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., {dim, [n, m]}]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point :  array-like, shape=[..., {dim, [n, m]}]</span>
-<span class="sd">            Point on the group. Optional, default is the identity.</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        curvature : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">        riemann_curvature : array-like, shape=[..., dim, dim,</span>
+<span class="sd">                                                    dim, dim]</span>
+<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
+<span class="sd">            Riemannian tensor curvature,</span>
+<span class="sd">            with the contravariant index on the last dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Riemann tensor not implemented for manifolds with points of ndim &gt; 1.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">jacobian_christoffels</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">)(</span><span class="n">point</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">base_point</span>
+                <span class="p">],</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">prod_christoffels</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">&quot;...ijk,...klm-&gt;...ijlm&quot;</span><span class="p">,</span> <span class="n">christoffels</span><span class="p">,</span> <span class="n">christoffels</span>
+        <span class="p">)</span>
+        <span class="n">riemann_curvature</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijlm-&gt;...lmji&quot;</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijlm-&gt;...ljmi&quot;</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijlm-&gt;...mjli&quot;</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijlm-&gt;...lmji&quot;</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">riemann_curvature</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">riemann_curvature</span> <span class="o">=</span> <span class="n">riemann_curvature</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">riemann_curvature</span></div>
+
+<div class="viewcode-block" id="Connection.curvature"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.curvature">[docs]</a>    <span class="k">def</span> <span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the Riemann curvature map R.</span>
+
+<span class="sd">        For three tangent vectors at base point :math:`P`:</span>
+<span class="sd">        - :math:`X|_P = tangent\_vec\_a`,</span>
+<span class="sd">        - :math:`Y|_P = tangent\_vec\_b`,</span>
+<span class="sd">        - :math:`Z|_P = tangent\_vec\_c`,</span>
+<span class="sd">        the curvature(X, Y, Z, P) is defined by</span>
+<span class="sd">        :math:`R(X,Y)Z = \nabla_X \nabla_Y Z - \nabla_Y \nabla_X Z - \nabla_[X, Y]Z`.</span>
+
+<span class="sd">        The output is the tangent vector:</span>
+<span class="sd">        :math:`dx^l(R(X, Y)Z) = R_{ijk}^l X_j Y_k Z_i`</span>
+<span class="sd">        written with Einstein notation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[..., dim]</span>
+<span class="sd">            curvature(X, Y, Z, P)[..., l] = dx^l(R(X, Y)Z)</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;The curvature is not implemented.&quot;</span><span class="p">)</span></div>
+        <span class="n">riemann</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">curvature</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">&quot;...ijkl, ...j, ...k, ...i -&gt; ...l&quot;</span><span class="p">,</span>
+            <span class="n">riemann</span><span class="p">,</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">tangent_vec_c</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">curvature</span></div>
+
+<div class="viewcode-block" id="Connection.ricci_tensor"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.ricci_tensor">[docs]</a>    <span class="k">def</span> <span class="nf">ricci_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Ricci curvature tensor at base_point.</span>
+
+<span class="sd">        The Ricci curvature tensor :math:`\mathrm{Ric}_{ij}` is defined as:</span>
+<span class="sd">        :math:`\mathrm{Ric}_{ij} = R_{ikj}^k`</span>
+<span class="sd">        with Einstein notation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ricci_tensor : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            ricci_tensor[...,i,j] = Ric_{ij}</span>
+<span class="sd">            Ricci tensor curvature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ijkj -&gt; ...ik&quot;</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ricci_tensor</span></div>
 
 <div class="viewcode-block" id="Connection.directional_curvature"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.directional_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">directional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the directional curvature (tidal force operator).</span>
 
-<span class="sd">        For two vectors fields :math:`X|_P = tangent\_vec\_a`, and :math:`Y|_P</span>
-<span class="sd">        = tangent\_vec\_b` with tangent vector specified in argument at</span>
-<span class="sd">        the base point :math:`P`, the directional curvature, better known</span>
-<span class="sd">        in relativity as the tidal force operator, is defined by</span>
+<span class="sd">        For two tangent vectors at base_point :math:`P`:</span>
+<span class="sd">        - :math:`X|_P = tangent\_vec\_a`,</span>
+<span class="sd">        - :math:`Y|_P = tangent\_vec\_b`,</span>
+<span class="sd">        the directional curvature, better known</span>
+<span class="sd">        in relativity as the tidal force operator,</span>
+<span class="sd">        is defined by</span>
 <span class="sd">        :math:`R_Y(X) = R(Y,X)Y`.</span>
 
 <span class="sd">        Parameters</span>
@@ -852,43 +952,49 @@
     <span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the covariant derivative of the curvature.</span>
 
-<span class="sd">        For four vectors fields :math:`H|_P = tangent\_vec\_a, X|_P =</span>
-<span class="sd">        tangent\_vec\_b, Y|_P = tangent\_vec\_c, Z|_P = tangent\_vec\_d` with</span>
-<span class="sd">        tangent vector value specified in argument at the base point `P`,</span>
-<span class="sd">        the covariant derivative of the curvature</span>
-<span class="sd">        :math:`(\nabla_H R)(X, Y) Z |_P` is computed at the base point `P`.</span>
+<span class="sd">        For four tangent vectors at base_point :math:`P`:</span>
+<span class="sd">        - :math:`H|_P = tangent\_vec\_a`,</span>
+<span class="sd">        - :math:`X|_P = tangent\_vec\_b`,</span>
+<span class="sd">        - :math:`Y|_P = tangent\_vec\_c`,</span>
+<span class="sd">        - :math:`Z|_P = tangent\_vec\_d`,</span>
+<span class="sd">        the covariant derivative of the curvature is defined as:</span>
+<span class="sd">        :math:`(\nabla_H R)(X, Y) Z |_P`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_d : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">        tangent_vec_d : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point :  array-like, shape=[..., {dim, [n, m]}]</span>
-<span class="sd">            Point on the group. Optional, default is the identity.</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        curvature_derivative : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at base-point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;The curvature is not implemented.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;The covariant derivative of the curvature is not implemented.&quot;</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Connection.directional_curvature_derivative"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.directional_curvature_derivative">[docs]</a>    <span class="k">def</span> <span class="nf">directional_curvature_derivative</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the covariant derivative of the directional curvature.</span>
 
-<span class="sd">        For two vectors fields :math:`X|_P = tangent\_vec\_a, Y|_P =</span>
-<span class="sd">        tangent\_vec\_b` with tangent vector value specified in argument at the</span>
-<span class="sd">        base point `P`, the covariant derivative (in the direction `X`)</span>
+<span class="sd">        For tangent vector fields at base_point :math:`P`:</span>
+<span class="sd">        - :math:`X|_P = tangent\_vec\_a`,</span>
+<span class="sd">        - :math:`Y|_P = tangent\_vec\_b`,</span>
+<span class="sd">        the covariant derivative (in the direction `X`)</span>
 <span class="sd">        :math:`(\nabla_X R_Y)(X) |_P = (\nabla_X R)(Y, X) Y |_P` of the</span>
 <span class="sd">        directional curvature (in the direction `Y`)</span>
-<span class="sd">        :math:`R_Y(X) = R(Y, X) Y` is a quadratic tensor in `X` and `Y` that</span>
+<span class="sd">        :math:`R_Y(X) = R(Y, X) Y`</span>
+<span class="sd">        is a quadratic tensor in `X` and `Y` that</span>
 <span class="sd">        plays an important role in the computation of the moments of the</span>
 <span class="sd">        empirical Fréchet mean.</span>
 

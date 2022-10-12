@@ -455,7 +455,11 @@
         <span class="k">return</span> <span class="n">cometric_matrix</span></div>
 
 <div class="viewcode-block" id="RiemannianMetric.inner_product_derivative_matrix"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product_derivative_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute derivative of the inner prod matrix at base point.</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        Writing :math:`g_{ij}` the inner-product matrix at base point,</span>
+<span class="sd">        this computes :math:`mat_{ijk} = \partial_k g_{ij}`, where the</span>
+<span class="sd">        index k of the derivation is put last.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -465,8 +469,9 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        mat : array-like, shape=[..., dim, dim]</span>
-<span class="sd">            Derivative of inverse of inner-product matrix.</span>
+<span class="sd">        mat : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: math:`mat_{ijk} = \partial_k g_{ij}`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">metric_derivative</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">metric_derivative</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span></div>
@@ -483,6 +488,9 @@
 <span class="sd">        - :math:`p` represents the base point, and</span>
 <span class="sd">        - :math:`g` represents the Riemannian metric tensor.</span>
 
+<span class="sd">        Note that the function computing the derivative of the metric matrix</span>
+<span class="sd">        puts the index of the derivation last.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        base_point: array-like, shape=[..., dim]</span>
@@ -491,7 +499,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        christoffels: array-like, shape=[..., dim, dim, dim]</span>
-<span class="sd">            Christoffel symbols.</span>
+<span class="sd">            Christoffel symbols, where the contravariant index is first.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cometric_mat_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="n">metric_derivative_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_derivative_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
@@ -887,13 +895,46 @@
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i, ikl-&gt;ikl&quot;</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">norms</span><span class="p">),</span> <span class="n">basis</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="RiemannianMetric.covariant_riemann_tensor"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.covariant_riemann_tensor">[docs]</a>    <span class="k">def</span> <span class="nf">covariant_riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute purely covariant version of Riemannian tensor at base_point.</span>
+
+<span class="sd">        In the literature the covariant riemannian tensor is noted :math:`R_{ijkl}`.</span>
+
+<span class="sd">        Convention used in the literature (tensor index notation, ref. Wikipedia) is:</span>
+<span class="sd">        :math:`R_{ijkl} = &lt;R(x_k, x_l)x_j, x_i&gt;`</span>
+<span class="sd">        where :math:`x_i` is the i-th basis vector of the tangent space at base point.</span>
+
+<span class="sd">        In other words:</span>
+<span class="sd">        [cov_riemann_tensor]_{ijkl} = [metric_matrix]_{im} [riemann_tensor]_{jkl}^m</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        covariant_tensor : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            covariant_riemann_tensor[..., i, j, k, l] = R_{ijkl}</span>
+<span class="sd">            Covariant version of Riemannian curvature tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">covariant_tensor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij, ...klmj-&gt;...iklm&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">covariant_tensor</span></div>
+
 <div class="viewcode-block" id="RiemannianMetric.sectional_curvature"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.sectional_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sectional curvature.</span>
 
+<span class="sd">        In the literature sectional curvature is noted K.</span>
+
 <span class="sd">        For two orthonormal tangent vectors :math:`x,y` at a base point,</span>
-<span class="sd">        the sectional curvature is defined by :math:`&lt;R(x, y)x, y&gt; =</span>
-<span class="sd">        &lt;R_x(y), y&gt;`. For non-orthonormal vectors vectors, it is</span>
-<span class="sd">        :math:`&lt;R(x, y)x, y&gt; / \\|x \wedge y\\|^2`.</span>
+<span class="sd">        the sectional curvature is defined by :math:`K(x,y) = &lt;R(x, y)x, y&gt;`.</span>
+<span class="sd">        For non-orthonormal vectors, it is</span>
+<span class="sd">        :math:`K(x,y) = &lt;R(x, y)x, y&gt; / \\|x \wedge y\\|^2`.</span>
+
+<span class="sd">        sectional_curvature(X, Y, P) = K(X,Y) where X, Y are tangent vectors</span>
+<span class="sd">        at base point P.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -902,21 +943,22 @@
 <span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at `base_point`.</span>
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point in the group. Optional, default is the identity</span>
+<span class="sd">            Point in the manifold.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
 <span class="sd">            Sectional curvature at `base_point`.</span>
 
-<span class="sd">        See Also</span>
-<span class="sd">        --------</span>
-<span class="sd">        https://en.wikipedia.org/wiki/Sectional_curvature</span>
+<span class="sd">        Reference</span>
+<span class="sd">        ---------</span>
+<span class="sd">        [CF1992] Do Carmo, M. P., &amp; Flaherty Francis, J. (1992).</span>
+<span class="sd">        Riemannian geometry (Vol. 6). Boston: Birkhäuser.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">curvature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span>
-            <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span>
-        <span class="n">sectional</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">curvature</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">sectional</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">curvature</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">norm_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">norm_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">inner_ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
@@ -924,7 +966,30 @@
 
         <span class="n">condition</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">normalization_factor</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">normalization_factor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">EPSILON</span><span class="p">,</span> <span class="n">normalization_factor</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">condition</span><span class="p">,</span> <span class="n">sectional</span> <span class="o">/</span> <span class="n">normalization_factor</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">condition</span><span class="p">,</span> <span class="n">sectional</span> <span class="o">/</span> <span class="n">normalization_factor</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMetric.scalar_curvature"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.scalar_curvature">[docs]</a>    <span class="k">def</span> <span class="nf">scalar_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute scalar curvature at base_point.</span>
+
+<span class="sd">        In the literature scalar_curvature is noted S and writes:</span>
+<span class="sd">        :math:`S = g^{ij} Ric_{ij}`,</span>
+<span class="sd">        with Einstein notation, where we recognize the trace of the Ricci</span>
+<span class="sd">        tensor according to the Riemannian metric :math:`g`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[...,]</span>
+<span class="sd">            Scalar curvature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ricci_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">cometric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">scalar</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij, ...ij -&gt; ...&quot;</span><span class="p">,</span> <span class="n">cometric_matrix</span><span class="p">,</span> <span class="n">ricci_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scalar</span></div></div>
 </pre></div>
 
             </article>
