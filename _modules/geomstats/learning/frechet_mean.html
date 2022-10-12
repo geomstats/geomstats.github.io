@@ -379,19 +379,21 @@
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span> <span class="k">as</span> <span class="nn">error</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticMetric</span><span class="p">,</span> <span class="n">SRVMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">EuclideanMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span><span class="p">,</span> <span class="n">HypersphereMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">MatricesMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.minkowski</span> <span class="kn">import</span> <span class="n">MinkowskiMetric</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
 
-<span class="n">LINEAR_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;EuclideanMetric&quot;</span><span class="p">,</span> <span class="s2">&quot;MatricesMetric&quot;</span><span class="p">,</span> <span class="s2">&quot;MinkowskiMetric&quot;</span><span class="p">]</span>
+<span class="n">LINEAR_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="n">EuclideanMetric</span><span class="p">,</span> <span class="n">MatricesMetric</span><span class="p">,</span> <span class="n">MinkowskiMetric</span><span class="p">]</span>
+<span class="n">ELASTIC_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="n">ElasticMetric</span><span class="p">]</span>
 
-<span class="n">ELASTIC_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SRVMetric&quot;</span><span class="p">,</span> <span class="s2">&quot;ElasticMetric&quot;</span><span class="p">]</span>
 
-
-<span class="k">def</span> <span class="nf">_is_metric_in_list</span><span class="p">(</span><span class="n">metric_str</span><span class="p">,</span> <span class="n">metric_names</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">cmp_str</span> <span class="ow">in</span> <span class="n">metric_names</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">cmp_str</span> <span class="ow">in</span> <span class="n">metric_str</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_is_metric_in_list</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">metric_classes</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">metric_class</span> <span class="ow">in</span> <span class="n">metric_classes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">metric_class</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">return</span> <span class="kc">False</span>
@@ -401,8 +403,8 @@
     <span class="k">return</span> <span class="n">_is_metric_in_list</span><span class="p">(</span><span class="n">metric_str</span><span class="p">,</span> <span class="n">LINEAR_METRICS</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_is_elastic_metric</span><span class="p">(</span><span class="n">metric_str</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_is_metric_in_list</span><span class="p">(</span><span class="n">metric_str</span><span class="p">,</span> <span class="n">ELASTIC_METRICS</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_is_elastic_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_is_metric_in_list</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">ELASTIC_METRICS</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_scalarmul</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
@@ -958,15 +960,13 @@
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">metric_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="s2">&quot;HypersphereMetric&quot;</span> <span class="ow">in</span> <span class="n">metric_str</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">HypersphereMetric</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="o">.</span><span class="n">angle_to_extrinsic</span><span class="p">(</span><span class="n">_circle_mean</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="n">metric_str</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">linear_mean</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="n">metric_str</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
             <span class="n">mean</span> <span class="o">=</span> <span class="n">elastic_mean</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
