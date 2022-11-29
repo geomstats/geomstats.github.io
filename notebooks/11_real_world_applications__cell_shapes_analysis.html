@@ -701,7 +701,7 @@ div.rendered_html tbody tr:hover {
 <p>This notebook studies <em>Osteosarcoma</em> (bone cancer) cells and the impact of drug treatment on their <em>morphological shapes</em>, by analyzing cell images obtained from fluorescence microscopy.</p>
 <p>This analysis relies on the <em>elastic metric between discrete curves</em> from Geomstats. We will study to which extent this metric can detect how the cell shape is associated with the response to treatment.</p>
 <p>This notebook is adapted from Florent Michel’s submission to the <a class="reference external" href="https://github.com/geomstats/challenge-iclr-2021">ICLR 2021 Computational Geometry and Topology challenge</a>.</p>
-<center><p><img alt="1a877438c68c41e58df2300a45fb98ec" class="no-scaled-link" src="../_images/cells_image.png" style="width: 600px;" /></p>
+<center><p><img alt="c5f0455d6aef415ca1a5910c9edfb891" class="no-scaled-link" src="../_images/cells_image.png" style="width: 600px;" /></p>
 </center><p>Figure 1: Representative images of the cell lines using fluorescence microscopy, studied in this notebook (Image credit : Ashok Prasad). The cells nuclei (blue), the actin cytoskeleton (green) and the lipid membrane (red) of each cell are stained and colored. We only focus on the cell shape in our analysis.</p>
 </section>
 <section id="1.-Introduction-and-Motivation">
@@ -715,16 +715,16 @@ cancer cell lines treated with different drugs <a class="reference external" hre
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import subprocess
 
-<span class="n">geomstats_gitroot_path</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
-    <span class="p">[</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;rev-parse&quot;</span><span class="p">,</span> <span class="s2">&quot;--show-toplevel&quot;</span><span class="p">],</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
+geomstats_gitroot_path = subprocess.check_output(
+    [&quot;git&quot;, &quot;rev-parse&quot;, &quot;--show-toplevel&quot;], universal_newlines=True
+)
 
-<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">geomstats_gitroot_path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+os.chdir(geomstats_gitroot_path[:-1])
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Working directory: &quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+print(&quot;Working directory: &quot;, os.getcwd())
 </pre></div>
 </div>
 </div>
@@ -740,15 +740,15 @@ Working directory:  /home/lgomespe/Repos/github/geomstats
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import warnings
 
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+warnings.filterwarnings(&quot;ignore&quot;)
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+import matplotlib.pyplot as plt
 
-<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+import geomstats.backend as gs
 
-<span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">2021</span><span class="p">)</span>
+gs.random.seed(2021)
 </pre></div>
 </div>
 </div>
@@ -767,16 +767,16 @@ INFO: Using numpy backend
 <p>We study a dataset of mouse <em>Osteosarcoma</em> imaged cells <a class="reference external" href="#References">(AXCFP2019)</a>. The dataset contains two different cancer cell lines : <em>DLM8</em> and <em>DUNN</em>, respectively representing a more agressive and a less agressive cancer. Among these cells, some have also been treated with different single drugs that perturb the cellular cytoskeleton. Overall, we can label each cell according to their cell line (<em>DLM8</em> and <em>DUNN</em>), and also if it is a <em>control</em> cell (no treatment), or has been treated
 with one of the following drugs : <em>Jasp</em> (jasplakinolide) and <em>Cytd</em> (cytochalasin D).</p>
 <p>Each cell comes from a raw image containing a set of cells, which was thresholded to generate binarized images.</p>
-<td><p><img alt="b22998e277ea4dbfa76a9b21439b7aa1" class="no-scaled-link" src="../_images/binarized_cells.png" style="width: 400px;" /></p>
+<td><p><img alt="958a5d2985a84b2c85138abbe174c6fc" class="no-scaled-link" src="../_images/binarized_cells.png" style="width: 400px;" /></p>
 </td><p>After binarizing the images, contouring was used to isolate each cell, and to extract their boundaries as a counter-clockwise ordered list of 2D coordinates, which corresponds to the representation of discrete curve in Geomstats. We load these discrete curves into the notebook.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.datasets.utils</span> <span class="k">as</span> <span class="nn">data_utils</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import geomstats.datasets.utils as data_utils
 
-<span class="n">cells</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">treatments</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">load_cells</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of cells : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+cells, lines, treatments = data_utils.load_cells()
+print(f&quot;Total number of cells : {len(cells)}&quot;)
 </pre></div>
 </div>
 </div>
@@ -795,12 +795,12 @@ Total number of cells : 650
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import pandas as pd
 
-<span class="n">TREATMENTS</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">treatments</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)</span>
-<span class="n">LINES</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">LINES</span><span class="p">)</span>
+TREATMENTS = gs.unique(treatments)
+print(TREATMENTS)
+LINES = gs.unique(lines)
+print(LINES)
 </pre></div>
 </div>
 </div>
@@ -817,9 +817,9 @@ Total number of cells : 650
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_idx</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cells</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>cell_idx = 1
+plt.plot(cells[cell_idx][:, 0], cells[cell_idx][:, 1], &quot;blue&quot;)
+plt.plot(cells[cell_idx][0, 0], cells[cell_idx][0, 1], &quot;blue&quot;, marker=&quot;o&quot;);
 </pre></div>
 </div>
 </div>
@@ -835,32 +835,32 @@ Total number of cells : 650
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ds = {}
 
-<span class="n">n_cells_arr</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+n_cells_arr = gs.zeros((3, 2))
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> :&quot;</span><span class="p">)</span>
-    <span class="n">ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">to_keep</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">one_treatment</span> <span class="o">==</span> <span class="n">treatment</span> <span class="ow">and</span> <span class="n">one_line</span> <span class="o">==</span> <span class="n">line</span>
-                <span class="k">for</span> <span class="n">one_treatment</span><span class="p">,</span> <span class="n">one_line</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">treatments</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">cell_i</span> <span class="k">for</span> <span class="n">cell_i</span><span class="p">,</span> <span class="n">to_keep_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cells</span><span class="p">,</span> <span class="n">to_keep</span><span class="p">)</span> <span class="k">if</span> <span class="n">to_keep_i</span>
-        <span class="p">]</span>
-        <span class="n">nb</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> </span><span class="si">{</span><span class="n">nb</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">n_cells_arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">nb</span>
+for i, treatment in enumerate(TREATMENTS):
+    print(f&quot;{treatment} :&quot;)
+    ds[treatment] = {}
+    for j, line in enumerate(LINES):
+        to_keep = gs.array(
+            [
+                one_treatment == treatment and one_line == line
+                for one_treatment, one_line in zip(treatments, lines)
+            ]
+        )
+        ds[treatment][line] = [
+            cell_i for cell_i, to_keep_i in zip(cells, to_keep) if to_keep_i
+        ]
+        nb = len(ds[treatment][line])
+        print(f&quot;\t {nb} {line}&quot;)
+        n_cells_arr[i, j] = nb
 
-<span class="n">n_cells_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;dlm8&quot;</span><span class="p">:</span> <span class="n">n_cells_arr</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;dunn&quot;</span><span class="p">:</span> <span class="n">n_cells_arr</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]})</span>
-<span class="n">n_cells_df</span> <span class="o">=</span> <span class="n">n_cells_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)</span>
+n_cells_df = pd.DataFrame({&quot;dlm8&quot;: n_cells_arr[:, 0], &quot;dunn&quot;: n_cells_arr[:, 1]})
+n_cells_df = n_cells_df.set_index(TREATMENTS)
 
-<span class="n">display</span><span class="p">(</span><span class="n">n_cells_df</span><span class="p">)</span>
-<span class="c1"># display(ds)</span>
+display(n_cells_df)
+# display(ds)
 </pre></div>
 </div>
 </div>
@@ -931,7 +931,7 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;cytd&quot;</span><span class="p">][</span><span class="s2">&quot;dlm8&quot;</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>len(ds[&quot;cytd&quot;][&quot;dlm8&quot;])
 </pre></div>
 </div>
 </div>
@@ -949,37 +949,37 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">apply_func_to_ds</span><span class="p">(</span><span class="n">input_ds</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Apply the input function func to the input dictionnary input_ds.</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def apply_func_to_ds(input_ds, func):
+    &quot;&quot;&quot;Apply the input function func to the input dictionnary input_ds.
 
-<span class="sd">    This function goes through the dictionnary structure and applies</span>
-<span class="sd">    func to every cell in input_ds[treatment][line].</span>
+    This function goes through the dictionnary structure and applies
+    func to every cell in input_ds[treatment][line].
 
-<span class="sd">    It stores the result in a dictionnary output_ds that is returned</span>
-<span class="sd">    to the user.</span>
+    It stores the result in a dictionnary output_ds that is returned
+    to the user.
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input_ds : dict</span>
-<span class="sd">        Input dictionnary, with keys treatment-line.</span>
-<span class="sd">    func : callable</span>
-<span class="sd">        Function to be applied to the values of the dictionnary, i.e.</span>
-<span class="sd">        the cells.</span>
+    Parameters
+    ----------
+    input_ds : dict
+        Input dictionnary, with keys treatment-line.
+    func : callable
+        Function to be applied to the values of the dictionnary, i.e.
+        the cells.
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    output_ds : dict</span>
-<span class="sd">        Output dictionnary, with the same keys as input_ds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">output_ds</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-        <span class="n">output_ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-            <span class="n">output_list</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">one_cell</span> <span class="ow">in</span> <span class="n">input_ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]:</span>
-                <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">one_cell</span><span class="p">))</span>
-            <span class="n">output_ds</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output_list</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">output_ds</span>
+    Returns
+    -------
+    output_ds : dict
+        Output dictionnary, with the same keys as input_ds.
+    &quot;&quot;&quot;
+    output_ds = {}
+    for treatment in TREATMENTS:
+        output_ds[treatment] = {}
+        for line in LINES:
+            output_list = []
+            for one_cell in input_ds[treatment][line]:
+                output_list.append(func(one_cell))
+            output_ds[treatment][line] = gs.array(output_list)
+    return output_ds
 </pre></div>
 </div>
 </div>
@@ -995,27 +995,27 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">nb_points</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Interpolate a discrete curve with nb_points from a discrete curve.</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def interpolate(curve, nb_points):
+    &quot;&quot;&quot;Interpolate a discrete curve with nb_points from a discrete curve.
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    interpolation : discrete curve with nb_points points</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">old_length</span> <span class="o">=</span> <span class="n">curve</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">interpolation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nb_points</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="n">incr</span> <span class="o">=</span> <span class="n">old_length</span> <span class="o">/</span> <span class="n">nb_points</span>
-    <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_points</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">pos</span><span class="p">))</span>
-        <span class="n">interpolation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">index</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">curve</span><span class="p">[(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">old_length</span><span class="p">]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">pos</span> <span class="o">+=</span> <span class="n">incr</span>
-    <span class="k">return</span> <span class="n">interpolation</span>
+    Returns
+    -------
+    interpolation : discrete curve with nb_points points
+    &quot;&quot;&quot;
+    old_length = curve.shape[0]
+    interpolation = gs.zeros((nb_points, 2))
+    incr = old_length / nb_points
+    pos = 0
+    for i in range(nb_points):
+        index = int(gs.floor(pos))
+        interpolation[i] = curve[index] + (pos - index) * (
+            curve[(index + 1) % old_length] - curve[index]
+        )
+        pos += incr
+    return interpolation
 
 
-<span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">200</span>
+k_sampling_points = 200
 </pre></div>
 </div>
 </div>
@@ -1024,24 +1024,24 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_rand</span> <span class="o">=</span> <span class="n">cells</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cells</span><span class="p">))]</span>
-<span class="n">cell_interpolation</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">cell_rand</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>cell_rand = cells[gs.random.randint(len(cells))]
+cell_interpolation = interpolate(cell_rand, k_sampling_points)
 
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+fig = plt.figure(figsize=(15, 5))
 
-<span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell_rand</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell_rand</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original curve (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_rand</span><span class="p">)</span><span class="si">}</span><span class="s2"> points)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+fig.add_subplot(121)
+plt.plot(cell_rand[:, 0], cell_rand[:, 1])
+plt.axis(&quot;equal&quot;)
+plt.title(f&quot;Original curve ({len(cell_rand)} points)&quot;)
+plt.axis(&quot;off&quot;)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell_interpolation</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell_interpolation</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interpolated curve (</span><span class="si">{</span><span class="n">k_sampling_points</span><span class="si">}</span><span class="s2"> points)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+fig.add_subplot(122)
+plt.plot(cell_interpolation[:, 0], cell_interpolation[:, 1])
+plt.axis(&quot;equal&quot;)
+plt.title(f&quot;Interpolated curve ({k_sampling_points} points)&quot;)
+plt.axis(&quot;off&quot;)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;interpolation.svg&quot;</span><span class="p">)</span>
+plt.savefig(&quot;interpolation.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1058,9 +1058,9 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_interp</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
-    <span class="n">input_ds</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ds_interp = apply_func_to_ds(
+    input_ds=ds, func=lambda x: interpolate(x, k_sampling_points)
+)
 </pre></div>
 </div>
 </div>
@@ -1069,7 +1069,7 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ds_interp</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(ds_interp[&quot;control&quot;][&quot;dunn&quot;].shape)
 </pre></div>
 </div>
 </div>
@@ -1090,23 +1090,23 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_cells_to_plot</span> <span class="o">=</span> <span class="mi">10</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>n_cells_to_plot = 10
 
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">cell_data</span> <span class="o">=</span> <span class="n">ds_interp</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i_to_plot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cells_to_plot</span><span class="p">):</span>
-            <span class="n">cell</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cell_data</span><span class="p">)</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_cells_to_plot</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
-            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">((</span><span class="n">line</span> <span class="o">==</span> <span class="s2">&quot;dunn&quot;</span><span class="p">))))</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">i_to_plot</span> <span class="o">==</span> <span class="n">n_cells_to_plot</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2">   -   </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;cancer_cell_sample.svg&quot;</span><span class="p">)</span>
+fig = plt.figure(figsize=(16, 6))
+count = 1
+for treatment in TREATMENTS:
+    for line in LINES:
+        cell_data = ds_interp[treatment][line]
+        for i_to_plot in range(n_cells_to_plot):
+            cell = gs.random.choice(cell_data)
+            fig.add_subplot(3, 2 * n_cells_to_plot, count)
+            count += 1
+            plt.plot(cell[:, 0], cell[:, 1], color=&quot;C&quot; + str(int((line == &quot;dunn&quot;))))
+            plt.axis(&quot;equal&quot;)
+            plt.axis(&quot;off&quot;)
+            if i_to_plot == n_cells_to_plot // 2:
+                plt.title(f&quot;{treatment}   -   {line}&quot;, fontsize=20)
+plt.savefig(&quot;cancer_cell_sample.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1126,25 +1126,25 @@ jasp :
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import numpy as np
 
-<span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Preprocess curve to ensure that there are no consecutive duplicate points.</span>
+def preprocess(curve, tol=1e-10):
+    &quot;&quot;&quot;Preprocess curve to ensure that there are no consecutive duplicate points.
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    curve : discrete curve</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    Returns
+    -------
+    curve : discrete curve
+    &quot;&quot;&quot;
 
-    <span class="n">dist</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">dist_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    dist = curve[1:] - curve[:-1]
+    dist_norm = np.sqrt(np.sum(np.square(dist), axis=1))
 
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span> <span class="n">dist_norm</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="p">):</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
-                <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+    if np.any( dist_norm &lt; tol ):
+        for i in range(len(curve)-1):
+            if np.sqrt(np.sum(np.square(curve[i+1] - curve[i]), axis=0)) &lt; tol:
+                curve[i+1] = (curve[i] + curve[i+2]) / 2
 
-    <span class="k">return</span> <span class="n">curve</span>
+    return curve
 </pre></div>
 </div>
 </div>
@@ -1159,38 +1159,38 @@ them</a> or the notebooks using them.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.pre_shape</span> <span class="kn">import</span> <span class="n">PreShapeSpace</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from geomstats.geometry.pre_shape import PreShapeSpace
 
-<span class="n">M_AMBIENT</span> <span class="o">=</span> <span class="mi">2</span>
+M_AMBIENT = 2
 
-<span class="n">PRESHAPE_SPACE</span> <span class="o">=</span> <span class="n">PreShapeSpace</span><span class="p">(</span><span class="n">m_ambient</span><span class="o">=</span><span class="n">M_AMBIENT</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">)</span>
-<span class="n">PRESHAPE_METRIC</span> <span class="o">=</span> <span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">metric</span>
+PRESHAPE_SPACE = PreShapeSpace(m_ambient=M_AMBIENT, k_landmarks=k_sampling_points)
+PRESHAPE_METRIC = PRESHAPE_SPACE.embedding_space.metric
 
 
-<span class="k">def</span> <span class="nf">exhaustive_align</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">base_curve</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Align curve to base_curve to minimize the L² distance.</span>
+def exhaustive_align(curve, base_curve):
+    &quot;&quot;&quot;Align curve to base_curve to minimize the L² distance.
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    aligned_curve : discrete curve</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">nb_sampling</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
-    <span class="n">distances</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nb_sampling</span><span class="p">)</span>
-    <span class="n">base_curve</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">base_curve</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">shift</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_sampling</span><span class="p">):</span>
-        <span class="n">reparametrized</span> <span class="o">=</span> <span class="p">[</span><span class="n">curve</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="n">shift</span><span class="p">)</span> <span class="o">%</span> <span class="n">nb_sampling</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_sampling</span><span class="p">)]</span>
-        <span class="n">aligned</span> <span class="o">=</span> <span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reparametrized</span><span class="p">),</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_curve</span><span class="p">)</span>
-        <span class="n">distances</span><span class="p">[</span><span class="n">shift</span><span class="p">]</span> <span class="o">=</span> <span class="n">PRESHAPE_METRIC</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">aligned</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">base_curve</span><span class="p">)</span>
-        <span class="p">)</span>
-    <span class="n">shift_min</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-    <span class="n">reparametrized_min</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">curve</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="n">shift_min</span><span class="p">)</span> <span class="o">%</span> <span class="n">nb_sampling</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_sampling</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="n">aligned_curve</span> <span class="o">=</span> <span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
-        <span class="n">point</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reparametrized_min</span><span class="p">),</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_curve</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">aligned_curve</span>
+    Returns
+    -------
+    aligned_curve : discrete curve
+    &quot;&quot;&quot;
+    nb_sampling = len(curve)
+    distances = gs.zeros(nb_sampling)
+    base_curve = gs.array(base_curve)
+    for shift in range(nb_sampling):
+        reparametrized = [curve[(i + shift) % nb_sampling] for i in range(nb_sampling)]
+        aligned = PRESHAPE_SPACE.align(point=gs.array(reparametrized), base_point=base_curve)
+        distances[shift] = PRESHAPE_METRIC.norm(
+            gs.array(aligned) - gs.array(base_curve)
+        )
+    shift_min = gs.argmin(distances)
+    reparametrized_min = [
+        curve[(i + shift_min) % nb_sampling] for i in range(nb_sampling)
+    ]
+    aligned_curve = PRESHAPE_SPACE.align(
+        point=gs.array(reparametrized_min), base_point=base_curve
+    )
+    return aligned_curve
 </pre></div>
 </div>
 </div>
@@ -1200,16 +1200,16 @@ them</a> or the notebooks using them.</p>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_proc</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_interp</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ds_proc = apply_func_to_ds(ds_interp, func=lambda x: preprocess(x))
 
-<span class="n">ds_proj</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_proc</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">PRESHAPE_SPACE</span><span class="o">.</span><span class="n">projection</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+ds_proj = apply_func_to_ds(ds_proc, func=PRESHAPE_SPACE.projection)
+print(ds_proj[&quot;control&quot;][&quot;dunn&quot;].shape)
 
-<span class="n">BASE_CURVE</span> <span class="o">=</span> <span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shape of BASE_CURVE:&quot;</span><span class="p">,</span> <span class="n">BASE_CURVE</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+BASE_CURVE = ds_proj[&quot;control&quot;][&quot;dunn&quot;][0]
+print(&quot;Shape of BASE_CURVE:&quot;, BASE_CURVE.shape)
 
-<span class="n">ds_align</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span><span class="n">ds_proj</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">exhaustive_align</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">BASE_CURVE</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+ds_align = apply_func_to_ds(ds_proj, func=lambda x: exhaustive_align(x, BASE_CURVE))
+print(ds_align[&quot;control&quot;][&quot;dunn&quot;].shape)
 </pre></div>
 </div>
 </div>
@@ -1228,31 +1228,31 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i_rand</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">n_cells_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">])</span>
-<span class="n">unaligned_cell</span> <span class="o">=</span> <span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">][</span><span class="n">i_rand</span><span class="p">]</span>
-<span class="n">aligned_cell</span> <span class="o">=</span> <span class="n">ds_align</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">][</span><span class="n">i_rand</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>i_rand = gs.random.randint(n_cells_df.loc[&quot;control&quot;][&quot;dunn&quot;])
+unaligned_cell = ds_proj[&quot;control&quot;][&quot;dunn&quot;][i_rand]
+aligned_cell = ds_align[&quot;control&quot;][&quot;dunn&quot;][i_rand]
 
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+fig = plt.figure(figsize=(15, 5))
 
-<span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">131</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">BASE_CURVE</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">BASE_CURVE</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">BASE_CURVE</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">BASE_CURVE</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Reference curve&quot;</span><span class="p">)</span>
+fig.add_subplot(131)
+plt.plot(BASE_CURVE[:, 0], BASE_CURVE[:, 1])
+plt.plot(BASE_CURVE[0, 0], BASE_CURVE[0, 1], &quot;ro&quot;)
+plt.axis(&quot;equal&quot;)
+plt.title(&quot;Reference curve&quot;)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">132</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">unaligned_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">unaligned_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">unaligned_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">unaligned_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Unaligned curve&quot;</span><span class="p">)</span>
+fig.add_subplot(132)
+plt.plot(unaligned_cell[:, 0], unaligned_cell[:, 1])
+plt.plot(unaligned_cell[0, 0], unaligned_cell[0, 1], &quot;ro&quot;)
+plt.axis(&quot;equal&quot;)
+plt.title(&quot;Unaligned curve&quot;)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">133</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">aligned_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">aligned_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">aligned_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">aligned_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Aligned curve&quot;</span><span class="p">)</span>
+fig.add_subplot(133)
+plt.plot(aligned_cell[:, 0], aligned_cell[:, 1])
+plt.plot(aligned_cell[0, 0], aligned_cell[0, 1], &quot;ro&quot;)
+plt.axis(&quot;equal&quot;)
+plt.title(&quot;Aligned curve&quot;)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;alignment.svg&quot;</span><span class="p">)</span>
+plt.savefig(&quot;alignment.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1274,13 +1274,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i_start_rand</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">]))</span>
-<span class="n">i_end_rand</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ds_proj</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dlm8&quot;</span><span class="p">]))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>i_start_rand = gs.random.randint(len(ds_proj[&quot;control&quot;][&quot;dunn&quot;]))
+i_end_rand = gs.random.randint(len(ds_proj[&quot;control&quot;][&quot;dlm8&quot;]))
 
-<span class="n">cell_start</span> <span class="o">=</span> <span class="n">ds_align</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dunn&quot;</span><span class="p">][</span><span class="n">i_start_rand</span><span class="p">]</span>
-<span class="n">cell_end</span> <span class="o">=</span> <span class="n">ds_align</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">][</span><span class="s2">&quot;dlm8&quot;</span><span class="p">][</span><span class="n">i_end_rand</span><span class="p">]</span>
+cell_start = ds_align[&quot;control&quot;][&quot;dunn&quot;][i_start_rand]
+cell_end = ds_align[&quot;control&quot;][&quot;dlm8&quot;][i_end_rand]
 
-<span class="nb">print</span><span class="p">(</span><span class="n">i_start_rand</span><span class="p">,</span> <span class="n">i_end_rand</span><span class="p">)</span>
+print(i_start_rand, i_end_rand)
 </pre></div>
 </div>
 </div>
@@ -1298,16 +1298,16 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">R2</span><span class="p">,</span> <span class="n">DiscreteCurves</span><span class="p">,</span> <span class="n">SRVMetric</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from geomstats.geometry.discrete_curves import R2, DiscreteCurves, SRVMetric
 
-<span class="n">CURVES_SPACE</span> <span class="o">=</span> <span class="n">DiscreteCurves</span><span class="p">(</span><span class="n">R2</span><span class="p">)</span>
-<span class="n">SRV_METRIC</span> <span class="o">=</span> <span class="n">CURVES_SPACE</span><span class="o">.</span><span class="n">srv_metric</span>
+CURVES_SPACE = DiscreteCurves(R2)
+SRV_METRIC = CURVES_SPACE.srv_metric
 
-<span class="n">geodesic</span> <span class="o">=</span> <span class="n">SRV_METRIC</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">initial_point</span><span class="o">=</span><span class="n">cell_start</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">cell_end</span><span class="p">)</span>
+geodesic = SRV_METRIC.geodesic(initial_point=cell_start, end_point=cell_end)
 
-<span class="n">n_times</span> <span class="o">=</span> <span class="mi">30</span>
-<span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
-<span class="n">geod_points</span> <span class="o">=</span> <span class="n">geodesic</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+n_times = 30
+times = gs.linspace(0.0, 1.0, n_times)
+geod_points = geodesic(times)
 </pre></div>
 </div>
 </div>
@@ -1316,16 +1316,16 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic between two cells&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig = plt.figure(figsize=(10, 2))
+plt.title(&quot;Geodesic between two cells&quot;)
+plt.axis(&quot;off&quot;)
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">geod_points</span><span class="p">):</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_times</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curve</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">curve</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;geodesic_light_blue.svg&quot;</span><span class="p">)</span>
+for i, curve in enumerate(geod_points):
+    fig.add_subplot(2, n_times // 2, i + 1)
+    plt.plot(curve[:, 0], curve[:, 1])
+    plt.axis(&quot;equal&quot;)
+    plt.axis(&quot;off&quot;)
+plt.savefig(&quot;geodesic_light_blue.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1341,16 +1341,16 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Start Cell&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;End Cell&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.figure(figsize=(12, 12))
+for i in range(1, n_times - 1):
+    plt.plot(geod_points[i, :, 0], geod_points[i, :, 1], &quot;o-&quot;, color=&quot;lightgrey&quot;)
+plt.plot(geod_points[0, :, 0], geod_points[0, :, 1], &quot;o-b&quot;, label=&quot;Start Cell&quot;)
+plt.plot(geod_points[-1, :, 0], geod_points[-1, :, 1], &quot;o-r&quot;, label=&quot;End Cell&quot;)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic for the Square Root Velocity metric&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;geodesic_blue_red.svg&quot;</span><span class="p">);</span>
+plt.title(&quot;Geodesic for the Square Root Velocity metric&quot;)
+plt.legend()
+plt.show()
+plt.savefig(&quot;geodesic_blue_red.svg&quot;);
 </pre></div>
 </div>
 </div>
@@ -1374,13 +1374,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell_shapes_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">cell_shapes_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>cell_shapes_list = []
+for treatment in TREATMENTS:
+    for line in LINES:
+        cell_shapes_list.extend(ds_align[treatment][line])
 
-<span class="n">cell_shapes</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cell_shapes_list</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">cell_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+cell_shapes = gs.array(cell_shapes_list)
+print(cell_shapes.shape)
 </pre></div>
 </div>
 </div>
@@ -1398,14 +1398,14 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from geomstats.learning.frechet_mean import FrechetMean
 
-<span class="n">mean</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">SRV_METRIC</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
-<span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cell_shapes</span><span class="p">[:</span><span class="mi">500</span><span class="p">])</span>
+mean = FrechetMean(metric=SRV_METRIC, method=&quot;default&quot;)
+mean.fit(cell_shapes[:500])
 
-<span class="n">mean_estimate</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">estimate_</span>
+mean_estimate = mean.estimate_
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_estimate</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;black&quot;</span><span class="p">);</span>
+plt.plot(mean_estimate[:, 0], mean_estimate[:, 1], &quot;black&quot;);
 </pre></div>
 </div>
 </div>
@@ -1422,12 +1422,12 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">)))</span>
-<span class="n">mean_estimate_clean</span> <span class="o">=</span> <span class="n">mean_estimate</span><span class="p">[</span><span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">mean_estimate_clean</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(gs.sum(gs.isnan(mean_estimate)))
+mean_estimate_clean = mean_estimate[~gs.isnan(gs.sum(mean_estimate, axis=1)), :]
+print(mean_estimate_clean.shape)
+mean_estimate_clean = interpolate(mean_estimate_clean, k_sampling_points)
+print(gs.sum(gs.isnan(mean_estimate_clean)))
+print(mean_estimate_clean.shape)
 </pre></div>
 </div>
 </div>
@@ -1447,14 +1447,14 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">cell_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cell_shapes</span><span class="p">:</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(cell_shapes.shape)
+for cell in cell_shapes:
+    plt.plot(cell[:, 0], cell[:, 1], &quot;lightgrey&quot;, alpha=0.2)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-    <span class="n">mean_estimate_clean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_estimate_clean</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span>
-<span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">);</span>
+plt.plot(
+    mean_estimate_clean[:, 0], mean_estimate_clean[:, 1], &quot;black&quot;, label=&quot;Mean cell&quot;
+)
+plt.legend(fontsize=12);
 </pre></div>
 </div>
 </div>
@@ -1478,17 +1478,17 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned</span> <span class="o">=</span> <span class="mf">1.55</span> <span class="o">*</span> <span class="p">(</span>
-    <span class="n">mean_estimate_clean</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean_estimate_aligned = 1.55 * (
+    mean_estimate_clean - gs.mean(mean_estimate_clean, axis=0)
+)
 
-<span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cell_shapes</span><span class="p">:</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+for cell in cell_shapes:
+    plt.plot(cell[:, 0], cell[:, 1], &quot;lightgrey&quot;, alpha=0.2)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-    <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span>
-<span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">);</span>
+plt.plot(
+    mean_estimate_aligned[:, 0], mean_estimate_aligned[:, 1], &quot;black&quot;, label=&quot;Mean cell&quot;
+)
+plt.legend(fontsize=12);
 </pre></div>
 </div>
 </div>
@@ -1505,9 +1505,9 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned_bis</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">mean_estimate_aligned</span><span class="p">[</span><span class="mi">4</span><span class="p">:],</span> <span class="n">mean_estimate_aligned</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean_estimate_aligned_bis = gs.vstack(
+    [mean_estimate_aligned[4:], mean_estimate_aligned[-1]]
+)
 </pre></div>
 </div>
 </div>
@@ -1515,25 +1515,25 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [28]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">gaussian_kde</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from scipy.stats import gaussian_kde
 
-<span class="n">cells_to_plot</span> <span class="o">=</span> <span class="n">cell_shapes</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_shapes</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">200</span><span class="p">)]</span>
-<span class="n">points_to_plot</span> <span class="o">=</span> <span class="n">cells_to_plot</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+cells_to_plot = cell_shapes[gs.random.randint(len(cell_shapes), size=200)]
+points_to_plot = cells_to_plot.reshape(-1, 2)
 
-<span class="n">z</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">points_to_plot</span><span class="o">.</span><span class="n">T</span><span class="p">)(</span><span class="n">points_to_plot</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="n">z_norm</span> <span class="o">=</span> <span class="n">z</span> <span class="o">/</span> <span class="n">z</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+z = gaussian_kde(points_to_plot.T)(points_to_plot.T)
+z_norm = z / z.max()
 
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">points_to_plot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points_to_plot</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">z_norm</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-    <span class="n">mean_estimate_aligned_bis</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-    <span class="n">mean_estimate_aligned_bis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
-    <span class="s2">&quot;black&quot;</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Global mean shape superimposed on the</span><span class="se">\n</span><span class="s2"> dataset of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+plt.scatter(points_to_plot[:, 0], points_to_plot[:, 1], alpha=0.2, c=z_norm, s=10)
+plt.plot(
+    mean_estimate_aligned_bis[:, 0],
+    mean_estimate_aligned_bis[:, 1],
+    &quot;black&quot;,
+    label=&quot;Mean cell&quot;,
+)
+plt.legend(fontsize=12)
+plt.title(&quot;Global mean shape superimposed on the\n dataset of cells&quot;, fontsize=14)
 
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;global_mean_shape.svg&quot;</span><span class="p">)</span>
+plt.savefig(&quot;global_mean_shape.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1553,14 +1553,14 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
-    <span class="n">ds_align</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">SRV_METRIC</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean_estimate_aligned</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dists_to_global_mean = apply_func_to_ds(
+    ds_align, func=lambda x: SRV_METRIC.dist(x, mean_estimate_aligned)
+)
 
-<span class="n">dists_to_global_mean_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">dists_to_global_mean_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">l</span><span class="p">])</span>
+dists_to_global_mean_list = []
+for t in TREATMENTS:
+    for l in LINES:
+        dists_to_global_mean_list.extend(dists_to_global_mean[t][l])
 </pre></div>
 </div>
 </div>
@@ -1569,7 +1569,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean_list</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dists_to_global_mean_list[:5]
 </pre></div>
 </div>
 </div>
@@ -1591,7 +1591,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [31]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>gs.where(gs.isnan(dists_to_global_mean_list))
 </pre></div>
 </div>
 </div>
@@ -1608,9 +1608,9 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [32]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">)</span>
-<span class="n">max_dists</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">min_dists</span><span class="p">,</span> <span class="n">max_dists</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>min_dists = min(dists_to_global_mean_list)
+max_dists = max(dists_to_global_mean_list)
+print(min_dists, max_dists)
 </pre></div>
 </div>
 </div>
@@ -1626,7 +1626,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [33]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xx</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">min_dists</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_dists</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>xx = gs.linspace(gs.floor(min_dists), gs.ceil(max_dists), 100)
 </pre></div>
 </div>
 </div>
@@ -1635,7 +1635,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [34]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from scipy import stats
 </pre></div>
 </div>
 </div>
@@ -1643,29 +1643,29 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [35]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axs = plt.subplots(1, sharex=True, sharey=True, tight_layout=True, figsize=(8, 4))
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">distances</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][</span>
-                <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;C&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">treatment</span><span class="p">)</span>
-    <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">xx</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="n">min_dists</span><span class="p">,</span> <span class="n">max_dists</span><span class="p">))</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+for i, treatment in enumerate(TREATMENTS):
+    distances = []
+    for j, line in enumerate(LINES):
+        distances.extend(
+            dists_to_global_mean[treatment][line][
+                ~gs.isnan(dists_to_global_mean[treatment][line])
+            ]
+        )
+    color = &quot;C&quot; + str(2 + i)
+    axs.hist(distances, bins=20, alpha=0.4, density=True, color=color, label=treatment)
+    kde = stats.gaussian_kde(distances)
+    axs.plot(xx, kde(xx), color=color)
+    axs.set_xlim((min_dists, max_dists))
+    axs.legend(fontsize=12)
 
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Fraction of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+    axs.set_title(f&quot;{treatment} cells&quot;, fontsize=14)
+    axs.set_ylabel(&quot;Fraction of cells&quot;, fontsize=14)
 
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Histograms of srv distances (a=1, b=0.5) to global mean cell&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;dist_to_global_mean_per_treatment2.svg&quot;</span><span class="p">)</span>
+fig.suptitle(&quot;Histograms of srv distances (a=1, b=0.5) to global mean cell&quot;, fontsize=20)
+plt.savefig(&quot;dist_to_global_mean_per_treatment2.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1681,27 +1681,27 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axs = plt.subplots(3, sharex=True, sharey=True, tight_layout=True, figsize=(8, 8))
 
-<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="n">min_dists</span><span class="p">,</span> <span class="n">max_dists</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][</span>
-            <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-        <span class="p">]</span>
-        <span class="n">color</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
-            <span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">line</span>
-        <span class="p">)</span>
-        <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">xx</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+axs[0].set_xlim((min_dists, max_dists))
+for i, treatment in enumerate(TREATMENTS):
+    for j, line in enumerate(LINES):
+        distances = dists_to_global_mean[treatment][line][
+            ~gs.isnan(dists_to_global_mean[treatment][line])
+        ]
+        color = f&quot;C{j}&quot;
+        axs[i].hist(
+            distances, bins=20, alpha=0.4, density=True, color=color, label=line
+        )
+        kde = stats.gaussian_kde(distances)
+        axs[i].plot(xx, kde(xx), color=color)
 
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Fraction of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    axs[i].set_title(f&quot;{treatment} cells&quot;, fontsize=14)
+    axs[i].set_ylabel(&quot;Fraction of cells&quot;, fontsize=14)
+    axs[i].legend(fontsize=12)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Histograms of srv distances (a=1, b=0.5) to global mean cell&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;dist_to_global_mean_per_class2.svg&quot;</span><span class="p">)</span>
+fig.suptitle(&quot;Histograms of srv distances (a=1, b=0.5) to global mean cell&quot;, fontsize=20)
+plt.savefig(&quot;dist_to_global_mean_per_class2.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1718,47 +1718,47 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [37]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
-    <span class="n">nrows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">),</span>
-    <span class="n">ncols</span><span class="o">=</span><span class="n">n_quantiles</span><span class="p">,</span>
-    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)),</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>n_quantiles = 10
+fig, axes = plt.subplots(
+    nrows=len(TREATMENTS) * len(LINES),
+    ncols=n_quantiles,
+    figsize=(20, 2 * len(LINES) * len(TREATMENTS)),
+)
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">dists_list</span> <span class="o">=</span> <span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
-        <span class="n">dists_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="o">+</span> <span class="mf">0.0001</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dists_list</span><span class="p">]</span>
-        <span class="n">cells_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dists_list</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dists_list</span><span class="p">)</span>
-        <span class="n">n_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dists_list</span><span class="p">)</span>
+for i, treatment in enumerate(TREATMENTS):
+    for j, line in enumerate(LINES):
+        dists_list = dists_to_global_mean[treatment][line]
+        dists_list = [d + 0.0001 * gs.random.rand(1)[0] for d in dists_list]
+        cells_list = list(ds_align[treatment][line])
+        assert len(dists_list) == len(dists_list)
+        n_cells = len(dists_list)
 
-        <span class="n">zipped_lists</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dists_list</span><span class="p">,</span> <span class="n">cells_list</span><span class="p">)</span>
-        <span class="n">sorted_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">zipped_lists</span><span class="p">)</span>
+        zipped_lists = zip(dists_list, cells_list)
+        sorted_pairs = sorted(zipped_lists)
 
-        <span class="n">tuples</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_pairs</span><span class="p">)</span>
-        <span class="n">sorted_dists_list</span><span class="p">,</span> <span class="n">sorted_cells_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tuples</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i_quantile</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">):</span>
-            <span class="n">quantile</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">n_cells</span> <span class="o">*</span> <span class="n">i_quantile</span><span class="p">)</span>
-            <span class="n">one_cell</span> <span class="o">=</span> <span class="n">sorted_cells_list</span><span class="p">[</span><span class="n">quantile</span><span class="p">]</span>
-            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">,</span> <span class="n">i_quantile</span><span class="p">]</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">one_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">one_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;0.</span><span class="si">{</span><span class="n">i_quantile</span><span class="si">}</span><span class="s2"> quantile&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-            <span class="c1"># ax.axis(&quot;off&quot;)</span>
-            <span class="c1"># Turn off tick labels</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;bottom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">i_quantile</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quantiles for srv metric (a=1, b=0.5)&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=-</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;quantiles.svg&quot;</span><span class="p">)</span>
+        tuples = zip(*sorted_pairs)
+        sorted_dists_list, sorted_cells_list = [list(t) for t in tuples]
+        for i_quantile in range(n_quantiles):
+            quantile = int(0.1 * n_cells * i_quantile)
+            one_cell = sorted_cells_list[quantile]
+            ax = axes[2 * i + j, i_quantile]
+            ax.plot(one_cell[:, 0], one_cell[:, 1], c=f&quot;C{j}&quot;)
+            ax.set_title(f&quot;0.{i_quantile} quantile&quot;, fontsize=14)
+            # ax.axis(&quot;off&quot;)
+            # Turn off tick labels
+            ax.set_yticklabels([])
+            ax.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.spines[&quot;top&quot;].set_visible(False)
+            ax.spines[&quot;right&quot;].set_visible(False)
+            ax.spines[&quot;bottom&quot;].set_visible(False)
+            ax.spines[&quot;left&quot;].set_visible(False)
+            if i_quantile == 0:
+                ax.set_ylabel(f&quot;{treatment}-{line}&quot;, rotation=90, fontsize=18)
+plt.tight_layout()
+plt.suptitle(f&quot;Quantiles for srv metric (a=1, b=0.5)&quot;, y=-0.01, fontsize=24)
+plt.savefig(&quot;quantiles.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1778,11 +1778,11 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [38]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticMetric</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from geomstats.geometry.discrete_curves import ElasticMetric
 
-<span class="n">a</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">ELASTIC_METRIC</span>  <span class="o">=</span> <span class="n">ElasticMetric</span><span class="p">(</span><span class="n">ambient_manifold</span><span class="o">=</span><span class="n">R2</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
+a = 3
+b = 1
+ELASTIC_METRIC  = ElasticMetric(ambient_manifold=R2, a=a, b=b)
 <br/></pre></div>
 </div>
 </div>
@@ -1790,14 +1790,14 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [39]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
-    <span class="n">ds_align</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">ELASTIC_METRIC</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean_estimate_aligned</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>elastic_dists_to_global_mean = apply_func_to_ds(
+    ds_align, func=lambda x: ELASTIC_METRIC.dist(x, mean_estimate_aligned)
+)
 
-<span class="n">elastic_dists_to_global_mean_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">elastic_dists_to_global_mean_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">l</span><span class="p">])</span>
+elastic_dists_to_global_mean_list = []
+for t in TREATMENTS:
+    for l in LINES:
+        elastic_dists_to_global_mean_list.extend(elastic_dists_to_global_mean[t][l])
 </pre></div>
 </div>
 </div>
@@ -1805,10 +1805,10 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [40]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean_list</span><span class="p">)</span>
-<span class="n">elastic_max_dists</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean_list</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">elastic_min_dists</span><span class="p">,</span> <span class="n">elastic_max_dists</span><span class="p">)</span>
-<span class="n">elastic_xx</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">elastic_min_dists</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">elastic_max_dists</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>elastic_min_dists = min(elastic_dists_to_global_mean_list)
+elastic_max_dists = max(elastic_dists_to_global_mean_list)
+print(elastic_min_dists, elastic_max_dists)
+elastic_xx = gs.linspace(gs.floor(elastic_min_dists), gs.ceil(elastic_max_dists), 100)
 </pre></div>
 </div>
 </div>
@@ -1824,29 +1824,29 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [41]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axs = plt.subplots(1, sharex=True, sharey=True, tight_layout=True, figsize=(8, 4))
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">distances</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][</span>
-                <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;C&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">treatment</span><span class="p">)</span>
-    <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">elastic_xx</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">elastic_xx</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="n">elastic_min_dists</span><span class="p">,</span> <span class="n">elastic_max_dists</span><span class="p">))</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+for i, treatment in enumerate(TREATMENTS):
+    distances = []
+    for j, line in enumerate(LINES):
+        distances.extend(
+            elastic_dists_to_global_mean[treatment][line][
+                ~gs.isnan(elastic_dists_to_global_mean[treatment][line])
+            ]
+        )
+    color = &quot;C&quot; + str(2 + i)
+    axs.hist(distances, bins=20, alpha=0.4, density=True, color=color, label=treatment)
+    kde = stats.gaussian_kde(distances)
+    axs.plot(elastic_xx, kde(elastic_xx), color=color)
+    axs.set_xlim((elastic_min_dists, elastic_max_dists))
+    axs.legend(fontsize=12)
 
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Fraction of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+    axs.set_title(f&quot;{treatment} cells&quot;, fontsize=14)
+    axs.set_ylabel(&quot;Fraction of cells&quot;, fontsize=14)
 
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Histograms of elastic (a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">) distances to global mean cell&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dist_to_global_mean_per_treatment2_a</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">_b</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">.svg&quot;</span><span class="p">)</span>
+fig.suptitle(f&quot;Histograms of elastic (a={a}, b={b}) distances to global mean cell&quot;, fontsize=20)
+plt.savefig(f&quot;dist_to_global_mean_per_treatment2_a{a}_b{b}.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1861,27 +1861,27 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [42]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axs = plt.subplots(3, sharex=True, sharey=True, tight_layout=True, figsize=(8, 8))
 
-<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="n">elastic_min_dists</span><span class="p">,</span> <span class="n">elastic_max_dists</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][</span>
-            <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-        <span class="p">]</span>
-        <span class="n">color</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
-            <span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">line</span>
-        <span class="p">)</span>
-        <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">elastic_xx</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">elastic_xx</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+axs[0].set_xlim((elastic_min_dists, elastic_max_dists))
+for i, treatment in enumerate(TREATMENTS):
+    for j, line in enumerate(LINES):
+        distances = elastic_dists_to_global_mean[treatment][line][
+            ~gs.isnan(elastic_dists_to_global_mean[treatment][line])
+        ]
+        color = f&quot;C{j}&quot;
+        axs[i].hist(
+            distances, bins=20, alpha=0.4, density=True, color=color, label=line
+        )
+        kde = stats.gaussian_kde(distances)
+        axs[i].plot(elastic_xx, kde(elastic_xx), color=color)
 
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Fraction of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    axs[i].set_title(f&quot;{treatment} cells&quot;, fontsize=14)
+    axs[i].set_ylabel(&quot;Fraction of cells&quot;, fontsize=14)
+    axs[i].legend(fontsize=12)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Histograms of elastic (a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">) distances to global mean cell&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dist_to_global_mean_per_class2_a</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">_b</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">.svg&quot;</span><span class="p">)</span>
+fig.suptitle(f&quot;Histograms of elastic (a={a}, b={b}) distances to global mean cell&quot;, fontsize=20)
+plt.savefig(f&quot;dist_to_global_mean_per_class2_a{a}_b{b}.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1896,47 +1896,47 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [43]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># n_quantiles = 10</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
-    <span class="n">nrows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">),</span>
-    <span class="n">ncols</span><span class="o">=</span><span class="n">n_quantiles</span><span class="p">,</span>
-    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)),</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># n_quantiles = 10
+fig, axes = plt.subplots(
+    nrows=len(TREATMENTS) * len(LINES),
+    ncols=n_quantiles,
+    figsize=(20, 2 * len(LINES) * len(TREATMENTS)),
+)
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">elastic_dists_list</span> <span class="o">=</span> <span class="n">elastic_dists_to_global_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
-        <span class="n">elastic_dists_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="o">+</span> <span class="mf">0.0001</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">elastic_dists_list</span><span class="p">]</span>
-        <span class="n">cells_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">elastic_dists_list</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">elastic_dists_list</span><span class="p">)</span>
-        <span class="n">n_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elastic_dists_list</span><span class="p">)</span>
+for i, treatment in enumerate(TREATMENTS):
+    for j, line in enumerate(LINES):
+        elastic_dists_list = elastic_dists_to_global_mean[treatment][line]
+        elastic_dists_list = [d + 0.0001 * gs.random.rand(1)[0] for d in elastic_dists_list]
+        cells_list = list(ds_align[treatment][line])
+        assert len(elastic_dists_list) == len(elastic_dists_list)
+        n_cells = len(elastic_dists_list)
 
-        <span class="n">zipped_lists</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">elastic_dists_list</span><span class="p">,</span> <span class="n">cells_list</span><span class="p">)</span>
-        <span class="n">sorted_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">zipped_lists</span><span class="p">)</span>
+        zipped_lists = zip(elastic_dists_list, cells_list)
+        sorted_pairs = sorted(zipped_lists)
 
-        <span class="n">tuples</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_pairs</span><span class="p">)</span>
-        <span class="n">sorted_dists_list</span><span class="p">,</span> <span class="n">sorted_cells_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tuples</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i_quantile</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_quantiles</span><span class="p">):</span>
-            <span class="n">quantile</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">n_cells</span> <span class="o">*</span> <span class="n">i_quantile</span><span class="p">)</span>
-            <span class="n">one_cell</span> <span class="o">=</span> <span class="n">sorted_cells_list</span><span class="p">[</span><span class="n">quantile</span><span class="p">]</span>
-            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">,</span> <span class="n">i_quantile</span><span class="p">]</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">one_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">one_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;0.</span><span class="si">{</span><span class="n">i_quantile</span><span class="si">}</span><span class="s2"> quantile&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-            <span class="c1"># ax.axis(&quot;off&quot;)</span>
-            <span class="c1"># Turn off tick labels</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;bottom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">i_quantile</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quantiles for Elastic Metric (a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=-</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;elastic_quantiles_a</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">_b</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">.svg&quot;</span><span class="p">)</span>
+        tuples = zip(*sorted_pairs)
+        sorted_dists_list, sorted_cells_list = [list(t) for t in tuples]
+        for i_quantile in range(n_quantiles):
+            quantile = int(0.1 * n_cells * i_quantile)
+            one_cell = sorted_cells_list[quantile]
+            ax = axes[2 * i + j, i_quantile]
+            ax.plot(one_cell[:, 0], one_cell[:, 1], c=f&quot;C{j}&quot;)
+            ax.set_title(f&quot;0.{i_quantile} quantile&quot;, fontsize=14)
+            # ax.axis(&quot;off&quot;)
+            # Turn off tick labels
+            ax.set_yticklabels([])
+            ax.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.spines[&quot;top&quot;].set_visible(False)
+            ax.spines[&quot;right&quot;].set_visible(False)
+            ax.spines[&quot;bottom&quot;].set_visible(False)
+            ax.spines[&quot;left&quot;].set_visible(False)
+            if i_quantile == 0:
+                ax.set_ylabel(f&quot;{treatment}-{line}&quot;, rotation=90, fontsize=18)
+plt.tight_layout()
+plt.suptitle(f&quot;Quantiles for Elastic Metric (a={a}, b={b})&quot;, y=-0.01, fontsize=24)
+plt.savefig(f&quot;elastic_quantiles_a{a}_b{b}.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -1957,7 +1957,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [44]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">scipy</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import scipy
 </pre></div>
 </div>
 </div>
@@ -1965,20 +1965,20 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [45]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line_1</span><span class="p">,</span> <span class="n">line_2</span> <span class="o">=</span> <span class="n">LINES</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>line_1, line_2 = LINES
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> --- Test equality of means: </span><span class="si">{</span><span class="n">line_1</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">line_2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="n">dists_1</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">treatment_1</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">dists_1</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_1</span><span class="p">][</span><span class="n">line_1</span><span class="p">])</span>
-<span class="n">dists_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists_1</span><span class="p">)</span>
+print(f&quot;\n --- Test equality of means: {line_1} vs {line_2}&quot;)
+dists_1 = []
+for treatment_1 in TREATMENTS:
+    dists_1.extend(dists_to_global_mean[treatment_1][line_1])
+dists_1 = gs.array(dists_1)
 
-<span class="n">dists_2</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">treatment_2</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">dists_2</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_2</span><span class="p">][</span><span class="n">line_2</span><span class="p">])</span>
-<span class="n">dist_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists_2</span><span class="p">)</span>
+dists_2 = []
+for treatment_2 in TREATMENTS:
+    dists_2.extend(dists_to_global_mean[treatment_2][line_2])
+dist_2 = gs.array(dists_2)
 
-<span class="n">display</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">dists_1</span><span class="p">,</span> <span class="n">dists_2</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+display(scipy.stats.ttest_ind(dists_1, dists_2, equal_var=False))
 </pre></div>
 </div>
 </div>
@@ -2003,30 +2003,30 @@ Ttest_indResult(statistic=-7.119641927083621, pvalue=3.0954021594097804e-12)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [46]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>count = 0
 
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+from itertools import combinations
 
-<span class="k">for</span> <span class="n">two_treatments</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-    <span class="n">treatment_1</span><span class="p">,</span> <span class="n">treatment_2</span> <span class="o">=</span> <span class="n">two_treatments</span>
+for two_treatments in combinations(TREATMENTS, 2):
+    treatment_1, treatment_2 = two_treatments
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> --- Test equality of means: </span><span class="si">{</span><span class="n">treatment_1</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">treatment_2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">dists_1</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">line_1</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">dists_1</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_1</span><span class="p">][</span><span class="n">line_1</span><span class="p">])</span>
-    <span class="n">dists_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists_1</span><span class="p">)</span>
+    print(f&quot;\n --- Test equality of means: {treatment_1} vs {treatment_2}&quot;)
+    dists_1 = []
+    for line_1 in LINES:
+        dists_1.extend(dists_to_global_mean[treatment_1][line_1])
+    dists_1 = gs.array(dists_1)
 
-    <span class="n">dists_2</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">line_2</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">dists_2</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_2</span><span class="p">][</span><span class="n">line_2</span><span class="p">])</span>
-    <span class="n">dist_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists_2</span><span class="p">)</span>
+    dists_2 = []
+    for line_2 in LINES:
+        dists_2.extend(dists_to_global_mean[treatment_2][line_2])
+    dist_2 = gs.array(dists_2)
 
-    <span class="n">display</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">dists_1</span><span class="p">,</span> <span class="n">dists_2</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-<span class="nb">print</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;!! Correct for multiple hypothesis testing with Bonferroni correction,&quot;</span>
-    <span class="sa">f</span><span class="s2">&quot; by multiplying the p-values by </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> &quot;</span>
-<span class="p">)</span>
+    display(scipy.stats.ttest_ind(dists_1, dists_2, equal_var=False))
+    count += 1
+print(
+    f&quot;!! Correct for multiple hypothesis testing with Bonferroni correction,&quot;
+    f&quot; by multiplying the p-values by {count} &quot;
+)
 </pre></div>
 </div>
 </div>
@@ -2093,7 +2093,7 @@ Ttest_indResult(statistic=10.293250508487523, pvalue=1.2621209911041894e-21)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [47]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TREATMENT_LINE_CLASSES</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([(</span><span class="n">t</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TREATMENTS</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>TREATMENT_LINE_CLASSES = set([(t, l) for t in TREATMENTS for l in LINES])
 </pre></div>
 </div>
 </div>
@@ -2101,27 +2101,27 @@ Ttest_indResult(statistic=10.293250508487523, pvalue=1.2621209911041894e-21)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [48]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>count = 0
 
-<span class="k">for</span> <span class="n">two_classes</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">TREATMENT_LINE_CLASSES</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-    <span class="n">class_1</span><span class="p">,</span> <span class="n">class_2</span> <span class="o">=</span> <span class="n">two_classes</span>
-    <span class="n">treatment_1</span><span class="p">,</span> <span class="n">line_1</span> <span class="o">=</span> <span class="n">class_1</span>
-    <span class="n">treatment_2</span><span class="p">,</span> <span class="n">line_2</span> <span class="o">=</span> <span class="n">class_2</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> --- Test equality of means: </span><span class="si">{</span><span class="n">treatment_1</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">line_1</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">treatment_2</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">line_2</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="p">)</span>
-    <span class="n">display</span><span class="p">(</span>
-        <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span>
-            <span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_1</span><span class="p">][</span><span class="n">line_1</span><span class="p">],</span>
-            <span class="n">dists_to_global_mean</span><span class="p">[</span><span class="n">treatment_2</span><span class="p">][</span><span class="n">line_2</span><span class="p">],</span>
-            <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-<span class="nb">print</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;!! Correct for multiple hypothesis testing with Bonferroni correction,&quot;</span>
-    <span class="sa">f</span><span class="s2">&quot; by multiplying the p-values by </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> &quot;</span>
-<span class="p">)</span>
+for two_classes in combinations(TREATMENT_LINE_CLASSES, 2):
+    class_1, class_2 = two_classes
+    treatment_1, line_1 = class_1
+    treatment_2, line_2 = class_2
+    print(
+        f&quot;\n --- Test equality of means: {treatment_1}-{line_1} vs {treatment_2}-{line_2}&quot;
+    )
+    display(
+        scipy.stats.ttest_ind(
+            dists_to_global_mean[treatment_1][line_1],
+            dists_to_global_mean[treatment_2][line_2],
+            equal_var=False,
+        )
+    )
+    count += 1
+print(
+    f&quot;!! Correct for multiple hypothesis testing with Bonferroni correction,&quot;
+    f&quot; by multiplying the p-values by {count} &quot;
+)
 </pre></div>
 </div>
 </div>
@@ -2396,14 +2396,14 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [49]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_treatment_cells</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">treatment_cells</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">treatment_cells</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-    <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">SRV_METRIC</span><span class="p">)</span>
-    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">treatment_cells</span><span class="p">[:</span><span class="mi">30</span><span class="p">])</span>
-    <span class="n">mean_treatment_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean_treatment_cells = {}
+for treatment in TREATMENTS:
+    treatment_cells = []
+    for line in LINES:
+        treatment_cells.extend(ds_align[treatment][line])
+    mean_estimator = FrechetMean(metric=SRV_METRIC)
+    mean_estimator.fit(treatment_cells[:30])
+    mean_treatment_cells[treatment] = mean_estimator.estimate_
 </pre></div>
 </div>
 </div>
@@ -2411,17 +2411,17 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [50]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">mean_cell</span> <span class="o">=</span> <span class="n">mean_treatment_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">),</span> <span class="n">count</span><span class="p">)</span>
-    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;C2&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean </span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;cancer_mean_treatment_cells.svg&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig = plt.figure(figsize=(8, 4))
+count = 1
+for treatment in TREATMENTS:
+    mean_cell = mean_treatment_cells[treatment]
+    fig.add_subplot(1, len(TREATMENTS), count)
+    count += 1
+    plt.plot(mean_cell[:, 0], mean_cell[:, 1], color=f&quot;C2&quot;)
+    plt.axis(&quot;equal&quot;)
+    plt.axis(&quot;off&quot;)
+    plt.title(f&quot;Mean {treatment}&quot;, fontsize=20)
+plt.savefig(&quot;cancer_mean_treatment_cells.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -2436,14 +2436,14 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [51]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_line_cells</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-    <span class="n">line_cells</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-        <span class="n">line_cells</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-    <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">SRV_METRIC</span><span class="p">)</span>
-    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">line_cells</span><span class="p">[:</span><span class="mi">225</span><span class="p">])</span>
-    <span class="n">mean_line_cells</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean_line_cells = {}
+for line in LINES:
+    line_cells = []
+    for treatment in TREATMENTS:
+        line_cells.extend(ds_align[treatment][line])
+    mean_estimator = FrechetMean(metric=SRV_METRIC)
+    mean_estimator.fit(line_cells[:225])
+    mean_line_cells[line] = mean_estimator.estimate_
 </pre></div>
 </div>
 </div>
@@ -2451,17 +2451,17 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [52]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-    <span class="n">mean_cell</span> <span class="o">=</span> <span class="n">mean_line_cells</span><span class="p">[</span><span class="n">line</span><span class="p">]</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">),</span> <span class="n">count</span><span class="p">)</span>
-    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;C1&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;cancer_mean_line_cells.svg&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig = plt.figure(figsize=(8, 4))
+count = 1
+for line in LINES:
+    mean_cell = mean_line_cells[line]
+    fig.add_subplot(1, len(LINES), count)
+    count += 1
+    plt.plot(mean_cell[:, 0], mean_cell[:, 1], color=f&quot;C1&quot;)
+    plt.axis(&quot;equal&quot;)
+    plt.axis(&quot;off&quot;)
+    plt.title(f&quot;Mean {line}&quot;, fontsize=20)
+plt.savefig(&quot;cancer_mean_line_cells.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -2476,13 +2476,13 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [53]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_cells</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">SRV_METRIC</span><span class="p">)</span>
-        <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][:</span><span class="mi">20</span><span class="p">])</span>
-        <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mean_cells = {}
+for treatment in TREATMENTS:
+    mean_cells[treatment] = {}
+    for line in LINES:
+        mean_estimator = FrechetMean(metric=SRV_METRIC)
+        mean_estimator.fit(ds_align[treatment][line][:20])
+        mean_cells[treatment][line] = mean_estimator.estimate_
 </pre></div>
 </div>
 </div>
@@ -2490,18 +2490,18 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [54]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">mean_cell</span> <span class="o">=</span> <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">),</span> <span class="n">count</span><span class="p">)</span>
-        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2">   -   </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;cancer_mean_cells.svg&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig = plt.figure(figsize=(16, 6))
+count = 1
+for treatment in TREATMENTS:
+    for j, line in enumerate(LINES):
+        mean_cell = mean_cells[treatment][line]
+        fig.add_subplot(len(TREATMENTS), len(LINES), count)
+        count += 1
+        plt.plot(mean_cell[:, 0], mean_cell[:, 1], color=f&quot;C{j}&quot;)
+        plt.axis(&quot;equal&quot;)
+        plt.axis(&quot;off&quot;)
+        plt.title(f&quot;{treatment}   -   {line}&quot;, fontsize=20)
+plt.savefig(&quot;cancer_mean_cells.svg&quot;)
 </pre></div>
 </div>
 </div>
@@ -2521,22 +2521,22 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [55]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_own_mean</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">nan_ids</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
-    <span class="n">dists_to_own_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">nan_ids</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i_curve</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]):</span>
-            <span class="n">one_dist</span> <span class="o">=</span> <span class="n">SRV_METRIC</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-            <span class="k">if</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">one_dist</span><span class="p">):</span>
-                <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">one_dist</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_curve</span><span class="p">)</span>
-        <span class="n">dists_to_own_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">dists</span>
-        <span class="n">nan_ids</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">ids</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dists_to_own_mean = {}
+nan_ids = {}
+for treatment in TREATMENTS:
+    dists_to_own_mean[treatment] = {}
+    nan_ids[treatment] = {}
+    for line in LINES:
+        dists = []
+        ids = []
+        for i_curve, curve in enumerate(ds_align[treatment][line]):
+            one_dist = SRV_METRIC.dist(curve, mean_cells[treatment][line])
+            if ~gs.isnan(one_dist):
+                dists.append(one_dist)
+            else:
+                ids.append(i_curve)
+        dists_to_own_mean[treatment][line] = dists
+        nan_ids[treatment][line] = ids
 </pre></div>
 </div>
 </div>
@@ -2544,24 +2544,24 @@ Ttest_indResult(statistic=-25.733072716232908, pvalue=1.2147188349651639e-56)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [56]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, axs = plt.subplots(3, sharex=True, sharey=True, tight_layout=True, figsize=(8, 8))
 
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">LINES</span><span class="p">):</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">dists_to_own_mean</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
-        <span class="n">color</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;C</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
-            <span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">line</span>
-        <span class="p">)</span>
-        <span class="n">kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">kde</span><span class="p">(</span><span class="n">xx</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+for i, treatment in enumerate(TREATMENTS):
+    for j, line in enumerate(LINES):
+        distances = dists_to_own_mean[treatment][line]
+        color = f&quot;C{j}&quot;
+        axs[i].hist(
+            distances, bins=20, alpha=0.4, density=True, color=color, label=line
+        )
+        kde = stats.gaussian_kde(distances)
+        axs[i].plot(xx, kde(xx), color=color)
 
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">treatment</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Fraction of cells&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    axs[i].set_title(f&quot;{treatment} cells&quot;, fontsize=14)
+    axs[i].set_ylabel(&quot;Fraction of cells&quot;, fontsize=14)
+    axs[i].legend(fontsize=12)
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Histograms of elastic distances to *own* mean cell&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;dist_to_own_mean.svg&quot;</span><span class="p">)</span>
+fig.suptitle(&quot;Histograms of elastic distances to *own* mean cell&quot;, fontsize=20)
+plt.savefig(&quot;dist_to_own_mean.svg&quot;)
 </pre></div>
 </div>
 </div>
