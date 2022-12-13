@@ -396,38 +396,9 @@
 <span class="p">)</span>
 
 
-<div class="viewcode-block" id="broadcast_shapes"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.broadcast_shapes">[docs]</a><span class="k">def</span> <span class="nf">broadcast_shapes</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Broadcast the input shapes into a single shape.</span>
-
-<span class="sd">    This is an adaptation of the version of the function implemented in mumpy 1.20.0</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    `*args` : tuples of ints, or ints</span>
-<span class="sd">        The shapes to be broadcast against each other.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    tuple</span>
-<span class="sd">        Broadcasted shape.</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    ValueError</span>
-<span class="sd">        If the shapes are not compatible and cannot be broadcast according</span>
-<span class="sd">        to NumPy&#39;s broadcasting rules.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">()</span>
-    <span class="n">arrays</span> <span class="o">=</span> <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
-    <span class="n">broadcasted_array</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="o">*</span><span class="n">arrays</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">broadcasted_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span></div>
-
-
-<div class="viewcode-block" id="all_equal"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.all_equal">[docs]</a><span class="k">def</span> <span class="nf">all_equal</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_all_equal</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Check if all elements of arg are equal.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ProductManifold"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold">[docs]</a><span class="k">class</span> <span class="nc">ProductManifold</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
@@ -444,17 +415,21 @@
 <span class="sd">    metric_scales : list</span>
 <span class="sd">        Optional. A list of positive numbers by which to scale the metric on each</span>
 <span class="sd">        factor. If not given, no scaling is used.</span>
-<span class="sd">    default_point_type : {&#39;vector&#39;, &#39;matrix}</span>
-<span class="sd">        Optional. Vector representation gives the point as a 1-d array.</span>
-<span class="sd">        Matrix representation allows for a point to be represented by an array of shape</span>
-<span class="sd">        (n, dim), if each manifold has default_point_type &#39;vector&#39; with shape (dim,).</span>
+<span class="sd">    default_point_type : {&#39;auto&#39;, &#39;vector&#39;, &#39;matrix&#39;, &#39;other&#39;}</span>
+<span class="sd">        Optional. Default value is &#39;auto&#39;, which will implement as &#39;vector&#39; unless all</span>
+<span class="sd">        factors have the same shape. Vector representation gives the point as a 1-d</span>
+<span class="sd">        array. Matrix representation allows for a point to be represented by an array of</span>
+<span class="sd">        shape (n, dim), if each manifold has default_point_type &#39;vector&#39; with shape</span>
+<span class="sd">        (dim,). &#39;other&#39; will behave as `matrix` but for higher dimensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">factors</span><span class="p">,</span> <span class="n">metric_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">factors</span><span class="p">,</span> <span class="n">metric_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">):</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="n">default_point_type</span><span class="p">,</span> <span class="s2">&quot;default_point_type&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
+            <span class="n">default_point_type</span><span class="p">,</span>
+            <span class="s2">&quot;default_point_type&quot;</span><span class="p">,</span>
+            <span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix&quot;</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">factors</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span>
@@ -511,21 +486,25 @@
 
     <span class="k">def</span> <span class="nf">_find_product_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_point_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Determine an appropriate shape for the product from the factors.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_all_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">default_point_type</span> <span class="o">=</span> <span class="s2">&quot;vector&quot;</span>
         <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="nb">sum</span><span class="p">([</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">factor_shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">factor_shape</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">]),</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">factor_shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">factor_shape</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">),</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">all_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_all_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;A default_point_type of &#39;matrix&#39; can only be used if all &quot;</span>
+                <span class="s2">&quot;A default_point_type of &#39;matrix&#39; or &#39;other&#39; can only be used if all &quot;</span>
                 <span class="s2">&quot;manifolds have the same shape.&quot;</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;A default_point_type of &#39;matrix&#39; can only be used if all &quot;</span>
                 <span class="s2">&quot;manifolds have vector type.&quot;</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
 
 <div class="viewcode-block" id="ProductManifold.embed_to_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold.embed_to_product">[docs]</a>    <span class="k">def</span> <span class="nf">embed_to_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Map a point in each factor to a point in the product.</span>
@@ -558,9 +537,9 @@
                     <span class="n">response</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 
                 <span class="n">points_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">points_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
+        <span class="n">stacking_axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">stacking_axis</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ProductManifold.project_from_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold.project_from_product">[docs]</a>    <span class="k">def</span> <span class="nf">project_from_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Map a point in the product to points in each factor.</span>
@@ -590,7 +569,12 @@
             <span class="p">]</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">projected_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">))]</span>
+            <span class="n">splitting_axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">projected_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">splitting_axis</span><span class="p">)</span>
+            <span class="n">projected_points</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">projected_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">splitting_axis</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">projected_point</span> <span class="ow">in</span> <span class="n">projected_points</span>
+            <span class="p">]</span>
 
         <span class="k">return</span> <span class="n">projected_points</span></div>
 
@@ -697,7 +681,7 @@
         <span class="n">all_arrays</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">factor_output</span><span class="p">)</span> <span class="k">for</span> <span class="n">factor_output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">all_arrays</span>
-            <span class="ow">and</span> <span class="n">all_equal</span><span class="p">([</span><span class="n">factor_output</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">factor_output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span>
+            <span class="ow">and</span> <span class="n">_all_equal</span><span class="p">([</span><span class="n">factor_output</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">factor_output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span>
             <span class="ow">and</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">is_bool</span><span class="p">(</span><span class="n">factor_output</span><span class="p">)</span> <span class="k">for</span> <span class="n">factor_output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">])</span>
             <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">all_arrays</span><span class="p">)</span>
         <span class="p">):</span>
@@ -759,7 +743,7 @@
         <span class="sd">&quot;&quot;&quot;Sample in the product space from the product distribution.</span>
 
 <span class="sd">        The distribution used is the product of the distributions used by the</span>
-<span class="sd">        random_sample methods of each individual factor manifold.</span>
+<span class="sd">        random_point methods of each individual factor manifold.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -777,6 +761,32 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_factors</span><span class="p">(</span>
             <span class="s2">&quot;random_point&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="n">n_samples</span><span class="p">,</span> <span class="s2">&quot;bound&quot;</span><span class="p">:</span> <span class="n">bound</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+<div class="viewcode-block" id="ProductManifold.random_tangent_vec"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold.random_tangent_vec">[docs]</a>    <span class="k">def</span> <span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample on the tangent space from the product distribution.</span>
+
+<span class="sd">        The distribution used is the product of the distributions used by the</span>
+<span class="sd">        random_tangent_vec methods of each individual factor manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Base point of the tangent space.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., {dim, embedding_space.dim,</span>
+<span class="sd">            [n_manifolds, dim_each]}]</span>
+<span class="sd">            Points sampled in the tangent space of the product manifold at base_point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_factors</span><span class="p">(</span>
+            <span class="s2">&quot;random_tangent_vec&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;base_point&quot;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">,</span> <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="n">n_samples</span><span class="p">}</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">samples</span></div>
 
@@ -876,7 +886,7 @@
         <span class="n">n_copies</span><span class="p">,</span>
         <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">default_coords_type</span><span class="o">=</span><span class="s2">&quot;intrinsic&quot;</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">n_copies</span><span class="p">,</span> <span class="s2">&quot;n_copies&quot;</span><span class="p">)</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">n_copies</span> <span class="o">*</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">dim</span>
