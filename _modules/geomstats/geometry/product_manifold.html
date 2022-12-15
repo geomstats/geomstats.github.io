@@ -384,24 +384,19 @@
 <span class="sd">Lead author: Nicolas Guigui, John Harvey.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
-<span class="kn">from</span> <span class="nn">geomstats.errors</span> <span class="kn">import</span> <span class="n">ShapeError</span><span class="p">,</span> <span class="n">check_point_shape</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.product_riemannian_metric</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">NFoldMetric</span><span class="p">,</span>
     <span class="n">ProductRiemannianMetric</span><span class="p">,</span>
+    <span class="n">_all_equal</span><span class="p">,</span>
+    <span class="n">_IterateOverFactorsMixins</span><span class="p">,</span>
 <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_all_equal</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Check if all elements of arg are equal.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="ProductManifold"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold">[docs]</a><span class="k">class</span> <span class="nc">ProductManifold</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
+<div class="viewcode-block" id="ProductManifold"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold">[docs]</a><span class="k">class</span> <span class="nc">ProductManifold</span><span class="p">(</span><span class="n">_IterateOverFactorsMixins</span><span class="p">,</span> <span class="n">Manifold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for a product of manifolds M_1 x ... x M_n.</span>
 
 <span class="sd">    In contrast to the classes NFoldManifold, Landmarks, or DiscretizedCurves,</span>
@@ -461,6 +456,7 @@
         <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">pool_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
             <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
             <span class="n">default_coords_type</span><span class="o">=</span><span class="n">default_coords_type</span><span class="p">,</span>
@@ -483,179 +479,6 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_coords_type</span> <span class="o">==</span> <span class="s2">&quot;intrinsic&quot;</span>
             <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">_factor_dims</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_find_product_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_point_type</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Determine an appropriate shape for the product from the factors.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">_all_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">):</span>
-                <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-            <span class="n">default_point_type</span> <span class="o">=</span> <span class="s2">&quot;vector&quot;</span>
-        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span>
-                <span class="nb">sum</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">factor_shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">factor_shape</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_all_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;A default_point_type of &#39;matrix&#39; or &#39;other&#39; can only be used if all &quot;</span>
-                <span class="s2">&quot;manifolds have the same shape.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;A default_point_type of &#39;matrix&#39; can only be used if all &quot;</span>
-                <span class="s2">&quot;manifolds have vector type.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-
-<div class="viewcode-block" id="ProductManifold.embed_to_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold.embed_to_product">[docs]</a>    <span class="k">def</span> <span class="nf">embed_to_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Map a point in each factor to a point in the product.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        points : list</span>
-<span class="sd">            A list of points, one from each factor, each array-like of shape</span>
-<span class="sd">            (..., factor.shape)</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape (..., self.shape)</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ShapeError</span>
-<span class="sd">            If the points are not compatible with the shapes of the corresponding</span>
-<span class="sd">            factors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">point</span><span class="p">,</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">):</span>
-            <span class="n">check_point_shape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
-            <span class="n">points_</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">response</span><span class="p">,</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">response</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
-                    <span class="n">response</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])))</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">response</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-
-                <span class="n">points_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">points_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">stacking_axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">stacking_axis</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="ProductManifold.project_from_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.ProductManifold.project_from_product">[docs]</a>    <span class="k">def</span> <span class="nf">project_from_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Map a point in the product to points in each factor.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape (..., self.shape)</span>
-<span class="sd">            The point to be projected to the factors</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        projected_points : list of array-like</span>
-<span class="sd">            The points on each factor, of shape (..., factor.shape)</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ShapeError</span>
-<span class="sd">            If the point does not have a shape compatible with the product manifold.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">check_point_shape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
-            <span class="n">projected_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cum_index</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">projected_points</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_reshape_trailing</span><span class="p">(</span><span class="n">projected_points</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">))</span>
-            <span class="p">]</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">splitting_axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-            <span class="n">projected_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">splitting_axis</span><span class="p">)</span>
-            <span class="n">projected_points</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">projected_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">splitting_axis</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">projected_point</span> <span class="ow">in</span> <span class="n">projected_points</span>
-            <span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">projected_points</span></div>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_reshape_trailing</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">manifold</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert the trailing dimensions to match the shape of a factor manifold.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">manifold</span><span class="o">.</span><span class="n">default_coords_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">argument</span>
-        <span class="n">leading_shape</span> <span class="o">=</span> <span class="n">argument</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">trailing_shape</span> <span class="o">=</span> <span class="n">manifold</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">new_shape</span> <span class="o">=</span> <span class="n">leading_shape</span> <span class="o">+</span> <span class="n">trailing_shape</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_iterate_over_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Apply a function to each factor of the product.</span>
-
-<span class="sd">        func is called on each factor of the product.</span>
-
-<span class="sd">        Array-type arguments are separated out to be passed to func for each factor,</span>
-<span class="sd">        but other arguments are passed unchanged.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        func : str</span>
-<span class="sd">            The name of a method which is defined for each factor of the product</span>
-<span class="sd">            The method must return an array of shape (..., factor.shape) or a boolean</span>
-<span class="sd">            array of shape (...,).</span>
-<span class="sd">        args : dict</span>
-<span class="sd">            Dict of arguments.</span>
-<span class="sd">            Array-type arguments must be of type (..., shape)</span>
-<span class="sd">            Other arguments are passed to each factor unchanged</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        out : array-like, shape = [..., {(), self.shape}]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO The user may prefer to provide the arguments as lists and receive them as</span>
-        <span class="c1"># TODO lists, as this may be the form in which they are available. This should</span>
-        <span class="c1"># TODO be allowed, rather than packing and unpacking them repeatedly.</span>
-        <span class="n">args_list</span><span class="p">,</span> <span class="n">numerical_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_prepare_args_for_iteration</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-
-        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_get_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">func</span><span class="p">,</span> <span class="n">args_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">numerical_args</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">))</span>
-        <span class="p">]</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool_outputs_from_function</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">out</span>
-
-    <span class="k">def</span> <span class="nf">_validate_and_prepare_args_for_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Separate arguments into different types and validate them.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        args : dict</span>
-<span class="sd">            Dict of arguments.</span>
-<span class="sd">            Float or int arguments are passed to func for each manifold</span>
-<span class="sd">            Array-type arguments must be of type (..., shape)</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        arguments : list</span>
-<span class="sd">            List of dicts of arguments with values being array-like.</span>
-<span class="sd">            Each element of the list corresponds to a factor af the manifold.</span>
-<span class="sd">        numerical_args : dict</span>
-<span class="sd">            Dict of non-array arguments</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">args_list</span> <span class="o">=</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">]</span>
-        <span class="n">numerical_args</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-                <span class="n">numerical_args</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">new_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_from_product</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">args_dict</span><span class="p">,</span> <span class="n">new_arg</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">args_list</span><span class="p">,</span> <span class="n">new_args</span><span class="p">):</span>
-                    <span class="n">args_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_arg</span>
-        <span class="k">return</span> <span class="n">args_list</span><span class="p">,</span> <span class="n">numerical_args</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_get_method</span><span class="p">(</span><span class="n">manifold</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">array_args</span><span class="p">,</span> <span class="n">num_args</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Call manifold.method_name.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">manifold</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)(</span><span class="o">**</span><span class="n">array_args</span><span class="p">,</span> <span class="o">**</span><span class="n">num_args</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_pool_outputs_from_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Collect outputs for each product to be returned.</span>
@@ -691,7 +514,7 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embed_to_product</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">ShapeError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ShapeError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
                 <span class="s2">&quot;Could not combine outputs - they are not points of the individual&quot;</span>
                 <span class="s2">&quot; factors.&quot;</span>
