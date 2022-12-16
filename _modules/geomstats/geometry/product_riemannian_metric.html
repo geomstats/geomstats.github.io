@@ -607,9 +607,6 @@
 <span class="sd">    ----------</span>
 <span class="sd">    metrics : list</span>
 <span class="sd">        List of metrics in the product.</span>
-<span class="sd">    scales : list</span>
-<span class="sd">        List of positive values to rescale the inner product by on each factor.</span>
-<span class="sd">        Note: To rescale the distances by a constant c, use c^2 for the scale</span>
 <span class="sd">    default_point_type : {&#39;auto&#39;, &#39;vector&#39;, &#39;matrix&#39;, &#39;other&#39;}</span>
 <span class="sd">        Optional. Default value is &#39;auto&#39;, which will implement as &#39;vector&#39; unless all</span>
 <span class="sd">        factors have the same shape. Vector representation gives the point as a 1-d</span>
@@ -618,7 +615,7 @@
 <span class="sd">        (dim,). &#39;other&#39; will behave as `matrix` but for higher dimensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">scales</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">):</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
             <span class="n">default_point_type</span><span class="p">,</span>
             <span class="s2">&quot;default_point_type&quot;</span><span class="p">,</span>
@@ -630,11 +627,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_factor_shapes</span> <span class="o">=</span> <span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_factor_shape_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_factor_signatures</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">signature</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">scale</span> <span class="ow">in</span> <span class="n">scales</span><span class="p">:</span>
-                <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_positive</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="s2">&quot;Each value in scales&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="o">=</span> <span class="n">scales</span>
 
         <span class="n">dim</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_dims</span><span class="p">)</span>
 
@@ -671,12 +663,7 @@
         <span class="n">factor_matrices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_factors</span><span class="p">(</span>
             <span class="s2">&quot;metric_matrix&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;base_point&quot;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">}</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">factor_matrices</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">matrix</span> <span class="o">*</span> <span class="n">scale</span> <span class="k">for</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">factor_matrices</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">)</span>
-            <span class="p">]</span>
-        <span class="n">metric_matrix</span> <span class="o">=</span> <span class="n">_block_diagonal</span><span class="p">(</span><span class="n">factor_matrices</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">metric_matrix</span></div>
+        <span class="k">return</span> <span class="n">_block_diagonal</span><span class="p">(</span><span class="n">factor_matrices</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ProductRiemannianMetric.inner_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -710,12 +697,6 @@
             <span class="s2">&quot;base_point&quot;</span><span class="p">:</span> <span class="n">base_point</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">inner_products</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_over_factors</span><span class="p">(</span><span class="s2">&quot;inner_product&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">inner_products</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">product</span> <span class="o">*</span> <span class="n">scale</span> <span class="k">for</span> <span class="n">product</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">inner_products</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">)</span>
-            <span class="p">]</span>
-
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">inner_products</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ProductRiemannianMetric.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_riemannian_metric.ProductRiemannianMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

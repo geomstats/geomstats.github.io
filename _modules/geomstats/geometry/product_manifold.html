@@ -407,9 +407,6 @@
 <span class="sd">    ----------</span>
 <span class="sd">    factors : list</span>
 <span class="sd">        List of manifolds in the product.</span>
-<span class="sd">    metric_scales : list</span>
-<span class="sd">        Optional. A list of positive numbers by which to scale the metric on each</span>
-<span class="sd">        factor. If not given, no scaling is used.</span>
 <span class="sd">    default_point_type : {&#39;auto&#39;, &#39;vector&#39;, &#39;matrix&#39;, &#39;other&#39;}</span>
 <span class="sd">        Optional. Default value is &#39;auto&#39;, which will implement as &#39;vector&#39; unless all</span>
 <span class="sd">        factors have the same shape. Vector representation gives the point as a 1-d</span>
@@ -418,9 +415,12 @@
 <span class="sd">        (dim,). &#39;other&#39; will behave as `matrix` but for higher dimensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">factors</span><span class="p">,</span> <span class="n">metric_scales</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factors</span><span class="p">,</span> <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;metric_scales&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Argument `metric_scales` is no longer in use: &quot;</span>
+                <span class="s2">&quot;use `scale * metric` to achieved the desired behavior&quot;</span>
+            <span class="p">)</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
             <span class="n">default_point_type</span><span class="p">,</span>
             <span class="s2">&quot;default_point_type&quot;</span><span class="p">,</span>
@@ -443,15 +443,11 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">default_coords_type</span> <span class="o">=</span> <span class="s2">&quot;intrinsic&quot;</span>
 
-        <span class="k">if</span> <span class="n">metric_scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">scale</span> <span class="ow">in</span> <span class="n">metric_scales</span><span class="p">:</span>
-                <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_positive</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
         <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
             <span class="s2">&quot;metric&quot;</span><span class="p">,</span>
             <span class="n">ProductRiemannianMetric</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">manifold</span><span class="o">.</span><span class="n">metric</span> <span class="k">for</span> <span class="n">manifold</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">],</span>
                 <span class="n">default_point_type</span><span class="o">=</span><span class="n">default_point_type</span><span class="p">,</span>
-                <span class="n">scales</span><span class="o">=</span><span class="n">metric_scales</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">)</span>
 
@@ -470,9 +466,8 @@
                 <span class="k">else</span> <span class="n">manifold</span>
                 <span class="k">for</span> <span class="n">manifold</span> <span class="ow">in</span> <span class="n">factors</span>
             <span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span> <span class="o">=</span> <span class="n">ProductManifold</span><span class="p">(</span>
-                <span class="n">factor_embedding_spaces</span><span class="p">,</span> <span class="n">metric_scales</span><span class="o">=</span><span class="n">metric_scales</span>
-            <span class="p">)</span>
+            <span class="c1"># TODO: need to revisit due to removal of scales</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span> <span class="o">=</span> <span class="n">ProductManifold</span><span class="p">(</span><span class="n">factor_embedding_spaces</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cum_index</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">gs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_factor_dims</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -708,26 +703,23 @@
         <span class="n">base_manifold</span><span class="p">,</span>
         <span class="n">n_copies</span><span class="p">,</span>
         <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">default_coords_type</span><span class="o">=</span><span class="s2">&quot;intrinsic&quot;</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">n_copies</span><span class="p">,</span> <span class="s2">&quot;n_copies&quot;</span><span class="p">)</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">n_copies</span> <span class="o">*</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">dim</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_copies</span><span class="p">,)</span> <span class="o">+</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span>
 
+        <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metric</span> <span class="o">=</span> <span class="n">NFoldMetric</span><span class="p">(</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">n_copies</span><span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
             <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
-            <span class="n">default_coords_type</span><span class="o">=</span><span class="n">default_coords_type</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">default_coords_type</span><span class="o">=</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">default_coords_type</span><span class="p">,</span>
+            <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span> <span class="o">=</span> <span class="n">base_manifold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span> <span class="o">=</span> <span class="n">n_copies</span>
-
-        <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">metric</span> <span class="o">=</span> <span class="n">NFoldMetric</span><span class="p">(</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">n_copies</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
 
 <div class="viewcode-block" id="NFoldManifold.belongs"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.product_manifold.NFoldManifold.belongs">[docs]</a>    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Test if a point belongs to the manifold.</span>
