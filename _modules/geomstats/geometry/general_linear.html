@@ -511,9 +511,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[n, n]</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Target point.</span>
-<span class="sd">        base_point : array-like, shape=[n, n], optional</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n], optional</span>
 <span class="sd">            Base point.</span>
 <span class="sd">            Optional, defaults to identity if None.</span>
 
@@ -544,8 +544,23 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">):</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">is_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span>
+
         <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
             <span class="n">vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;t,...ij-&gt;...tij&quot;</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_vec</span> <span class="ow">and</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">cls</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vecs_</span><span class="p">)</span> <span class="k">for</span> <span class="n">vecs_</span> <span class="ow">in</span> <span class="n">vecs</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">is_vec</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="bp">cls</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vecs_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">vecs_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">vecs</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
             <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vecs</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">path</span></div></div>

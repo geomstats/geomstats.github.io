@@ -474,9 +474,7 @@
 <span class="sd">            Point projected on the hypersphere.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">projected_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">projected_point</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a vector to the tangent space.</span>
@@ -501,9 +499,7 @@
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">base_point</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
         <span class="n">coef</span> <span class="o">=</span> <span class="n">inner_prod</span> <span class="o">/</span> <span class="n">sq_norm</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...j-&gt;...j&quot;</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tangent_vec</span>
+        <span class="k">return</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...j-&gt;...j&quot;</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">angle_to_extrinsic</span><span class="p">(</span><span class="n">point_angle</span><span class="p">):</span>
@@ -515,7 +511,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_angle : array-like, shape=[...]</span>
+<span class="sd">        point_angle : array-like, shape=[..., 1]</span>
 <span class="sd">            Point on the circle, i.e. an angle in radians in [-Pi, Pi].</span>
 
 <span class="sd">        Returns</span>
@@ -525,7 +521,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cos</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">point_angle</span><span class="p">)</span>
         <span class="n">sin</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">point_angle</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">])</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">extrinsic_to_angle</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">):</span>
@@ -537,15 +533,18 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_extrinsic : array-like, shape=[...]</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., 2]</span>
 <span class="sd">            Point on the circle, in extrinsic coordinates in Euclidean space.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        point_angle : array_like, shape=[..., 2]</span>
+<span class="sd">        point_angle : array_like, shape=[..., 1]</span>
 <span class="sd">            Point on the circle, i.e. an angle in radians in [-Pi, Pi].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">spherical_to_extrinsic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_spherical</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from spherical to extrinsic coordinates.</span>
@@ -558,21 +557,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_spherical : array-like, shape=[..., dim]</span>
+<span class="sd">        point_spherical : array-like, shape=[..., 2]</span>
 <span class="sd">            Point on the sphere, in spherical coordinates.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        point_extrinsic : array_like, shape=[..., dim + 1]</span>
+<span class="sd">        point_extrinsic : array_like, shape=[..., 3]</span>
 <span class="sd">            Point on the sphere, in extrinsic coordinates in Euclidean space.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;The conversion from spherical coordinates&quot;</span>
-                <span class="s2">&quot; to extrinsic coordinates is implemented&quot;</span>
-                <span class="s2">&quot; only in dimension 2.&quot;</span>
-            <span class="p">)</span>
-
         <span class="n">theta</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">phi</span> <span class="o">=</span> <span class="n">point_spherical</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
@@ -580,9 +572,6 @@
             <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)],</span>
             <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Points do not belong to the manifold.&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">point_extrinsic</span>
 
@@ -597,14 +586,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_spherical : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec_spherical : array-like, shape=[..., 2]</span>
 <span class="sd">            Tangent vector to the sphere, in spherical coordinates.</span>
-<span class="sd">        base_point_spherical : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point_spherical : array-like, shape=[..., 2]</span>
 <span class="sd">            Point on the sphere, in spherical coordinates.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        tangent_vec_extrinsic : array-like, shape=[..., dim + 1]</span>
+<span class="sd">        tangent_vec_extrinsic : array-like, shape=[..., 3]</span>
 <span class="sd">            Tangent vector to the sphere, at base point,</span>
 <span class="sd">            in extrinsic coordinates in Euclidean space.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -631,11 +620,7 @@
         <span class="p">)</span>
         <span class="n">jac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">jac</span><span class="p">,</span> <span class="n">axes</span><span class="p">)</span>
 
-        <span class="n">tangent_vec_extrinsic</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">&quot;...ij,...j-&gt;...i&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">tangent_vec_spherical</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tangent_vec_extrinsic</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...j-&gt;...i&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">tangent_vec_spherical</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">extrinsic_to_spherical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_extrinsic</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from extrinsic to spherical coordinates.</span>
@@ -648,22 +633,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_extrinsic : array-like, shape=[..., dim]</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., 3]</span>
 <span class="sd">            Point on the sphere, in extrinsic coordinates.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        point_spherical : array_like, shape=[..., dim + 1]</span>
+<span class="sd">        point_spherical : array_like, shape=[..., 2]</span>
 <span class="sd">            Point on the sphere, in spherical coordinates relative to the</span>
 <span class="sd">            north pole.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;The conversion from to extrinsic coordinates &quot;</span>
-                <span class="s2">&quot;spherical coordinates is implemented&quot;</span>
-                <span class="s2">&quot; only in dimension 2.&quot;</span>
-            <span class="p">)</span>
-
         <span class="n">theta</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">point_extrinsic</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
@@ -683,19 +661,19 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 3]</span>
 <span class="sd">            Tangent vector to the sphere, in spherical coordinates.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., 3]</span>
 <span class="sd">            Point on the sphere. Unused if `base_point_spherical` is given.</span>
 <span class="sd">            Optional, default : None.</span>
-<span class="sd">        base_point_spherical : array-like, shape=[..., dim]</span>
+<span class="sd">        base_point_spherical : array-like, shape=[..., 2]</span>
 <span class="sd">            Point on the sphere, in spherical coordinates. Either</span>
 <span class="sd">            `base_point` or `base_point_spherical` must be given.</span>
 <span class="sd">            Optional, default : None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        tangent_vec_spherical : array-like, shape=[..., dim + 1]</span>
+<span class="sd">        tangent_vec_spherical : array-like, shape=[..., 2]</span>
 <span class="sd">            Tangent vector to the sphere, at base point,</span>
 <span class="sd">            in spherical coordinates relative to the north pole [0., 0., 1.].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -743,9 +721,7 @@
         <span class="n">theta_criterion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...ij-&gt;...ij&quot;</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">jac</span><span class="p">))</span>
         <span class="n">jac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">theta_criterion</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span> <span class="n">jac_close_0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
 
-        <span class="n">tangent_vec_spherical</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...j-&gt;...i&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tangent_vec_spherical</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...j-&gt;...i&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">intrinsic_to_extrinsic_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_intrinsic</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from intrinsic to extrinsic coordinates.</span>
@@ -897,6 +873,8 @@
 <span class="sd">            in Euclidean space of dimension dim + 1.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not implemented for dim == 1&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">angle</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
