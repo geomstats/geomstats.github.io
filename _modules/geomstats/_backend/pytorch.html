@@ -768,7 +768,30 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">start_is_array</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">stop_is_array</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">start_is_array</span> <span class="ow">or</span> <span class="n">stop_is_array</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">start_is_array</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stop_is_array</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">broadcast_tensors</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
+    <span class="n">result_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="o">*</span><span class="n">start</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">_torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="n">_torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">_torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="n">stop</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">steps</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+        <span class="n">result_shape</span><span class="p">,</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">equal</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
