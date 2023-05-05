@@ -429,8 +429,6 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.scalar_product_metric</span> <span class="kn">import</span> <span class="n">ScalarProductMetric</span>
 
 
 <div class="viewcode-block" id="Manifold"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold">[docs]</a><span class="k">class</span> <span class="nc">Manifold</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -443,24 +441,27 @@ document.write(`
 <span class="sd">    shape : tuple of int</span>
 <span class="sd">        Shape of one element of the manifold.</span>
 <span class="sd">        Optional, default : None.</span>
-<span class="sd">    metric : RiemannianMetric</span>
-<span class="sd">        Metric object to use on the manifold.</span>
-<span class="sd">    default_coords_type : str, {\&#39;intrinsic\&#39;, \&#39;extrinsic\&#39;, etc}</span>
+<span class="sd">    default_coords_type : str, {&#39;intrinsic&#39;, &#39;extrinsic&#39;, etc}</span>
 <span class="sd">        Coordinate type.</span>
 <span class="sd">        Optional, default: &#39;intrinsic&#39;.</span>
+<span class="sd">    equip : bool</span>
+<span class="sd">        If True, equip space with default metric.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    point_ndim : int</span>
 <span class="sd">        Dimension of point array.</span>
 <span class="sd">    default_point_type : str</span>
-<span class="sd">        Point type: &quot;vector&quot; or &quot;matrix&quot;</span>
+<span class="sd">        Point type: &quot;vector&quot; or &quot;matrix&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_coords_type</span><span class="o">=</span><span class="s2">&quot;intrinsic&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">,</span>
+        <span class="n">shape</span><span class="p">,</span>
+        <span class="n">default_coords_type</span><span class="o">=</span><span class="s2">&quot;intrinsic&quot;</span><span class="p">,</span>
+        <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="s2">&quot;dim&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
@@ -469,7 +470,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_coords_type</span> <span class="o">=</span> <span class="n">default_coords_type</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span> <span class="o">=</span> <span class="n">metric</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -478,6 +478,65 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">=</span> <span class="s2">&quot;matrix&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">=</span> <span class="s2">&quot;other&quot;</span>
+
+        <span class="k">if</span> <span class="n">equip</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Manifold.equip_with_metric"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold.equip_with_metric">[docs]</a>    <span class="k">def</span> <span class="nf">equip_with_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Metric</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">metric_kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equip manifold with Metric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Metric : Connection object</span>
+<span class="sd">            If None, default metric will be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">Metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_metric</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">Metric</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">out</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metric_kwargs</span><span class="p">)</span>
+                <span class="n">metric_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Metric</span> <span class="o">=</span> <span class="n">out</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">Metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">metric_kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Manifold.equip_with_group_action"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold.equip_with_group_action">[docs]</a>    <span class="k">def</span> <span class="nf">equip_with_group_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_action</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equip manifold with group action.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group_action : str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_action</span> <span class="o">=</span> <span class="n">group_action</span></div>
+
+    <span class="k">def</span> <span class="nf">_check_equip_with_quotient_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_quotient_map&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No quotient structure defined for this manifold.&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">structure_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="s2">&quot;group_action&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Need to equip with `</span><span class="si">{</span><span class="n">structure_name</span><span class="si">}</span><span class="s2">` first&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Manifold.equip_with_quotient_structure"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold.equip_with_quotient_structure">[docs]</a>    <span class="k">def</span> <span class="nf">equip_with_quotient_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equip manifold with quotient structure.</span>
+
+<span class="sd">        Creates attributes `quotient` and `fiber_bundle`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_equip_with_quotient_structure</span><span class="p">()</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_action</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No mapping for key: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">FiberBundle_</span><span class="p">,</span> <span class="n">QuotientMetric_</span> <span class="o">=</span> <span class="n">out</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span> <span class="o">=</span> <span class="n">FiberBundle_</span><span class="p">(</span><span class="n">total_space</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">quotient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">QuotientMetric_</span><span class="p">,</span> <span class="n">fiber_bundle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Manifold.belongs"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold.belongs">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
@@ -569,20 +628,6 @@ document.write(`
 <span class="sd">            Regularized point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Riemannian Metric associated to the Manifold.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span>
-
-    <span class="nd">@metric</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">,</span> <span class="n">ScalarProductMetric</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The argument must be a RiemannianMetric object&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
-                <span class="n">metric</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span> <span class="o">=</span> <span class="n">metric</span>
 
 <div class="viewcode-block" id="Manifold.random_tangent_vec"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.manifold.Manifold.random_tangent_vec">[docs]</a>    <span class="k">def</span> <span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate random tangent vec.</span>

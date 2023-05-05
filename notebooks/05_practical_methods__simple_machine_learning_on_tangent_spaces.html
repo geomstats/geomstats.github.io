@@ -412,6 +412,9 @@ document.write(`
 
 
 
+<li class="toctree-l1"><a class="reference internal" href="20_real_world_applications__graph_space.html">Graph Space</a></li>
+
+
 </ul>
 </div>
 </nav></div>
@@ -482,37 +485,9 @@ document.write(`
 <p>Lead author: Nicolas Guigui.</p>
 <p>In this notebook, we demonstrate how any standard machine learning algorithm can be used on data that live on a manifold yet respecting its geometry. In the previous notebooks we saw that linear operations (mean, linear weighting) don’t work on manifold. However, to each point on a manifold, is associated a tangent space, which is a vector space, where all our off-the-shelf ML operations are well defined!</p>
 <p>We will use the <a class="reference external" href="02_from_vector_spaces_to_manifolds.ipynb#From-substraction-to-logarithm-map">logarithm map</a> to go from points of the manifolds to vectors in the tangent space at a reference point. This will enable to use a simple logistic regression to classify our data.</p>
-<section id="Set-up">
-<h2>Set up<a class="headerlink" href="#Set-up" title="Permalink to this heading">#</a></h2>
-<p>Before starting this tutorial, we set the working directory to be the root of the geomstats repository. In order to have the code working on your machine, you need to change this path to the path of your geomstats repository.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
-
-<span class="n">geomstats_gitroot_path</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
-    <span class="p">[</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;rev-parse&quot;</span><span class="p">,</span> <span class="s2">&quot;--show-toplevel&quot;</span><span class="p">],</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
-
-<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">geomstats_gitroot_path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Working directory: &quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Working directory:  /Users/nina/Google Drive/code/geomstats
-</pre></div></div>
-</div>
 <p>We import the backend that will be used for geomstats computations and set a seed for reproducibility of the results.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
@@ -531,21 +506,20 @@ INFO: Using numpy backend
 </div>
 <p>We import the visualization tools.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </pre></div>
 </div>
 </div>
-</section>
 <section id="The-Data">
 <h2>The Data<a class="headerlink" href="#The-Data" title="Permalink to this heading">#</a></h2>
 <p>We use data from the <a class="reference external" href="https://www.kaggle.com/c/mlsp-2014-mri/data">MSLP 2014 Schizophrenia Challenge</a>. The dataset correponds to the Functional Connectivity Networks (FCN) extracted from resting-state fMRIs of 86 patients at 28 Regions Of Interest (ROIs). Roughly, an FCN corresponds to a correlation matrix and can be seen as a point on the manifold of Symmetric Positive-Definite (SPD) matrices. Patients are separated in two classes: schizophrenic and control. The goal will be to classify
 them.</p>
 <p>First we load the data (reshaped as matrices):</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.datasets.utils</span> <span class="k">as</span> <span class="nn">data_utils</span>
@@ -556,7 +530,7 @@ them.</p>
 </div>
 <p>We plot the first two connectomes from the MSLP dataset with their corresponding labels.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">labels_str</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Healthy&quot;</span><span class="p">,</span> <span class="s2">&quot;Schizophrenic&quot;</span><span class="p">]</span>
@@ -579,12 +553,12 @@ them.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_05_practical_methods__simple_machine_learning_on_tangent_spaces_13_0.png" src="../_images/notebooks_05_practical_methods__simple_machine_learning_on_tangent_spaces_13_0.png" />
+<img alt="../_images/notebooks_05_practical_methods__simple_machine_learning_on_tangent_spaces_10_0.png" src="../_images/notebooks_05_practical_methods__simple_machine_learning_on_tangent_spaces_10_0.png" />
 </div>
 </div>
 <p>In order to compare with a standard Euclidean method, we also flatten the data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flat_data</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">data_utils</span><span class="o">.</span><span class="n">load_connectomes</span><span class="p">(</span><span class="n">as_vectors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -605,14 +579,23 @@ them.</p>
 <h2>The Manifold<a class="headerlink" href="#The-Manifold" title="Permalink to this heading">#</a></h2>
 <p>As mentionned above, correlation matrices are SPD matrices. Because multiple metrics could be used on SPD matrices, we also import two of the most commonly used ones: the Log-Euclidean metric and the Affine-Invariant metric <a class="reference external" href="#References">[PFA2006]</a>. We can use the SPD module from <code class="docutils literal notranslate"><span class="pre">geomstats</span></code> to handle all the geometry, and check that our data indeed belongs to the manifold of SPD matrices:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.geometry.spd_matrices</span> <span class="k">as</span> <span class="nn">spd</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.spd_matrices</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SPDMatrices</span><span class="p">,</span>
+    <span class="n">SPDAffineMetric</span><span class="p">,</span>
+    <span class="n">SPDLogEuclideanMetric</span>
+<span class="p">)</span>
 
-<span class="n">manifold</span> <span class="o">=</span> <span class="n">spd</span><span class="o">.</span><span class="n">SPDMatrices</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>
-<span class="n">ai_metric</span> <span class="o">=</span> <span class="n">spd</span><span class="o">.</span><span class="n">SPDAffineMetric</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>
-<span class="n">le_metric</span> <span class="o">=</span> <span class="n">spd</span><span class="o">.</span><span class="n">SPDLogEuclideanMetric</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>
+<span class="n">manifold</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">spd_ai</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">spd_ai</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SPDAffineMetric</span><span class="p">)</span>
+
+<span class="n">spd_le</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">spd_le</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SPDLogEuclideanMetric</span><span class="p">)</span>
+
 <span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">manifold</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
 </pre></div>
 </div>
@@ -630,7 +613,7 @@ True
 <h2>The Transformer<a class="headerlink" href="#The-Transformer" title="Permalink to this heading">#</a></h2>
 <p>Great! Now, although the sum of two SPD matrices is an SPD matrix, their difference or their linear combination with non-positive weights are not necessarily! Therefore we need to work in a tangent space to perform simple machine learning. But worry not, all the geometry is handled by geomstats, thanks to the preprocessing module.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.preprocessing</span> <span class="kn">import</span> <span class="n">ToTangentSpace</span>
@@ -640,7 +623,7 @@ True
 <p>What <code class="docutils literal notranslate"><span class="pre">ToTangentSpace</span></code> does is simple: it computes the Frechet Mean of the data set (covered in the previous tutorial), then takes the log of each data point from the mean. This results in a set of tangent vectors, and in the case of the SPD manifold, these are simply symmetric matrices. It then squeezes them to a 1d-vector of size <code class="docutils literal notranslate"><span class="pre">dim</span> <span class="pre">=</span> <span class="pre">28</span> <span class="pre">*</span> <span class="pre">(28</span> <span class="pre">+</span> <span class="pre">1)</span> <span class="pre">/</span> <span class="pre">2</span></code>, and thus outputs an array of shape <code class="docutils literal notranslate"><span class="pre">[n_patients,</span> <span class="pre">dim]</span></code>, which can be fed to your favorite scikit-learn algorithm.</p>
 <p>Because the mean of the input data is computed, <code class="docutils literal notranslate"><span class="pre">ToTangentSpace</span></code> should be used in a pipeline (as e.g. scikit-learn’s <code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code>) not to leak information from the test set at train time.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
@@ -649,7 +632,7 @@ True
 
 <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
     <span class="n">steps</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;feature_ext&quot;</span><span class="p">,</span> <span class="n">ToTangentSpace</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">ai_metric</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s2">&quot;feature_ext&quot;</span><span class="p">,</span> <span class="n">ToTangentSpace</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">spd_ai</span><span class="p">)),</span>
         <span class="p">(</span><span class="s2">&quot;classifier&quot;</span><span class="p">,</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mi">2</span><span class="p">)),</span>
     <span class="p">]</span>
 <span class="p">)</span>
@@ -658,7 +641,7 @@ True
 </div>
 <p>We now have all the material to classify connectomes, and we evaluate the model with cross validation. With the affine-invariant metric we obtain:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">cross_validate</span><span class="p">(</span><span class="n">pipeline</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
@@ -676,12 +659,12 @@ True
 </div>
 <p>And with the log-Euclidean metric:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
     <span class="n">steps</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;feature_ext&quot;</span><span class="p">,</span> <span class="n">ToTangentSpace</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">le_metric</span><span class="p">)),</span>
+        <span class="p">(</span><span class="s2">&quot;feature_ext&quot;</span><span class="p">,</span> <span class="n">ToTangentSpace</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">spd_le</span><span class="p">)),</span>
         <span class="p">(</span><span class="s2">&quot;classifier&quot;</span><span class="p">,</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">C</span><span class="o">=</span><span class="mi">2</span><span class="p">)),</span>
     <span class="p">]</span>
 <span class="p">)</span>
@@ -702,7 +685,7 @@ True
 <p>But wait, why do the results depend on the metric used? You may remember from the previous notebooks that the Riemannian metric defines the notion of geodesics and distance on the manifold. Both notions are used to compute the Frechet Mean and the logarithms, so changing the metric changes the results, and some metrics may be more suitable than others for different applications.</p>
 <p>We can finally compare to a standard Euclidean logistic regression on the flattened data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flat_result</span> <span class="o">=</span> <span class="n">cross_validate</span><span class="p">(</span><span class="n">LogisticRegression</span><span class="p">(),</span> <span class="n">flat_data</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
@@ -790,7 +773,6 @@ space of symmetric positive-definite matrices</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Set-up">Set up</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Data">The Data</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Manifold">The Manifold</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#The-Transformer">The Transformer</a></li>

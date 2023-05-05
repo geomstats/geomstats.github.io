@@ -438,8 +438,8 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
-<span class="sd">        Group to equip with the invariant metric</span>
+<span class="sd">    space : LieGroup</span>
+<span class="sd">        Group to equip with the invariant metric.</span>
 <span class="sd">    metric_mat_at_identity : array-like, shape=[dim, dim]</span>
 <span class="sd">        Matrix that defines the metric at identity.</span>
 <span class="sd">        Optional, defaults to identity matrix if None.</span>
@@ -461,14 +461,10 @@ document.write(`
 <span class="sd">                   https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">lie_algebra</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">metric_mat_at_identity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-
+            <span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">metric_mat_at_identity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
 
@@ -489,7 +485,9 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">):</span>
             <span class="n">metric_coeffs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span><span class="p">)</span>
-            <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">metric_coeffs</span><span class="p">))</span>
+            <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">metric_coeffs</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="n">metric_mat</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This is only possible for a diagonal matrix&quot;</span><span class="p">)</span>
 
@@ -512,7 +510,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tan_b</span> <span class="o">=</span> <span class="n">tangent_vec_b</span>
         <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
-        <span class="k">if</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">is_diagonal</span><span class="p">(</span><span class="n">metric_mat</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tan_b</span> <span class="o">=</span> <span class="n">tangent_vec_b</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshaped_metric_matrix</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tan_b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">inner_prod</span>
@@ -538,7 +536,7 @@ document.write(`
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
 
-        <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">tangent_vec_a_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -600,7 +598,7 @@ document.write(`
 <span class="sd">                       Geonger International Publishing, 2020.</span>
 <span class="sd">                       https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
         <span class="k">return</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
             <span class="s2">&quot;i...,ijk-&gt;...jk&quot;</span><span class="p">,</span>
             <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -683,13 +681,13 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">tan_a_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
         <span class="n">tan_b_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
 
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
 
@@ -761,14 +759,14 @@ document.write(`
                 <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span>
             <span class="p">)</span>
 
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">tan_a_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
         <span class="n">tan_b_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
         <span class="n">tan_c_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_c</span><span class="p">)</span>
 
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
         <span class="n">value_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature_at_identity</span><span class="p">(</span><span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">,</span> <span class="n">tan_c_at_id</span><span class="p">)</span>
@@ -845,7 +843,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sectional_curvature_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span>
         <span class="p">)</span>
         <span class="n">tan_a_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -938,7 +936,7 @@ document.write(`
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature_derivative_at_identity</span><span class="p">(</span>
                 <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">tangent_vec_d</span>
             <span class="p">)</span>
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span>
         <span class="p">)</span>
         <span class="n">tan_a_at_id</span> <span class="o">=</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -949,7 +947,7 @@ document.write(`
         <span class="n">value_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature_derivative_at_identity</span><span class="p">(</span>
             <span class="n">tan_a_at_id</span><span class="p">,</span> <span class="n">tan_b_at_id</span><span class="p">,</span> <span class="n">tan_c_at_id</span><span class="p">,</span> <span class="n">tan_d_at_id</span>
         <span class="p">)</span>
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span>
         <span class="p">)</span>
 
@@ -1003,14 +1001,15 @@ document.write(`
 <span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
 <span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
         <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
 
         <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">_time</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute the right-hand side of the geodesic equation.&quot;&quot;&quot;</span>
             <span class="n">point</span><span class="p">,</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">state</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span><span class="n">vector</span><span class="p">)</span>
+            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span>
+                <span class="n">vector</span>
+            <span class="p">)</span>
             <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
@@ -1021,16 +1020,16 @@ document.write(`
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">identity</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">identity</span>
             <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">tangent_vec</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
                 <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">)])</span>
+        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">)])</span>
         <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">lie_acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
@@ -1094,14 +1093,14 @@ document.write(`
 <span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
 <span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;are_antipodals&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-            <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">are_antipodals</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="s2">&quot;are_antipodals&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">are_antipodals</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;The Logarithm map is not well-defined for&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot; antipodal matrices: </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">base_point</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
                 <span class="n">point</span><span class="p">,</span>
                 <span class="n">base_point</span><span class="p">,</span>
@@ -1187,12 +1186,11 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tangent_vec_b_</span> <span class="o">=</span> <span class="n">direction</span>
 
-        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
-        <span class="n">translation_map</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">translation_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-        <span class="n">left_angular_vel_a</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span>
-        <span class="n">left_angular_vel_b</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b_</span><span class="p">))</span>
+        <span class="n">left_angular_vel_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span>
+        <span class="n">left_angular_vel_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">translation_map</span><span class="p">(</span><span class="n">tangent_vec_b_</span><span class="p">))</span>
 
         <span class="k">def</span> <span class="nf">acceleration</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute the right-hand-side of the parallel transport eq.&quot;&quot;&quot;</span>
@@ -1214,7 +1212,7 @@ document.write(`
         <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel_b</span><span class="p">,</span> <span class="n">left_angular_vel_a</span><span class="p">])</span>
         <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
         <span class="n">gamma</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">zeta_t</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">transported</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">transported</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">gamma</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)(</span><span class="n">zeta_t</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">transported</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span> <span class="k">if</span> <span class="n">return_endpoint</span> <span class="k">else</span> <span class="n">transported</span>
@@ -1249,10 +1247,10 @@ document.write(`
 <span class="sd">            480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
 
         <span class="n">point</span><span class="p">,</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">state</span>
-        <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span><span class="n">vector</span><span class="p">)</span>
         <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
@@ -1268,18 +1266,16 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
+<span class="sd">    space : LieGroup</span>
 <span class="sd">        Group to equip with the invariant metric</span>
 <span class="sd">    left : bool</span>
 <span class="sd">        Whether to use a left or right invariant metric.</span>
 <span class="sd">        Optional, default: True.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
 
     <span class="nd">@staticmethod</span>
@@ -1316,8 +1312,8 @@ document.write(`
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span>
 
-        <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+        <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">jacobian_translation</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
 
         <span class="n">inv_jacobian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
         <span class="n">inv_jacobian_transposed</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_jacobian</span><span class="p">)</span>
@@ -1347,10 +1343,7 @@ document.write(`
 <span class="sd">        exp : array-like, shape=[..., dim]</span>
 <span class="sd">            Point in the group.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">exp_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tangent vector from the identity.</span>
@@ -1370,9 +1363,9 @@ document.write(`
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">opp_left_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_exp_from_identity</span><span class="p">(</span><span class="o">-</span><span class="n">tangent_vec</span><span class="p">)</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">opp_left_exp</span><span class="p">)</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">opp_left_exp</span><span class="p">)</span>
 
-        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp</span>
 
     <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1392,28 +1385,28 @@ document.write(`
 <span class="sd">            Point in the group equal to the Riemannian exponential</span>
 <span class="sd">            of tangent_vec at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">identity</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">identity</span>
 
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_from_identity</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
 
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">exp_from_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_from_identity</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">)</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">exp_from_id</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">exp_from_id</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp</span>
 
     <span class="k">def</span> <span class="nf">left_log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -1437,11 +1430,8 @@ document.write(`
 <span class="sd">            Tangent vector at the identity equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="bp">self</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">log</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize_tangent_vec_at_identity</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">point</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">log_from_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt the identity.</span>
@@ -1457,12 +1447,12 @@ document.write(`
 <span class="sd">            Tangent vector at the identity equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the identity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
             <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_log_from_identity</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">inv_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="n">inv_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
             <span class="n">left_log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_log_from_identity</span><span class="p">(</span><span class="n">inv_point</span><span class="p">)</span>
             <span class="n">log</span> <span class="o">=</span> <span class="o">-</span><span class="n">left_log</span>
 
@@ -1485,26 +1475,26 @@ document.write(`
 <span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">identity</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">identity</span>
 
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">base_point</span> <span class="o">=</span> <span class="n">identity</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
-        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
-            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
+            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">))</span>
+            <span class="n">point_near_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">))</span>
 
         <span class="n">log_from_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_from_identity</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span>
             <span class="n">log_from_id</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">log</span>
@@ -1530,7 +1520,7 @@ document.write(`
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
 
-        <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+        <span class="n">tangent_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">tangent_vec_a_at_id</span> <span class="o">=</span> <span class="n">tangent_translation</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -1552,7 +1542,7 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
+<span class="sd">    space : LieGroup</span>
 <span class="sd">        Group to equip with the invariant metric</span>
 <span class="sd">    metric_mat_at_identity : array-like, shape=[dim, dim]</span>
 <span class="sd">        Matrix that defines the metric at identity.</span>
@@ -1560,22 +1550,17 @@ document.write(`
 <span class="sd">    left : bool</span>
 <span class="sd">        Whether to use a left or right invariant metric.</span>
 <span class="sd">        Optional, default: True.</span>
-<span class="sd">    point_type : str, {&#39;vector&#39;, &#39;matrix&#39;}</span>
-<span class="sd">        Point representation.</span>
-<span class="sd">        Optional, default: group.default_point_type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">point_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a special euclidean group.</span>
 
 <span class="sd">        Select the object to instantiate depending on the point_type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">point_type</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span>
-        <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_InvariantMetricVector</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_InvariantMetricVector</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_InvariantMetricMatrix</span><span class="p">(</span>
-            <span class="n">group</span><span class="p">,</span>
+            <span class="n">space</span><span class="p">,</span>
             <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span>
             <span class="n">metric_mat_at_identity</span><span class="o">=</span><span class="n">metric_mat_at_identity</span><span class="p">,</span>
         <span class="p">)</span></div>
@@ -1590,7 +1575,7 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
+<span class="sd">    space : LieGroup</span>
 <span class="sd">        The group to equip with the bi-invariant metric</span>
 
 <span class="sd">    References</span>
@@ -1601,12 +1586,12 @@ document.write(`
 <span class="sd">        https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;SpecialOrthogonal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-            <span class="ow">and</span> <span class="s2">&quot;SO&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-            <span class="ow">and</span> <span class="s2">&quot;SpecialOrthogonal3&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+            <span class="s2">&quot;SpecialOrthogonal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">space</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+            <span class="ow">and</span> <span class="s2">&quot;SO&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">space</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+            <span class="ow">and</span> <span class="s2">&quot;SpecialOrthogonal3&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">space</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="c1"># TODO (nguigs): implement it for SE(3)</span>
         <span class="k">if</span> <span class="n">condition</span><span class="p">:</span>
@@ -1637,7 +1622,7 @@ document.write(`
 <span class="sd">            Geonger International Publishing, 2020.</span>
 <span class="sd">            https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BiInvariantMetric.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt the identity.</span>
@@ -1665,8 +1650,8 @@ document.write(`
 <span class="sd">            Geonger International Publishing, 2020.</span>
 <span class="sd">            https://doi.org/10.1007/978-3-030-46040-2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+        <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BiInvariantMetric.inner_product_at_identity"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.invariant_metric.BiInvariantMetric.inner_product_at_identity">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product_at_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute inner product at tangent space at identity.</span>
@@ -1683,7 +1668,7 @@ document.write(`
 <span class="sd">        inner_prod : array-like, shape=[...]</span>
 <span class="sd">            Inner-product of the two tangent vectors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span></div>
 
@@ -1705,7 +1690,7 @@ document.write(`
 <span class="sd">        inner_prod : array-like, shape=[...,]</span>
 <span class="sd">            Inner-product of the two tangent vectors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_at_identity</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
@@ -1774,7 +1759,7 @@ document.write(`
 <span class="sd">        radius : float</span>
 <span class="sd">            Injectivity radius.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">**</span><span class="mf">0.5</span></div></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="o">**</span><span class="mf">0.5</span></div></div>
 </pre></div>
 
                 </article>
