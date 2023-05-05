@@ -460,6 +460,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span><span class="p">,</span> <span class="n">MatricesMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <span class="k">def</span> <span class="nf">_squared_dist_grad_point_a</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
@@ -536,7 +537,7 @@ document.write(`
 <span class="sd">    _ : array-like, shape=[...,]</span>
 <span class="sd">        Geodesic distance between point_a and point_b.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">metric</span><span class="o">.</span><span class="n">private_squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metric</span><span class="o">.</span><span class="n">_squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Grassmannian"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.grassmannian.Grassmannian">[docs]</a><span class="k">class</span> <span class="nc">Grassmannian</span><span class="p">(</span><span class="n">LevelSet</span><span class="p">):</span>
@@ -803,7 +804,7 @@ document.write(`
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_general_linear</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="GrassmannianCanonicalMetric.parallel_transport"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
 
@@ -818,19 +819,19 @@ document.write(`
 <span class="sd">            Tangent vector at base point to be transported.</span>
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point on the Grassmann manifold. Point to transport from.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
+<span class="sd">        direction : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector at base point, along which the parallel transport</span>
 <span class="sd">            is computed.</span>
 <span class="sd">            Optional, default: None</span>
 <span class="sd">        end_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point on the Grassmann manifold to transport to. Unused if</span>
-<span class="sd">            `tangent_vec_b` is given.</span>
+<span class="sd">            `direction` is given.</span>
 <span class="sd">            Optional, default: None</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        transported_tangent_vec: array-like, shape=[..., n, n]</span>
-<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
+<span class="sd">            Transported tangent vector at `exp_(base_point)(direction)`.</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
@@ -839,20 +840,20 @@ document.write(`
 <span class="sd">            Aspects.” ArXiv:2011.13699 [Cs, Math], November 27, 2020.</span>
 <span class="sd">            https://arxiv.org/abs/2011.13699.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">tangent_vec_b</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">tangent_vec_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Either an end_point or a tangent_vec_b must be given to define the&quot;</span>
+                    <span class="s2">&quot;Either an end_point or a direction must be given to define the&quot;</span>
                     <span class="s2">&quot; geodesic along which to transport.&quot;</span>
                 <span class="p">)</span>
         <span class="n">expm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span>
         <span class="n">mul</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span>
-        <span class="n">rot</span> <span class="o">=</span> <span class="o">-</span><span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="n">rot</span> <span class="o">=</span> <span class="o">-</span><span class="n">Matrices</span><span class="o">.</span><span class="n">bracket</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mul</span><span class="p">(</span><span class="n">expm</span><span class="p">(</span><span class="n">rot</span><span class="p">),</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">expm</span><span class="p">(</span><span class="o">-</span><span class="n">rot</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="GrassmannianCanonicalMetric.private_squared_dist"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.private_squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">private_squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute geodesic distance between two points.</span>
 
 <span class="sd">        Compute the squared geodesic distance between point_a</span>
@@ -875,7 +876,7 @@ document.write(`
 <span class="sd">        _ : array-like, shape=[...,]</span>
 <span class="sd">            Geodesic distance between point_a and point_b.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GrassmannianCanonicalMetric.squared_dist"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.grassmannian.GrassmannianCanonicalMetric.squared_dist">[docs]</a>    <span class="k">def</span> <span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Squared geodesic distance between two points.</span>
@@ -909,7 +910,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        radius : float</span>
+<span class="sd">        radius : array-like, shape=[...,]</span>
 <span class="sd">            Injectivity radius.</span>
 
 <span class="sd">        References</span>
@@ -920,7 +921,8 @@ document.write(`
 <span class="sd">            ArXiv:2011.13699 [Cs, Math], November 27, 2020.</span>
 <span class="sd">            https://arxiv.org/abs/2011.13699.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span></div></div>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div></div>
 </pre></div>
 
                 </article>

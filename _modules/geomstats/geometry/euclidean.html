@@ -422,6 +422,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">VectorSpace</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="Euclidean"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.Euclidean">[docs]</a><span class="k">class</span> <span class="nc">Euclidean</span><span class="p">(</span><span class="n">VectorSpace</span><span class="p">):</span>
@@ -504,10 +505,9 @@ document.write(`
 <span class="sd">        inner_prod_mat : array-like, shape=[..., dim, dim]</span>
 <span class="sd">            Inner-product matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">,))</span>
-        <span class="k">return</span> <span class="n">mat</span></div>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="EuclideanMetric.inner_product"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.EuclideanMetric.inner_product">[docs]</a>    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
@@ -527,7 +527,10 @@ document.write(`
 <span class="sd">        inner_product : array-like, shape=[...,]</span>
 <span class="sd">            Inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
+        <span class="n">inner_product</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">inner_product</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="EuclideanMetric.norm"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.EuclideanMetric.norm">[docs]</a>    <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute norm of a vector.</span>
@@ -551,7 +554,8 @@ document.write(`
 <span class="sd">        norm : array-like, shape=[...,]</span>
 <span class="sd">            Norm.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="EuclideanMetric.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.EuclideanMetric.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute exp map of a base point in tangent vector direction.</span>
@@ -570,8 +574,7 @@ document.write(`
 <span class="sd">        exp : array-like, shape=[..., dim]</span>
 <span class="sd">            Riemannian exponential.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
+        <span class="k">return</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span></div>
 
 <div class="viewcode-block" id="EuclideanMetric.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.EuclideanMetric.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute log map using a base point and other point.</span>
@@ -590,8 +593,7 @@ document.write(`
 <span class="sd">        log: array-like, shape=[..., dim]</span>
 <span class="sd">            Riemannian logarithm.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span>
-        <span class="k">return</span> <span class="n">log</span></div>
+        <span class="k">return</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span></div>
 
 <div class="viewcode-block" id="EuclideanMetric.parallel_transport"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.euclidean.EuclideanMetric.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
@@ -621,7 +623,16 @@ document.write(`
 <span class="sd">        transported_tangent_vec: array-like, shape=[..., dim]</span>
 <span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span></div></div>
+        <span class="n">transported_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
+            <span class="n">transported_tangent_vec</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">direction</span><span class="p">,</span>
+            <span class="n">end_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
 </pre></div>
 
                 </article>
