@@ -422,6 +422,8 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.geodesic</span> <span class="kn">import</span> <span class="n">ExpODESolver</span><span class="p">,</span> <span class="n">LogShootingSolver</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.ivp</span> <span class="kn">import</span> <span class="n">GSIVPIntegrator</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
@@ -464,6 +466,14 @@ document.write(`
             <span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metric_mat_at_identity</span> <span class="o">=</span> <span class="n">metric_mat_at_identity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instantiate_solvers</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_instantiate_solvers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">LogShootingSolver</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">ExpODESolver</span><span class="p">(</span>
+            <span class="n">integrator</span><span class="o">=</span><span class="n">GSIVPIntegrator</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">step_type</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">reshaped_metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -945,7 +955,18 @@ document.write(`
 
         <span class="k">return</span> <span class="n">translation_map</span><span class="p">(</span><span class="n">value_at_id</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pre_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">identity</span>
+            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">tangent_vec</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
+                <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
 
 <span class="sd">        If :math:`\gamma` is a geodesic, then it satisfies the</span>
@@ -972,12 +993,6 @@ document.write(`
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point in the group.</span>
 <span class="sd">            Optional, defaults to identity if None.</span>
-<span class="sd">        n_steps : int,</span>
-<span class="sd">            Number of integration steps.</span>
-<span class="sd">            Optional, default : 15.</span>
-<span class="sd">        step : str, {&#39;euler&#39;, &#39;rk2&#39;, &#39;rk4&#39;}</span>
-<span class="sd">            Scheme to use in the integration.</span>
-<span class="sd">            Optional, default : &#39;rk4&#39;.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -993,48 +1008,14 @@ document.write(`
 <span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
 <span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
-        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
+            <span class="n">left_angular_vel</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">lie_acceleration</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">_time</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute the right-hand side of the geodesic equation.&quot;&quot;&quot;</span>
-            <span class="n">point</span><span class="p">,</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">state</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span>
-                <span class="n">vector</span>
-            <span class="p">)</span>
-            <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">basis_vector</span> <span class="ow">in</span> <span class="n">basis</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">acceleration</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i...,ijk-&gt;...jk&quot;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">identity</span>
-            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">tangent_vec</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
-                <span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)(</span><span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">)])</span>
-        <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">lie_acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">point</span><span class="p">,</span>
-        <span class="n">base_point</span><span class="p">,</span>
-        <span class="n">n_steps</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-        <span class="n">step</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
-        <span class="n">tol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point from a base point.</span>
 
 <span class="sd">        The log is computed by solving an optimization problem.</span>
@@ -1055,23 +1036,6 @@ document.write(`
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point in the group, from which to compute the log.</span>
 <span class="sd">            Optional, default: identity.</span>
-<span class="sd">        n_steps : int,</span>
-<span class="sd">            Number of integration steps to compute the exponential in the</span>
-<span class="sd">            loss.</span>
-<span class="sd">            Optional, default : 15.</span>
-<span class="sd">        step : str, {&#39;euler&#39;, &#39;rk2&#39;, &#39;rk4&#39;}</span>
-<span class="sd">            Scheme to use in the integration procedure of the exponential in</span>
-<span class="sd">            the loss.</span>
-<span class="sd">            Optional, default : &#39;rk4&#39;.</span>
-<span class="sd">        verbose : bool,</span>
-<span class="sd">            Verbosity level of the optimization procedure.</span>
-<span class="sd">            Optional. default : False.</span>
-<span class="sd">        max_iter : int,</span>
-<span class="sd">            Maximum of iteration of the optimization procedure.</span>
-<span class="sd">            Optional, default : 25.</span>
-<span class="sd">        tol : float,</span>
-<span class="sd">            Tolerance for the stopping criterion of the optimization.</span>
-<span class="sd">            Optional, default : 1e-10.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1093,16 +1057,59 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot; antipodal matrices: </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">base_point</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-                <span class="n">point</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="p">,</span>
-                <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
-                <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
-                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
-                <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span>
-                <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
-            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">),</span>
             <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
+
+<span class="sd">        Geodesic curve defined by either:</span>
+
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        - an initial point and an end point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
+<span class="sd">            an initial tangent vector must be given.</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim],</span>
+<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
+<span class="sd">            represents the different initial conditions, and the second</span>
+<span class="sd">            corresponds to time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
+                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot specify both an end point and an initial tangent vector.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">geodesic_bvp</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
+                <span class="n">end_point</span><span class="p">,</span>
+                <span class="n">initial_point</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">initial_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span>
+            <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">geodesic_ivp</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">left_angular_vel</span><span class="p">,</span> <span class="n">initial_point</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>

@@ -420,13 +420,30 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
 
-<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
-
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
-<span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 
-<span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="k">def</span> <span class="nf">_check_log_solver</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="s2">&quot;log_solver&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">raise_</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Requires `self.log_solver`. &quot;</span>
+                <span class="s2">&quot;Check `geomstats.numerics.geodesic` for available solvers.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">_check_exp_solver</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="s2">&quot;exp_solver&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">raise_</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Requires `self.exp_solver`. &quot;</span>
+                <span class="s2">&quot;Check `geomstats.numerics.geodesic` for available solvers.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
 
 
 <div class="viewcode-block" id="Connection"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection">[docs]</a><span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
@@ -481,12 +498,8 @@ document.write(`
         <span class="n">equation</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...kj,...j-&gt;...k&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">equation</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="Connection.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="Connection.exp"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.exp">[docs]</a>    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Exponential map associated to the affine connection.</span>
-
-<span class="sd">        Exponential map at base_point of tangent_vec computed by integration</span>
-<span class="sd">        of the geodesic equation (initial value problem), using the</span>
-<span class="sd">        christoffel symbols.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -494,39 +507,16 @@ document.write(`
 <span class="sd">            Tangent vector at the base point.</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
-<span class="sd">        n_steps : int</span>
-<span class="sd">            Number of discrete time steps to take in the integration.</span>
-<span class="sd">            Optional, default: N_STEPS.</span>
-<span class="sd">        step : str, {&#39;euler&#39;, &#39;rk4&#39;}</span>
-<span class="sd">            The numerical scheme to use for integration.</span>
-<span class="sd">            Optional, default: &#39;euler&#39;.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        exp : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">_check_exp_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
-        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">])</span>
-
-        <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span>
-        <span class="p">)</span>
-
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
-
-<div class="viewcode-block" id="Connection.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">point</span><span class="p">,</span>
-        <span class="n">base_point</span><span class="p">,</span>
-        <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span>
-        <span class="n">step</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span>
-        <span class="n">max_iter</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">tol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
-    <span class="p">):</span>
+<div class="viewcode-block" id="Connection.log"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute logarithm map associated to the affine connection.</span>
 
 <span class="sd">        Solve the boundary value problem associated to the geodesic equation</span>
@@ -553,38 +543,11 @@ document.write(`
 <span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
 <span class="sd">            Tangent vector at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">max_shape</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
-            <span class="n">max_shape</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span>
-
-        <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">velocity</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Define the objective function.&quot;&quot;&quot;</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">velocity</span><span class="p">)</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">base_point</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="n">velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">max_shape</span><span class="p">)</span>
-            <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span> <span class="o">-</span> <span class="n">point</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="n">objective_with_grad</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">value_and_grad</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">to_numpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">max_shape</span><span class="p">))</span>
-
-        <span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
-            <span class="n">objective_with_grad</span><span class="p">,</span>
-            <span class="n">tangent_vec</span><span class="p">,</span>
-            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
-            <span class="n">jac</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="n">verbose</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">max_iter</span><span class="p">},</span>
-            <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">max_shape</span><span class="p">)</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">base_point</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span></div>
+        <span class="n">_check_log_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_pole_ladder_step</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">base_shoot</span><span class="p">,</span> <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">base_shoot</span><span class="p">,</span> <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one Pole Ladder step.</span>
 
@@ -624,20 +587,16 @@ document.write(`
 <span class="sd">            Verlag, 2013,50 (1-2), pp.5-17. ⟨10.1007/s10851-013-0470-3⟩</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mid_tangent_vector_to_shoot</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">next_point</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">mid_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">mid_tangent_vector_to_shoot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">mid_tangent_vector_to_shoot</span>
         <span class="p">)</span>
 
-        <span class="n">tangent_vector_to_shoot</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span>
+        <span class="n">tangent_vector_to_shoot</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">)</span>
 
-        <span class="n">end_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vector_to_shoot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span>
+        <span class="n">end_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vector_to_shoot</span><span class="p">)</span>
 
         <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">return_geodesics</span><span class="p">:</span>
@@ -652,7 +611,7 @@ document.write(`
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;geodesics&quot;</span><span class="p">:</span> <span class="n">geodesics</span><span class="p">,</span> <span class="s2">&quot;end_point&quot;</span><span class="p">:</span> <span class="n">end_shoot</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_schild_ladder_step</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">base_shoot</span><span class="p">,</span> <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">base_shoot</span><span class="p">,</span> <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one Schild&#39;s Ladder step.</span>
 
@@ -689,20 +648,16 @@ document.write(`
 <span class="sd">            Verlag, 2013,50 (1-2), pp.5-17. ⟨10.1007/s10851-013-0470-3⟩</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mid_tangent_vector_to_shoot</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">next_point</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">mid_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">mid_tangent_vector_to_shoot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">mid_tangent_vector_to_shoot</span>
         <span class="p">)</span>
 
-        <span class="n">tangent_vector_to_shoot</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span>
+        <span class="n">tangent_vector_to_shoot</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">end_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vector_to_shoot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span>
+        <span class="n">end_shoot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">base_point</span><span class="o">=</span><span class="n">mid_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vector_to_shoot</span><span class="p">)</span>
 
         <span class="n">geodesics</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">return_geodesics</span><span class="p">:</span>
@@ -727,7 +682,7 @@ document.write(`
         <span class="n">n_rungs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;pole&quot;</span><span class="p">,</span>
         <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">single_step_kwargs</span><span class="p">,</span>
+        <span class="n">return_geodesics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Approximate parallel transport using the pole ladder scheme.</span>
 
@@ -759,7 +714,6 @@ document.write(`
 <span class="sd">            Exponent for the scaling of the vector to transport. Must be</span>
 <span class="sd">            greater or equal to 1, 2 is optimal. See [GP2020]_.</span>
 <span class="sd">            Optional, default: 2</span>
-<span class="sd">        **single_step_kwargs : keyword arguments for the step functions</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -800,7 +754,7 @@ document.write(`
                 <span class="n">base_point</span><span class="o">=</span><span class="n">current_point</span><span class="p">,</span>
                 <span class="n">next_point</span><span class="o">=</span><span class="n">next_point</span><span class="p">,</span>
                 <span class="n">base_shoot</span><span class="o">=</span><span class="n">base_shoot</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">single_step_kwargs</span><span class="p">,</span>
+                <span class="n">return_geodesics</span><span class="o">=</span><span class="n">return_geodesics</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">current_point</span> <span class="o">=</span> <span class="n">next_point</span>
             <span class="n">base_shoot</span> <span class="o">=</span> <span class="n">next_step</span><span class="p">[</span><span class="s2">&quot;end_point&quot;</span><span class="p">]</span>
@@ -1022,9 +976,7 @@ document.write(`
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Connection.geodesic"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">exp_kwargs</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_geodesic_from_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
 
 <span class="sd">        Geodesic curve defined by either:</span>
@@ -1036,9 +988,6 @@ document.write(`
 <span class="sd">        ----------</span>
 <span class="sd">        initial_point : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold, initial point of the geodesic.</span>
-<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
-<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
-<span class="sd">            an initial tangent vector must be given.</span>
 <span class="sd">        initial_tangent_vec : array-like, shape=[..., dim],</span>
 <span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
 <span class="sd">            Optional, default: None.</span>
@@ -1053,21 +1002,6 @@ document.write(`
 <span class="sd">            corresponds to time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">default_point_type</span>
-
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
-                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">shooting_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">shooting_tangent_vec</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s2">&quot;The shooting tangent vector is too&quot;</span>
-                        <span class="s2">&quot; far from the input initial tangent vector.&quot;</span>
-                    <span class="p">)</span>
-            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">shooting_tangent_vec</span>
 
         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
             <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -1098,8 +1032,7 @@ document.write(`
                 <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i,...kl-&gt;...ikl&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
 
             <span class="n">points_at_time_t</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tv</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="o">**</span><span class="n">exp_kwargs</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">tv</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tv</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span> <span class="k">for</span> <span class="n">tv</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="n">points_at_time_t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">points_at_time_t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
@@ -1107,7 +1040,62 @@ document.write(`
                 <span class="n">points_at_time_t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_initial_conditions</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">points_at_time_t</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">path</span></div>
+        <span class="k">return</span> <span class="n">path</span>
+
+<div class="viewcode-block" id="Connection.geodesic"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.geodesic">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
+
+<span class="sd">        Geodesic curve defined by either:</span>
+
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        - an initial point and an end point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
+<span class="sd">            an initial tangent vector must be given.</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim],</span>
+<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
+<span class="sd">            represents the different initial conditions, and the second</span>
+<span class="sd">            corresponds to time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
+                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot specify both an end point and an initial tangent vector.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">_check_log_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">geodesic_bvp</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
+                    <span class="n">end_point</span><span class="p">,</span>
+                    <span class="n">initial_point</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_check_exp_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">geodesic_ivp</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geodesic_from_exp</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Connection.parallel_transport"><a class="viewcode-back" href="../../../api/geometry.html#geomstats.geometry.connection.Connection.parallel_transport">[docs]</a>    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
