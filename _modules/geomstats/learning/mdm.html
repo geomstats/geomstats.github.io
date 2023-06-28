@@ -422,10 +422,15 @@ document.write(`
 <span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClassifierMixin</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.learning._template</span> <span class="kn">import</span> <span class="n">TransformerMixin</span>
 <span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
 
 
-<div class="viewcode-block" id="RiemannianMinimumDistanceToMean"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMinimumDistanceToMean</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean">[docs]</a><span class="k">class</span> <span class="nc">RiemannianMinimumDistanceToMean</span><span class="p">(</span>
+    <span class="n">BaseEstimator</span><span class="p">,</span>
+    <span class="n">ClassifierMixin</span><span class="p">,</span>
+    <span class="n">TransformerMixin</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimum Distance to Mean (MDM) classifier on manifolds.</span>
 
 <span class="sd">    Classification by nearest centroid. For each of the given classes, a</span>
@@ -535,7 +540,32 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">probas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="n">dist2</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RiemannianMinimumDistanceToMean.transform"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distances to each centroid.</span>
+
+<span class="sd">        Compute distances to each centroid according to riemannian_metric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">            Test samples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dist : ndarray, shape=[n_samples, n_classes]</span>
+<span class="sd">            Distances to each centroid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span></div></div>
 </pre></div>
 
                 </article>
