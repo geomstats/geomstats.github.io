@@ -439,8 +439,8 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    riemannian_metric : RiemannianMetric</span>
-<span class="sd">        Riemannian metric to be used.</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -449,6 +449,10 @@ document.write(`
 <span class="sd">    mean_estimates_ : array-like, shape=[n_classes, *metric.shape]</span>
 <span class="sd">        If fit, centroids computed on training set.</span>
 
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * Required metric methods: `squared_dist`, `closest_neighbot_index`.</span>
+
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [BBCJ2012] A. Barachant, S. Bonnet, M. Congedo and C. Jutten, Multiclass</span>
@@ -456,10 +460,18 @@ document.write(`
 <span class="sd">        Trans. Biomed. Eng., vol. 59, pp. 920-928, 2012.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">riemannian_metric</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span> <span class="o">=</span> <span class="n">riemannian_metric</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_classes_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of classes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RiemannianMinimumDistanceToMean.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Frechet mean of each class.</span>
@@ -480,19 +492,20 @@ document.write(`
 <span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_classes_</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">weights</span> <span class="o">/=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-        <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="p">)</span>
         <span class="n">frechet_means</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">:</span>
             <span class="n">X_c</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span>
             <span class="n">weights_c</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span>
-            <span class="n">mean_c</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_c</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weights_c</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span>
+            <span class="n">mean_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_c</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights_c</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span>
             <span class="n">frechet_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_c</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">frechet_means</span><span class="p">)</span></div>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">frechet_means</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="RiemannianMinimumDistanceToMean.predict"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.mdm.RiemannianMinimumDistanceToMean.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute closest neighbor according to riemannian_metric.</span>
@@ -507,7 +520,7 @@ document.write(`
 <span class="sd">        y : array-like, shape=[n_samples,]</span>
 <span class="sd">            Predicted labels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span>
             <span class="n">X</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
         <span class="p">)</span>
@@ -532,11 +545,10 @@ document.write(`
 <span class="sd">        probas : array-like, shape=[n_samples, n_classes]</span>
 <span class="sd">            Probability of the sample for each class in the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">probas</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
-            <span class="n">dist2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span>
-                <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="n">dist2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">probas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="n">dist2</span><span class="p">))</span>
@@ -557,11 +569,10 @@ document.write(`
 <span class="sd">        dist : ndarray, shape=[n_samples, n_classes]</span>
 <span class="sd">            Distances to each centroid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
-            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemannian_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
-                <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>

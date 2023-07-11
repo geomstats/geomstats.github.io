@@ -424,96 +424,6 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 
-<span class="c1"># TODO (nkoep): Move this into the OnlineKMeans class.</span>
-
-
-<div class="viewcode-block" id="online_kmeans"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.online_kmeans">[docs]</a><span class="k">def</span> <span class="nf">online_kmeans</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">,</span> <span class="n">n_repetitions</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mf">5e4</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform online K-means clustering.</span>
-
-<span class="sd">    Perform online version of k-means algorithm on data contained in X.</span>
-<span class="sd">    The data points are treated sequentially and the cluster centers are</span>
-<span class="sd">    updated one at a time. This version of k-means avoids computing the</span>
-<span class="sd">    mean of each cluster at each iteration and is therefore less</span>
-<span class="sd">    computationally intensive than the offline version.</span>
-
-<span class="sd">    In the setting of quantization of probability distributions, this</span>
-<span class="sd">    algorithm is also known as Competitive Learning Riemannian Quantization.</span>
-<span class="sd">    It computes the closest approximation of the empirical distribution of</span>
-<span class="sd">    data by a discrete distribution supported by a smaller number of points</span>
-<span class="sd">    with respect to the Wasserstein distance. This smaller number of points</span>
-<span class="sd">    is n_clusters.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    X : array-like, shape=[..., n_features]</span>
-<span class="sd">        Input data. It is treated sequentially by the algorithm, i.e.</span>
-<span class="sd">        one datum is chosen randomly at each iteration.</span>
-<span class="sd">    metric : object</span>
-<span class="sd">        Metric of the space in which the data lives. At each iteration,</span>
-<span class="sd">        one of the cluster centers is moved in the direction of the new</span>
-<span class="sd">        datum, according the exponential map of the underlying space, which</span>
-<span class="sd">        is a method of metric.</span>
-<span class="sd">    n_clusters : int</span>
-<span class="sd">        Number of clusters of the k-means clustering, or number of desired</span>
-<span class="sd">        atoms of the quantized distribution.</span>
-<span class="sd">    n_repetitions : int, default=20</span>
-<span class="sd">        The cluster centers are updated using decreasing step sizes, each</span>
-<span class="sd">        of which stays constant for n_repetitions iterations to allow a better</span>
-<span class="sd">        exploration of the data points.</span>
-<span class="sd">    max_iter : int, default=5e4</span>
-<span class="sd">        Maximum number of iterations. If it is reached, the</span>
-<span class="sd">        quantization may be inacurate.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    cluster_centers : array, shape=[n_clusters, n_features]</span>
-<span class="sd">        Coordinates of cluster centers.</span>
-<span class="sd">    labels : array, shape=[n_samples]</span>
-<span class="sd">        Cluster labels for each point.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="n">random_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">,))</span>
-    <span class="n">cluster_centers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">random_indices</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
-
-    <span class="n">gap</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iter</span><span class="p">:</span>
-        <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">step_size</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">iteration</span> <span class="o">/</span> <span class="n">n_repetitions</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
-
-        <span class="n">random_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">random_index</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">index_to_update</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">cluster_centers</span><span class="p">)</span>
-        <span class="n">center_to_update</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">,</span> <span class="n">index_to_update</span><span class="p">))</span>
-
-        <span class="n">tangent_vec_update</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">step_size</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="p">)</span>
-        <span class="n">new_center</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec_update</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span>
-        <span class="p">)</span>
-        <span class="n">gap</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">center_to_update</span><span class="p">,</span> <span class="n">new_center</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">gap</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">gap</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-
-        <span class="n">cluster_centers</span><span class="p">[</span><span class="n">index_to_update</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">new_center</span>
-
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">):</span>
-            <span class="k">break</span>
-
-    <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="n">max_iter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Maximum number of iterations </span><span class="si">{}</span><span class="s2"> reached. The&quot;</span>
-            <span class="s2">&quot;clustering may be inaccurate&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_iter</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="n">labels</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">cluster_centers</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">cluster_centers</span><span class="p">,</span> <span class="n">labels</span></div>
-
 
 <div class="viewcode-block" id="OnlineKMeans"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.OnlineKMeans">[docs]</a><span class="k">class</span> <span class="nc">OnlineKMeans</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClusterMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Online k-means clustering.</span>
@@ -529,8 +439,8 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    metric : object</span>
-<span class="sd">        Metric of the space in which the data lives. At each iteration,</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold. At each iteration,</span>
 <span class="sd">        one of the cluster centers is moved in the direction of the new</span>
 <span class="sd">        datum, according the exponential map of the underlying space, which</span>
 <span class="sd">        is a method of metric.</span>
@@ -552,6 +462,10 @@ document.write(`
 <span class="sd">    labels_ :</span>
 <span class="sd">        Labels of each point.</span>
 
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * Required metric methods: `exp`, `log`, `dist`, `closest_neighbor_index`.</span>
+
 <span class="sd">    Example</span>
 <span class="sd">    -------</span>
 <span class="sd">    &gt;&gt;&gt; from geomstats.geometry.hypersphere import Hypersphere</span>
@@ -563,6 +477,7 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; clustering.cluster_centers_</span>
 <span class="sd">    &gt;&gt;&gt; clustering.labels_</span>
 
+
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [LBP2019] A. Le Brigant and S. Puechmorel, Optimal Riemannian</span>
@@ -572,47 +487,103 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">metric</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
         <span class="n">n_clusters</span><span class="p">,</span>
         <span class="n">n_repetitions</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">atol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
-        <span class="n">max_iter</span><span class="o">=</span><span class="mf">5e4</span><span class="p">,</span>
-        <span class="n">point_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span> <span class="o">=</span> <span class="n">n_clusters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_repetitions</span> <span class="o">=</span> <span class="n">n_repetitions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="n">atol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">point_type</span> <span class="o">=</span> <span class="n">point_type</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="OnlineKMeans.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.OnlineKMeans.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<div class="viewcode-block" id="OnlineKMeans.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.OnlineKMeans.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform clustering.</span>
+
+<span class="sd">        Perform online version of k-means algorithm on data contained in X.</span>
+<span class="sd">        The data points are treated sequentially and the cluster centers are</span>
+<span class="sd">        updated one at a time. This version of k-means avoids computing the</span>
+<span class="sd">        mean of each cluster at each iteration and is therefore less</span>
+<span class="sd">        computationally intensive than the offline version.</span>
+
+<span class="sd">        In the setting of quantization of probability distributions, this</span>
+<span class="sd">        algorithm is also known as Competitive Learning Riemannian Quantization.</span>
+<span class="sd">        It computes the closest approximation of the empirical distribution of</span>
+<span class="sd">        data by a discrete distribution supported by a smaller number of points</span>
+<span class="sd">        with respect to the Wasserstein distance. This smaller number of points</span>
+<span class="sd">        is n_clusters.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_features, n_samples]</span>
-<span class="sd">            Samples to cluster.</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_features]</span>
+<span class="sd">            Input data. It is treated sequentially by the algorithm, i.e.</span>
+<span class="sd">            one datum is chosen randomly at each iteration.</span>
+<span class="sd">        y : None</span>
+<span class="sd">            Target values. Ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="n">online_kmeans</span><span class="p">(</span>
-            <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
-            <span class="n">metric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
-            <span class="n">n_clusters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">,</span>
-            <span class="n">n_repetitions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_repetitions</span><span class="p">,</span>
-            <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
-            <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">random_indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">,)</span>
         <span class="p">)</span>
+        <span class="n">cluster_centers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">random_indices</span><span class="p">)</span>
+
+        <span class="n">gap</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">step_size</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">iteration</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_repetitions</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="n">random_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">random_index</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">index_to_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span>
+                <span class="n">point</span><span class="p">,</span> <span class="n">cluster_centers</span>
+            <span class="p">)</span>
+            <span class="n">center_to_update</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">,</span> <span class="n">index_to_update</span><span class="p">))</span>
+
+            <span class="n">tangent_vec_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                <span class="n">point</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">step_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec_update</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">center_to_update</span>
+            <span class="p">)</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">center_to_update</span><span class="p">,</span> <span class="n">new_center</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gap</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">gap</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+            <span class="n">cluster_centers</span><span class="p">[</span><span class="n">index_to_update</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">new_center</span>
+
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Maximum number of iterations </span><span class="si">{}</span><span class="s2"> reached. The&quot;</span>
+                <span class="s2">&quot;clustering may be inaccurate&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">cluster_centers</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="n">cluster_centers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="n">labels</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="OnlineKMeans.predict"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.OnlineKMeans.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<div class="viewcode-block" id="OnlineKMeans.predict"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.online_kmeans.OnlineKMeans.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict the closest cluster each sample in X belongs to.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_features]</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_features]</span>
 <span class="sd">            New data to predict.</span>
 
 <span class="sd">        Returns</span>
@@ -623,7 +594,7 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Not fitted&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">closest_neighbor_index</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span><span class="p">)</span></div></div>
 </pre></div>
 
                 </article>

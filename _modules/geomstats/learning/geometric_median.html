@@ -427,15 +427,15 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    metric : RiemannianMetric</span>
-<span class="sd">        Riemannian metric.</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
 <span class="sd">    max_iter : int</span>
 <span class="sd">        Maximum number of iterations for the algorithm.</span>
 <span class="sd">        Optional, default : 100</span>
 <span class="sd">    lr : float</span>
 <span class="sd">        Learning rate to be used for the algorithm.</span>
 <span class="sd">        Optional, default : 1.0</span>
-<span class="sd">    init_point : array-like, shape=[*metric.shape]</span>
+<span class="sd">    init_point : array-like, shape=[*space.shape]</span>
 <span class="sd">        Initialization to be used in the start.</span>
 <span class="sd">        Optional, default : None, in which case it uses last sample.</span>
 <span class="sd">    print_every : int</span>
@@ -448,8 +448,12 @@ document.write(`
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">    estimate_ : array-like, shape=[*metric.shape]</span>
+<span class="sd">    estimate_ : array-like, shape=[*space.shape]</span>
 <span class="sd">        If fit, geometric median.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * Required metric methods: `dist`, `log`, `exp`.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -461,19 +465,20 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">metric</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
         <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
         <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">print_every</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">epsilon</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="o">=</span> <span class="n">init_point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">print_every</span> <span class="o">=</span> <span class="n">print_every</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_iterate_once</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_median</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">lr</span><span class="p">):</span>
@@ -481,9 +486,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        current_median : array-like, shape=[*metric.shape]</span>
+<span class="sd">        current_median : array-like, shape=[*space.shape]</span>
 <span class="sd">            Current median.</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">        X : array-like, shape=[n_samples, *space.shape]</span>
 <span class="sd">            Training input samples.</span>
 <span class="sd">        weights : array-like, shape=[n_samples,]</span>
 <span class="sd">            Weights for weighted sum.</span>
@@ -495,15 +500,15 @@ document.write(`
 <span class="sd">        updated_median : array-like, shape=[*metric.shape]</span>
 <span class="sd">            Updated median after single iteration.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">current_median</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">current_median</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="n">is_non_zero</span> <span class="o">=</span> <span class="n">dists</span> <span class="o">&gt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">is_non_zero</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">current_median</span>
 
         <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">is_non_zero</span><span class="p">]</span> <span class="o">/</span> <span class="n">dists</span><span class="p">[</span><span class="n">is_non_zero</span><span class="p">]</span>
-        <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">is_non_zero</span><span class="p">],</span> <span class="n">current_median</span><span class="p">)</span>
+        <span class="n">logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">is_non_zero</span><span class="p">],</span> <span class="n">current_median</span><span class="p">)</span>
         <span class="n">v_k</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;n,n...-&gt;...&quot;</span><span class="p">,</span> <span class="n">w</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">logs</span><span class="p">)</span>
-        <span class="n">updated_median</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lr</span> <span class="o">*</span> <span class="n">v_k</span><span class="p">,</span> <span class="n">current_median</span><span class="p">)</span>
+        <span class="n">updated_median</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lr</span> <span class="o">*</span> <span class="n">v_k</span><span class="p">,</span> <span class="n">current_median</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">updated_median</span>
 
 <div class="viewcode-block" id="GeometricMedian.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.geometric_median.GeometricMedian.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -526,15 +531,14 @@ document.write(`
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_points</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">median</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">weights</span> <span class="o">/=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
             <span class="n">new_median</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_once</span><span class="p">(</span><span class="n">median</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
-            <span class="n">shift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">new_median</span><span class="p">,</span> <span class="n">median</span><span class="p">)</span>
+            <span class="n">shift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">new_median</span><span class="p">,</span> <span class="n">median</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">shift</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
                 <span class="k">break</span>

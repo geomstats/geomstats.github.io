@@ -420,12 +420,26 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KNeighborsClassifier</span>
 
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+
+
+<div class="viewcode-block" id="wrap"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.knn.wrap">[docs]</a><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a function to first convert args to arrays.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapped_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">new_args</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">new_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_function</span></div>
+
 
 <div class="viewcode-block" id="KNearestNeighborsClassifier"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.knn.KNearestNeighborsClassifier">[docs]</a><span class="k">class</span> <span class="nc">KNearestNeighborsClassifier</span><span class="p">(</span><span class="n">KNeighborsClassifier</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Classifier implementing the k-nearest neighbors vote on manifolds.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
 <span class="sd">    n_neighbors : int, optional (default = 5)</span>
 <span class="sd">        Number of neighbors to use by default.</span>
 <span class="sd">    weights : string or callable, optional (default = &#39;uniform&#39;)</span>
@@ -439,21 +453,6 @@ document.write(`
 <span class="sd">        - [callable] : a user-defined function which accepts an</span>
 <span class="sd">          array of distances, and returns an array of the same shape</span>
 <span class="sd">          containing the weights.</span>
-<span class="sd">    p : integer, optional (default = 2)</span>
-<span class="sd">        Power parameter for the &#39;minkowski&#39; string distance.</span>
-<span class="sd">        When p = 1, this is equivalent to using manhattan_distance (l1),</span>
-<span class="sd">        and euclidean_distance (l2) for p = 2.</span>
-<span class="sd">        For arbitrary p, minkowski_distance (l_p) is used.</span>
-<span class="sd">    distance : string or callable, optional (default = &#39;minkowski&#39;)</span>
-<span class="sd">        The distance metric to use.</span>
-<span class="sd">        The default distance is minkowski, and with p=2 is equivalent to the</span>
-<span class="sd">        standard Euclidean distance.</span>
-<span class="sd">        See the documentation of the DistanceMetric class in the scikit-learn</span>
-<span class="sd">        library for a list of available distances.</span>
-<span class="sd">        If distance is &quot;precomputed&quot;, X is assumed to be a distance matrix and</span>
-<span class="sd">        must be square during fit.</span>
-<span class="sd">    distance_params : dict, optional (default = None)</span>
-<span class="sd">        Additional keyword arguments for the distance function.</span>
 <span class="sd">    n_jobs : int or None, optional (default = None)</span>
 <span class="sd">        The number of parallel jobs to run for neighbors search.</span>
 <span class="sd">        ``None`` means 1; ``-1`` means using all processors.</span>
@@ -484,26 +483,20 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
         <span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
         <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
-        <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="n">distance</span><span class="o">=</span><span class="s2">&quot;minkowski&quot;</span><span class="p">,</span>
-        <span class="n">distance_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">distance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">distance_params</span> <span class="o">=</span> <span class="n">distance_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
 
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">n_neighbors</span><span class="o">=</span><span class="n">n_neighbors</span><span class="p">,</span>
             <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
             <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;brute&quot;</span><span class="p">,</span>
-            <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span>
             <span class="n">metric</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span>
-            <span class="n">metric_params</span><span class="o">=</span><span class="n">distance_params</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 </pre></div>
 

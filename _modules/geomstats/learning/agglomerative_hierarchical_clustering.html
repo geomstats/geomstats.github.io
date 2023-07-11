@@ -431,15 +431,11 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
 <span class="sd">    n_clusters : int or None, default=2</span>
 <span class="sd">        The number of clusters to find. It must be ``None`` if</span>
 <span class="sd">        ``distance_threshold`` is not ``None``.</span>
-<span class="sd">    distance : str or callable, default=&#39;euclidean&#39;</span>
-<span class="sd">        Distance used to compute the linkage. Can be &#39;euclidean&#39;, &#39;l1&#39;, &#39;l2&#39;,</span>
-<span class="sd">        &#39;manhattan&#39;, &#39;cosine&#39;, or &#39;precomputed&#39;.</span>
-<span class="sd">        If linkage is &#39;ward&#39;, only &#39;euclidean&#39; is accepted.</span>
-<span class="sd">        If &#39;precomputed&#39;, a distance matrix (instead of a similarity matrix)</span>
-<span class="sd">        is needed as input for the fit method.</span>
 <span class="sd">    memory : str or object, default=None</span>
 <span class="sd">        Used to cache the output of the computation of the tree.</span>
 <span class="sd">        By default, no caching is done. If a string is given, it is the</span>
@@ -508,29 +504,27 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
         <span class="n">n_clusters</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="n">distance</span><span class="o">=</span><span class="s2">&quot;euclidean&quot;</span><span class="p">,</span>
         <span class="n">memory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">connectivity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">compute_full_tree</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
         <span class="n">linkage</span><span class="o">=</span><span class="s2">&quot;average&quot;</span><span class="p">,</span>
         <span class="n">distance_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="k">def</span> <span class="nf">affinity</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">affinity</span> <span class="o">=</span> <span class="n">distance</span>
-        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">affinity_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i_sample</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+                <span class="n">affinity_matrix</span><span class="p">[</span><span class="n">i_sample</span><span class="p">,</span> <span class="p">:</span><span class="n">i_sample</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">i_sample</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">data</span><span class="p">[:</span><span class="n">i_sample</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">i_sample</span><span class="p">)</span>
+            <span class="n">affinity_matrix</span> <span class="o">+=</span> <span class="n">affinity_matrix</span><span class="o">.</span><span class="n">T</span>
+            <span class="k">return</span> <span class="n">affinity_matrix</span>
 
-            <span class="k">def</span> <span class="nf">affinity</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-                <span class="n">n_samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">affinity_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">i_sample</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
-                    <span class="n">affinity_matrix</span><span class="p">[</span><span class="n">i_sample</span><span class="p">,</span> <span class="p">:</span><span class="n">i_sample</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="p">(</span>
-                        <span class="n">data</span><span class="p">[</span><span class="n">i_sample</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">data</span><span class="p">[:</span><span class="n">i_sample</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-                    <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">i_sample</span><span class="p">)</span>
-                <span class="n">affinity_matrix</span> <span class="o">+=</span> <span class="n">affinity_matrix</span><span class="o">.</span><span class="n">T</span>
-                <span class="k">return</span> <span class="n">affinity_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">n_clusters</span><span class="o">=</span><span class="n">n_clusters</span><span class="p">,</span>

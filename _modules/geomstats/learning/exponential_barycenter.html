@@ -424,90 +424,70 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
-<span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">linear_mean</span>
-
-<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">BaseGradientDescent</span><span class="p">,</span> <span class="n">LinearMean</span>
 
 
-<span class="k">def</span> <span class="nf">_default_gradient_descent</span><span class="p">(</span>
-    <span class="n">group</span><span class="p">,</span>
-    <span class="n">points</span><span class="p">,</span>
-    <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">max_iter</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-    <span class="n">init_step_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the (weighted) group exponential barycenter of `points`.</span>
+<div class="viewcode-block" id="GradientDescent"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.GradientDescent">[docs]</a><span class="k">class</span> <span class="nc">GradientDescent</span><span class="p">(</span><span class="n">BaseGradientDescent</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient descent for exponential barycenter.&quot;&quot;&quot;</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
-<span class="sd">        Instance of the class LieGroup.</span>
-<span class="sd">    points : array-like, shape=[n_samples, dim, dim]</span>
-<span class="sd">        Input points lying in the Lie Group.</span>
-<span class="sd">    weights : array-like, shape=[n_samples,]</span>
-<span class="sd">        Weights associated to the points.</span>
-<span class="sd">        Optional, defaults to 1 for each point if None.</span>
-<span class="sd">    max_iter : int</span>
-<span class="sd">        Maximum number of iterations to perform in the gradient descent.</span>
-<span class="sd">        Optional, default: 32.</span>
-<span class="sd">    epsilon : float</span>
-<span class="sd">        Tolerance to reach convergence. The exstrinsic norm of the</span>
-<span class="sd">        gradient is used as criterion.</span>
-<span class="sd">        Optional, default: 1e-6.</span>
-<span class="sd">    init_step_size : float</span>
-<span class="sd">        Learning rate in the gradient descent.</span>
-<span class="sd">        Optional, default: 1.</span>
-<span class="sd">    verbose : bool</span>
-<span class="sd">        Level of verbosity to inform about convergence.</span>
-<span class="sd">        Optional, default: False.</span>
+<div class="viewcode-block" id="GradientDescent.minimize"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.GradientDescent.minimize">[docs]</a>    <span class="k">def</span> <span class="nf">minimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the (weighted) group exponential barycenter of `points`.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    exp_bar : array-like, shape=[dim, dim]</span>
-<span class="sd">        Exponential barycenter of the input points.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ndim</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">default_point_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span> <span class="k">else</span> <span class="mi">3</span>
-    <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">ndim</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">points</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : LieGroup</span>
+<span class="sd">            Instance of the class LieGroup.</span>
+<span class="sd">        points : array-like, shape=[n_samples, dim, dim]</span>
+<span class="sd">            Input points lying in the Lie Group.</span>
+<span class="sd">        weights : array-like, shape=[n_samples,]</span>
+<span class="sd">            Weights associated to the points.</span>
+<span class="sd">            Optional, defaults to 1 for each point if None.</span>
 
-    <span class="n">n_points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,))</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp_bar : array-like, shape=[dim, dim]</span>
+<span class="sd">            Exponential barycenter of the input points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="n">sq_dists_between_iterates</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">grad_norm</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,))</span>
 
-    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">grad_norm</span> <span class="o">&gt;</span> <span class="n">epsilon</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">break</span>
-        <span class="n">inv_mean</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
-        <span class="n">centered_points</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">inv_mean</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
-        <span class="n">logs</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">centered_points</span><span class="p">)</span>
-        <span class="n">tangent_mean</span> <span class="o">=</span> <span class="n">init_step_size</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">&quot;n, nk...-&gt;k...&quot;</span><span class="p">,</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">sum_weights</span><span class="p">,</span> <span class="n">logs</span>
-        <span class="p">)</span>
-        <span class="n">mean_next</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_mean</span><span class="p">))</span>
+        <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-        <span class="n">grad_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tangent_mean</span><span class="p">)</span>
-        <span class="n">sq_dists_between_iterates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">grad_norm</span><span class="p">)</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span>
 
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
+        <span class="n">grad_norm</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached. &quot;</span>
-            <span class="s2">&quot;The mean may be inaccurate&quot;</span>
-        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">grad_norm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">break</span>
 
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_iter: </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">, final gradient norm: </span><span class="si">{</span><span class="n">grad_norm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">mean</span>
+            <span class="n">inv_mean</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+            <span class="n">centered_points</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">inv_mean</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
+
+            <span class="n">logs</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">centered_points</span><span class="p">)</span>
+            <span class="n">tangent_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_step_size</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                <span class="s2">&quot;n, nk...-&gt;k...&quot;</span><span class="p">,</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">sum_weights</span><span class="p">,</span> <span class="n">logs</span>
+            <span class="p">)</span>
+            <span class="n">mean_next</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_mean</span><span class="p">))</span>
+
+            <span class="n">grad_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tangent_mean</span><span class="p">)</span>
+
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_next</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached. &quot;</span>
+                <span class="s2">&quot;The mean may be inaccurate&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_iter: </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">, final gradient norm: </span><span class="si">{</span><span class="n">grad_norm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span></div></div>
 
 
 <div class="viewcode-block" id="ExponentialBarycenter"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.ExponentialBarycenter">[docs]</a><span class="k">class</span> <span class="nc">ExponentialBarycenter</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
@@ -515,21 +495,8 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup</span>
+<span class="sd">    space : LieGroup</span>
 <span class="sd">        Lie group instance on which the data lie.</span>
-<span class="sd">    max_iter : int</span>
-<span class="sd">        Maximum number of iterations to perform in the gradient descent.</span>
-<span class="sd">        Optional, default: 32.</span>
-<span class="sd">    epsilon : float</span>
-<span class="sd">        Tolerance to reach convergence. The extrinsic norm of the</span>
-<span class="sd">        gradient is used as criterion.</span>
-<span class="sd">        Optional, default: 1e-6.</span>
-<span class="sd">    init_step_size : float</span>
-<span class="sd">        Learning rate in the gradient descent.</span>
-<span class="sd">        Optional, default: 1.</span>
-<span class="sd">    verbose : bool</span>
-<span class="sd">        Level of verbosity to inform about convergence.</span>
-<span class="sd">        Optional, default: 1.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -537,20 +504,31 @@ document.write(`
 <span class="sd">        If fit, exponential barycenter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">group</span><span class="p">,</span>
-        <span class="n">max_iter</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-        <span class="n">epsilon</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">,</span>
-        <span class="n">init_step_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init_step_size</span> <span class="o">=</span> <span class="n">init_step_size</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface for instantiating proper algorithm.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">Euclidean</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">LinearMean</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">GradientDescent</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ExponentialBarycenter.set"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.ExponentialBarycenter.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set optimizer parameters.</span>
+
+<span class="sd">        Especially useful for one line instantiations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown parameter </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="ExponentialBarycenter.fit"><a class="viewcode-back" href="../../../api/learning.html#geomstats.learning.exponential_barycenter.ExponentialBarycenter.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the empirical weighted exponential barycenter.</span>
@@ -570,23 +548,14 @@ document.write(`
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">Euclidean</span><span class="p">):</span>
-            <span class="n">mean</span> <span class="o">=</span> <span class="n">linear_mean</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-
         <span class="c1"># TODO (nguigs): use closed form expression for special euclidean</span>
         <span class="c1">#  group as before PR #537</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">mean</span> <span class="o">=</span> <span class="n">_default_gradient_descent</span><span class="p">(</span>
-                <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">,</span>
-                <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
-                <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
-                <span class="n">max_iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
-                <span class="n">init_step_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_step_size</span><span class="p">,</span>
-                <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
-                <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">mean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+            <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span>
+            <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span></div></div>
 </pre></div>
