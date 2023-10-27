@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -444,6 +444,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.poincare_ball</span> <span class="kn">import</span> <span class="n">PoincareBall</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="PoincareHalfSpace">
@@ -496,7 +497,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point_dim</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">point_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">atol</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">atol</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PoincareHalfSpace.projection">
@@ -557,13 +558,12 @@ document.write(`
 <span class="sd">            Inner-product of the two tangent vectors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">tangent_vec_a</span> <span class="o">*</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">inner_prod</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
-        <span class="k">return</span> <span class="n">inner_prod</span></div>
+        <span class="k">return</span> <span class="n">inner_prod</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span></div>
 
 
 <div class="viewcode-block" id="PoincareHalfSpaceMetric.exp">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.poincare_half_space.PoincareHalfSpaceMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential.</span>
 
 <span class="sd">        Parameters</span>
@@ -591,7 +591,7 @@ document.write(`
 
 <div class="viewcode-block" id="PoincareHalfSpaceMetric.log">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.poincare_half_space.PoincareHalfSpaceMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point wrt a base point.</span>
 
 <span class="sd">        Parameters</span>
@@ -631,10 +631,11 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        radius : float</span>
+<span class="sd">        radius : array-like, shape=[...,]</span>
 <span class="sd">            Injectivity radius.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span></div>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

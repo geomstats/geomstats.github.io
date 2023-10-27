@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -573,7 +573,7 @@ document.write(`
         <span class="n">variances_flatten</span> <span class="o">=</span> <span class="n">variances_expanded</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 
         <span class="n">distances</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist_broadcast</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">variances</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">variances</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
 
         <span class="n">num</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">distances</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">variances_flatten</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
@@ -714,7 +714,7 @@ document.write(`
 <span class="sd">        Optional, default: &#39;random&#39;.</span>
 <span class="sd">        Choice between initialization method for variances, means and weights.</span>
 <span class="sd">           &#39;random&#39; : will select random uniformly train points as</span>
-<span class="sd">                     initial centroids.</span>
+<span class="sd">                     initial cluster centers.</span>
 <span class="sd">            &#39;kmeans&#39; : will apply Riemannian kmeans to deduce</span>
 <span class="sd">            variances and means that the EM will use initially.</span>
 <span class="sd">    tol : float</span>
@@ -910,18 +910,18 @@ document.write(`
             <span class="p">)</span>
 
             <span class="n">kmeans_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
-            <span class="n">centroids</span> <span class="o">=</span> <span class="n">kmeans_estimator</span><span class="o">.</span><span class="n">centroids_</span>
+            <span class="n">cluster_centers</span> <span class="o">=</span> <span class="n">kmeans_estimator</span><span class="o">.</span><span class="n">cluster_centers_</span>
             <span class="n">labels</span> <span class="o">=</span> <span class="n">kmeans_estimator</span><span class="o">.</span><span class="n">labels_</span>
 
-            <span class="n">means</span> <span class="o">=</span> <span class="n">centroids</span>
+            <span class="n">means</span> <span class="o">=</span> <span class="n">cluster_centers</span>
             <span class="n">variances</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gaussians</span><span class="p">)</span>
 
             <span class="n">labeled_data</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">labels</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">X</span><span class="p">)])</span>
             <span class="n">labeled_data</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">labeled_data</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">centroid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">centroids</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">cluster_center</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">):</span>
                 <span class="n">label_mask</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">labeled_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">label</span><span class="p">)</span>
                 <span class="n">grouped_by_label</span> <span class="o">=</span> <span class="n">labeled_data</span><span class="p">[</span><span class="n">label_mask</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">:]</span>
-                <span class="n">v</span> <span class="o">=</span> <span class="n">variance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">grouped_by_label</span><span class="p">,</span> <span class="n">centroid</span><span class="p">)</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">variance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">grouped_by_label</span><span class="p">,</span> <span class="n">cluster_center</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">grouped_by_label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">v</span> <span class="o">+=</span> <span class="n">MIN_VAR_INIT</span>
                 <span class="n">variances</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>

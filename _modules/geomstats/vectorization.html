@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -485,10 +485,6 @@ document.write(`
 <span class="sd">        Number of points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">point_max_ndim</span> <span class="o">=</span> <span class="n">_get_max_ndim_point</span><span class="p">(</span><span class="o">*</span><span class="n">point</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">==</span> <span class="n">point_max_ndim</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">1</span>
-
     <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">point_max_ndim</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">])</span></div>
 
 
@@ -596,81 +592,6 @@ document.write(`
     <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">out_shape</span><span class="p">)]</span> <span class="o">!=</span> <span class="n">batch_shape</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="n">out_shape</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">out</span></div>
-
-
-
-<div class="viewcode-block" id="decorator">
-<a class="viewcode-back" href="../../api/geomstats.html#geomstats.vectorization.decorator">[docs]</a>
-<span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">input_types</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorize geomstats functions.</span>
-
-<span class="sd">    This decorator assumes that its function:</span>
-
-<span class="sd">    - works with fully-vectorized inputs,</span>
-<span class="sd">    - returns fully-vectorized outputs,</span>
-
-<span class="sd">    where &quot;fully-vectorized&quot; means that:</span>
-
-<span class="sd">    - one scalar has shape [1, 1],</span>
-<span class="sd">    - n scalars have shape [n, 1],</span>
-<span class="sd">    - one d-D vector has shape [1, d],</span>
-<span class="sd">    - n d-D vectors have shape [n, d],etc</span>
-<span class="sd">    etc.</span>
-
-<span class="sd">    The decorator:</span>
-
-<span class="sd">    - gets the types of all inputs of its function:</span>
-<span class="sd">        - args,</span>
-<span class="sd">        - kwargs,</span>
-<span class="sd">        - optional kwargs,</span>
-<span class="sd">            - e.g. input_type=None,</span>
-<span class="sd">    - gets the type of the output of its function,</span>
-<span class="sd">        - e.g. distinguishes between 1D &#39;vector&#39; vs &#39;scalar&#39;,</span>
-<span class="sd">    - gets the initial shapes of all inputs of its function,</span>
-<span class="sd">    - if needed, adapts the types of the inputs,</span>
-<span class="sd">        - e.g. distinguishes between &#39;vector&#39; or &#39;matrix&#39; inputs,</span>
-<span class="sd">        using variables &#39;point_type&#39; or &#39;default_point_type&#39;,</span>
-<span class="sd">    - converts the inputs into fully-vectorized inputs,</span>
-<span class="sd">    - calls the function,</span>
-<span class="sd">    - adapts the output shapes to match the users&#39; expectations,</span>
-<span class="sd">      using the initial shapes of the inputs.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input_types : list</span>
-<span class="sd">        List of inputs&#39; input_types, including for optional inputs.</span>
-<span class="sd">        The `input_type`s of optional inputs will not be read</span>
-<span class="sd">        by the decorator if the corresponding input is not given.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_types</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="n">input_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_types</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">aux_decorator</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="n">args_types</span><span class="p">,</span> <span class="n">kwargs_types</span><span class="p">,</span> <span class="n">opt_kwargs_types</span><span class="p">,</span> <span class="n">is_scal</span> <span class="o">=</span> <span class="n">get_types</span><span class="p">(</span>
-                <span class="n">input_types</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span>
-            <span class="p">)</span>
-            <span class="n">args_types</span><span class="p">,</span> <span class="n">kwargs_types</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">adapt_types</span><span class="p">(</span>
-                <span class="n">args_types</span><span class="p">,</span> <span class="n">kwargs_types</span><span class="p">,</span> <span class="n">opt_kwargs_types</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span>
-            <span class="p">)</span>
-            <span class="n">args_kwargs_types</span> <span class="o">=</span> <span class="n">args_types</span> <span class="o">+</span> <span class="n">kwargs_types</span>
-
-            <span class="n">args_shapes</span> <span class="o">=</span> <span class="n">get_initial_shapes</span><span class="p">(</span><span class="n">args_types</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-            <span class="n">kwargs_shapes</span> <span class="o">=</span> <span class="n">get_initial_shapes</span><span class="p">(</span><span class="n">kwargs_types</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-            <span class="n">initial_shapes</span> <span class="o">=</span> <span class="n">args_shapes</span> <span class="o">+</span> <span class="n">kwargs_shapes</span>
-
-            <span class="n">vect_args</span> <span class="o">=</span> <span class="n">vectorize_args</span><span class="p">(</span><span class="n">args_types</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-            <span class="n">vect_kwargs</span> <span class="o">=</span> <span class="n">vectorize_kwargs</span><span class="p">(</span><span class="n">kwargs_types</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
-
-            <span class="n">result</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">vect_args</span><span class="p">,</span> <span class="o">**</span><span class="n">vect_kwargs</span><span class="p">)</span>
-
-            <span class="n">result</span> <span class="o">=</span> <span class="n">adapt_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">initial_shapes</span><span class="p">,</span> <span class="n">args_kwargs_types</span><span class="p">,</span> <span class="n">is_scal</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">result</span>
-
-        <span class="k">return</span> <span class="n">wrapper</span>
-
-    <span class="k">return</span> <span class="n">aux_decorator</span></div>
 
 
 
@@ -1049,6 +970,44 @@ document.write(`
         <span class="k">return</span> <span class="kc">False</span>
     <span class="n">has_singleton_dim_1</span> <span class="o">=</span> <span class="n">vect_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">has_singleton_dim_1</span></div>
+
+
+
+<div class="viewcode-block" id="broadcast_to_multibatch">
+<a class="viewcode-back" href="../../api/geomstats.html#geomstats.vectorization.broadcast_to_multibatch">[docs]</a>
+<span class="k">def</span> <span class="nf">broadcast_to_multibatch</span><span class="p">(</span><span class="n">batch_shape_a</span><span class="p">,</span> <span class="n">batch_shape_b</span><span class="p">,</span> <span class="n">array_a</span><span class="p">,</span> <span class="o">*</span><span class="n">array_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Broadcast to multibatch.</span>
+
+<span class="sd">    Gives to both arrays batch shape `batch_shape_b + batch_shape_a`.</span>
+
+<span class="sd">    Does nothing if one of the batch shapes is empty.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    batch_shape_a : tuple</span>
+<span class="sd">        Batch shape of array_a.</span>
+<span class="sd">    batch_shape_b : tuple</span>
+<span class="sd">        Batch shape of array_b.</span>
+<span class="sd">    array_a : array</span>
+<span class="sd">    array_b : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">multi_b</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array_b</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">batch_shape_a</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">batch_shape_b</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">array_a</span><span class="p">,</span> <span class="n">array_b</span><span class="p">)</span> <span class="k">if</span> <span class="n">multi_b</span> <span class="k">else</span> <span class="p">(</span><span class="n">array_a</span><span class="p">,</span> <span class="n">array_b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">array_a_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">array_a</span><span class="p">,</span> <span class="n">batch_shape_b</span> <span class="o">+</span> <span class="n">array_a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="n">n_batch_b</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_shape_b</span><span class="p">)</span>
+    <span class="n">indices_in</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_shape_a</span><span class="p">)))</span>
+    <span class="n">indices_out</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">n_batch_b</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices_in</span><span class="p">]</span>
+
+    <span class="n">array_b_</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">array_b</span><span class="p">:</span>
+        <span class="n">array_b_aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">batch_shape_a</span> <span class="o">+</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">array_b_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">array_b_aux</span><span class="p">,</span> <span class="n">indices_in</span><span class="p">,</span> <span class="n">indices_out</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">array_a_</span><span class="p">,</span> <span class="n">array_b_</span><span class="p">)</span> <span class="k">if</span> <span class="n">multi_b</span> <span class="k">else</span> <span class="p">(</span><span class="n">array_a_</span><span class="p">,</span> <span class="n">array_b_</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
 
 </pre></div>
 

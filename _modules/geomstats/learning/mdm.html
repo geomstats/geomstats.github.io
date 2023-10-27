@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -464,7 +464,7 @@ document.write(`
 <span class="sd">    ----------</span>
 <span class="sd">    classes_ : array-like, shape=[n_classes,]</span>
 <span class="sd">        If fit, labels of training set.</span>
-<span class="sd">    mean_estimates_ : array-like, shape=[n_classes, *metric.shape]</span>
+<span class="sd">    mean_estimates_ : array-like, shape=[n_classes, *space.shape]</span>
 <span class="sd">        If fit, centroids computed on training set.</span>
 
 <span class="sd">    Notes</span>
@@ -498,7 +498,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">        X : array-like, shape=[n_samples, *space.shape]</span>
 <span class="sd">            Training input samples.</span>
 <span class="sd">        y : array-like, shape=[n_samples,]</span>
 <span class="sd">            Training labels.</span>
@@ -535,7 +535,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">        X : array-like, shape=[n_samples, *space.shape]</span>
 <span class="sd">            Test samples.</span>
 
 <span class="sd">        Returns</span>
@@ -550,7 +550,7 @@ document.write(`
         <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes_</span><span class="p">,</span> <span class="n">indices</span><span class="p">),</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMinimumDistanceToMean.predict_proba">
@@ -563,7 +563,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">        X : array-like, shape=[n_samples, *space.shape]</span>
 <span class="sd">            Test samples.</span>
 
 <span class="sd">        Returns</span>
@@ -571,14 +571,18 @@ document.write(`
 <span class="sd">        probas : array-like, shape=[n_samples, n_classes]</span>
 <span class="sd">            Probability of the sample for each class in the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">probas</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
-            <span class="n">dist2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span>
-                <span class="n">x</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">probas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="n">dist2</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div>
+        <span class="n">dists2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_dist</span><span class="p">(</span>
+                    <span class="n">X</span><span class="p">,</span>
+                    <span class="n">mean_estimate</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">mean_estimate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">probas</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="n">dists2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">probas</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMinimumDistanceToMean.transform">
@@ -590,7 +594,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">        X : array-like, shape=[n_samples, *space.shape]</span>
 <span class="sd">            Test samples.</span>
 
 <span class="sd">        Returns</span>
@@ -598,14 +602,17 @@ document.write(`
 <span class="sd">        dist : ndarray, shape=[n_samples, n_classes]</span>
 <span class="sd">            Distances to each centroid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
-            <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
-                <span class="n">x</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span></div>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                    <span class="n">X</span><span class="p">,</span>
+                    <span class="n">mean_estimate</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">mean_estimate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimates_</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dists</span></div>
 </div>
 
 </pre></div>

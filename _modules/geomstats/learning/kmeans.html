@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -460,13 +460,13 @@ document.write(`
 <span class="sd">        Number of clusters (k value of the k-means).</span>
 <span class="sd">        Optional, default: 8.</span>
 <span class="sd">    init : str or callable or array-like, shape=[n_clusters, n_features]</span>
-<span class="sd">        How to initialize centroids at the beginning of the algorithm. The</span>
-<span class="sd">        choice &#39;random&#39; will select training points as initial centroids</span>
-<span class="sd">        uniformly at random. The choice &#39;kmeans++&#39; selects centroids</span>
+<span class="sd">        How to initialize cluster centers at the beginning of the algorithm. The</span>
+<span class="sd">        choice &#39;random&#39; will select training points as initial cluster centers</span>
+<span class="sd">        uniformly at random. The choice &#39;kmeans++&#39; selects cluster centers</span>
 <span class="sd">        heuristically to improve the convergence rate. When providing an array</span>
-<span class="sd">        of shape ``(n_clusters, n_features)``, the centroids are chosen as the</span>
+<span class="sd">        of shape ``(n_clusters, n_features)``, the cluster centers are chosen as the</span>
 <span class="sd">        rows of that array. When providing a callable, it receives as arguments</span>
-<span class="sd">        the argument ``X`` to :meth:`fit` and the number of centroids</span>
+<span class="sd">        the argument ``X`` to :meth:`fit` and the number of cluster centers</span>
 <span class="sd">        ``n_clusters`` and is expected to return an array as above.</span>
 <span class="sd">        Optional, default: &#39;random&#39;.</span>
 <span class="sd">    tol : float</span>
@@ -507,65 +507,73 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">init_centroids</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_cluster_centers_</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span>
             <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
         <span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">init_step_size</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">centroids_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inertia_</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_pick_init_centroids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pick_init_cluster_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">==</span> <span class="s2">&quot;kmeans++&quot;</span><span class="p">:</span>
-                <span class="n">centroids</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]]</span>
+                <span class="n">cluster_centers</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]]</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">dists</span> <span class="o">=</span> <span class="p">[</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">centroids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="p">]</span>
-                    <span class="n">dists_to_closest_centroid</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                    <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
-                    <span class="n">weights</span> <span class="o">=</span> <span class="n">dists_to_closest_centroid</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-                        <span class="n">dists_to_closest_centroid</span>
+                    <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">X</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="p">]</span>
                     <span class="p">)</span>
-                    <span class="n">index</span> <span class="o">=</span> <span class="n">rv_discrete</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span><span class="o">.</span><span class="n">rvs</span><span class="p">()</span>
-                    <span class="n">centroids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+                    <span class="n">dists_to_closest_cluster_center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">dists_to_closest_cluster_center</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                        <span class="n">dists_to_closest_cluster_center</span>
+                    <span class="p">)</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">rv_discrete</span><span class="p">(</span>
+                        <span class="n">values</span><span class="o">=</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">rvs</span><span class="p">()</span>
+                    <span class="n">cluster_centers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-                <span class="n">centroids</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">cluster_centers</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
                 <span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown initial centroids method &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
-
-            <span class="n">centroids</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">centroids</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">):</span>
-                <span class="n">centroids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">centroids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span>
-
-            <span class="k">if</span> <span class="n">centroids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need as many initial centroids as clusters.&quot;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">centroids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Dimensions of initial centroids and training data do not match.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unknown initial cluster centers method &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
                 <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">centroids</span>
+            <span class="n">cluster_centers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">):</span>
+                <span class="n">cluster_centers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cluster_centers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span>
+
+            <span class="k">if</span> <span class="n">cluster_centers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need as many initial cluster centers as clusters.&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cluster_centers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Dimensions of initial cluster centers and &quot;</span>
+                    <span class="s2">&quot;training data do not match.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cluster_centers</span>
 
 <div class="viewcode-block" id="RiemannianKMeans.fit">
 <a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.kmeans.RiemannianKMeans.fit">[docs]</a>
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide clusters centroids and data labels.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide cluster centers and data labels.</span>
 
 <span class="sd">        Alternate between computing the mean of each cluster</span>
-<span class="sd">        and labelling data according to the new positions of the centroids.</span>
+<span class="sd">        and labelling data according to the new positions of the cluster centers.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -582,11 +590,11 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing...&quot;</span><span class="p">)</span>
 
-        <span class="n">centroids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pick_init_centroids</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init_centroids</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">centroids</span><span class="p">)</span>
+        <span class="n">cluster_centers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pick_init_cluster_centers</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_cluster_centers_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">)</span>
 
         <span class="n">dists</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">X</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">X</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span>
@@ -596,32 +604,34 @@ document.write(`
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 
-            <span class="n">old_centroids</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">centroids</span><span class="p">)</span>
+            <span class="n">old_cluster_centers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">):</span>
                 <span class="n">fold</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
-                    <span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
+                    <span class="n">cluster_centers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+                    <span class="n">cluster_centers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
 
             <span class="n">dists</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">centroids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">X</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cluster_centers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">X</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">dists_to_closest_centroid</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">inertia_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists_to_closest_centroid</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-            <span class="n">centroids_distances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">old_centroids</span><span class="p">,</span> <span class="n">centroids</span><span class="p">)</span>
+            <span class="n">dists_to_closest_cluster_center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inertia_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists_to_closest_cluster_center</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cluster_centers_distances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                <span class="n">old_cluster_centers</span><span class="p">,</span> <span class="n">cluster_centers</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Convergence criterion at the end of iteration </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;is </span><span class="si">{</span><span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">centroids_distances</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;is </span><span class="si">{</span><span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_centers_distances</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">centroids_distances</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cluster_centers_distances</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Convergence reached after </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> iterations.&quot;</span><span class="p">)</span>
 
@@ -632,7 +642,7 @@ document.write(`
                 <span class="s2">&quot;The mean may be inaccurate.&quot;</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">centroids_</span> <span class="o">=</span> <span class="n">centroids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="n">cluster_centers</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
@@ -643,7 +653,7 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict the labels for each data point.</span>
 
 <span class="sd">        Label each data point with the cluster having the nearest</span>
-<span class="sd">        centroid using metric distance.</span>
+<span class="sd">        cluster center using metric distance.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -655,10 +665,13 @@ document.write(`
 <span class="sd">        labels : array-like, shape=[n_samples,]</span>
 <span class="sd">            Array of predicted cluster indices for each sample.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">centroids_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;fit needs to be called first.&quot;</span><span class="p">)</span>
         <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">centroid</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">centroid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">centroids_</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">cluster_center</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">cluster_center</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span>
+            <span class="p">],</span>
             <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span>

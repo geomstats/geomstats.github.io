@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -438,7 +438,6 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span><span class="p">,</span> <span class="n">norm</span>
 
-<span class="kn">import</span> <span class="nn">geomstats</span>
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span> <span class="k">as</span> <span class="nn">errors</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">OpenSet</span>
@@ -452,8 +451,12 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.scalar_product_metric</span> <span class="kn">import</span> <span class="n">ScalarProductMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.spd_matrices</span> <span class="kn">import</span> <span class="n">SPDAffineMetric</span><span class="p">,</span> <span class="n">SPDMatrices</span>
-<span class="kn">from</span> <span class="nn">geomstats.information_geometry.base</span> <span class="kn">import</span> <span class="n">InformationManifoldMixin</span>
-<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
+<span class="kn">from</span> <span class="nn">geomstats.information_geometry.base</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InformationManifoldMixin</span><span class="p">,</span>
+    <span class="n">ScipyMultivariateRandomVariable</span><span class="p">,</span>
+    <span class="n">ScipyUnivariateRandomVariable</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">broadcast_to_multibatch</span><span class="p">,</span> <span class="n">get_batch_shape</span><span class="p">,</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="NormalDistributions">
@@ -503,7 +506,8 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">support_shape</span><span class="o">=</span><span class="p">(),</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">UnivariateNormalDistributionsRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="UnivariateNormalDistributions.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.UnivariateNormalDistributions.default_metric">[docs]</a>
@@ -563,12 +567,7 @@ document.write(`
 <span class="sd">        samples : array-like, shape=[..., n_samples]</span>
 <span class="sd">            Sample from normal distributions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">mean</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="n">point</span><span class="p">:</span>
-            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="UnivariateNormalDistributions.point_to_pdf">
@@ -592,6 +591,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">means</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">stds</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">stds</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for normal pdf.</span>
@@ -608,9 +608,7 @@ document.write(`
 <span class="sd">                by point.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
-            <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">stds</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">means</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">stds</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">pdf_normalization</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">means</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">stds</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">pdf</span></div>
 </div>
@@ -633,8 +631,9 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_dim</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">,),</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="o">=</span> <span class="n">sample_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">SharedMeanNormalDistributionsRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CenteredNormalDistributions.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.CenteredNormalDistributions.default_metric">[docs]</a>
@@ -663,13 +662,7 @@ document.write(`
 <span class="sd">        samples : array-like, shape=[..., n_samples, sample_dim]</span>
 <span class="sd">            Sample from centered multivariate normal distributions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">cov</span> <span class="ow">in</span> <span class="n">point</span><span class="p">:</span>
-            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CenteredNormalDistributions.point_to_pdf">
@@ -689,12 +682,10 @@ document.write(`
 <span class="sd">            Probability density function of the centered multivariate normal</span>
 <span class="sd">            distributions with covariance matrices provided by point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">point</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
         <span class="n">det_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="n">inv_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
+        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for normal pdf.</span>
@@ -710,14 +701,14 @@ document.write(`
 <span class="sd">            pdf_at_x: array-like, shape=[..., n_samples]</span>
 <span class="sd">                Probability density function at x.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">x_</span><span class="p">,</span> <span class="n">inv_cov_</span> <span class="o">=</span> <span class="n">broadcast_to_multibatch</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">batch_shape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">inv_cov</span>
+            <span class="p">)</span>
 
-            <span class="n">pdf</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-                <span class="n">pdf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xi</span><span class="p">)</span> <span class="o">@</span> <span class="n">inv_cov</span> <span class="o">@</span> <span class="n">xi</span><span class="p">))</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">pdf_normalization</span> <span class="o">*</span> <span class="n">pdf</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+            <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x_</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">inv_cov_</span><span class="p">,</span> <span class="n">x_</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                <span class="s2">&quot;...,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">pdf_normalization</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">pdf</span></div>
 </div>
@@ -745,7 +736,13 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="o">=</span> <span class="n">sample_dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_space</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sample_dim</span><span class="p">)</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">embedding_space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">embedding_space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span>
+            <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">,),</span>
+            <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">DiagonalNormalDistributionsRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DiagonalNormalDistributions.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.DiagonalNormalDistributions.default_metric">[docs]</a>
@@ -755,8 +752,7 @@ document.write(`
         <span class="k">return</span> <span class="n">DiagonalNormalMetric</span></div>
 
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_unstack_mean_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract mean and diagonal of the covariance matrix from a given point.</span>
 
 <span class="sd">        Parameters</span>
@@ -773,8 +769,8 @@ document.write(`
 <span class="sd">        diagonal : array-like, shape=[..., sample_dim]</span>
 <span class="sd">            Diagonals of covariance matrices from the input point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">sample_dim</span><span class="p">]</span>
-        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">sample_dim</span><span class="p">:]</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">]</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="p">:]</span>
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span>
 
     <span class="nd">@staticmethod</span>
@@ -793,8 +789,7 @@ document.write(`
 <span class="sd">        point : array-like, shape=[..., 2 * sample_dim]</span>
 <span class="sd">            Point with means and diagonals covariance matrices.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">point</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DiagonalNormalDistributions.belongs">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.DiagonalNormalDistributions.belongs">[docs]</a>
@@ -815,9 +810,8 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point_dim</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">belongs</span> <span class="o">=</span> <span class="n">point_dim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="n">belongs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diagonal</span> <span class="o">&gt;=</span> <span class="n">atol</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">belongs</span></div>
+        <span class="n">_</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">diagonal</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="n">atol</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="DiagonalNormalDistributions.random_point">
@@ -869,10 +863,9 @@ document.write(`
 <span class="sd">            Point containing means and diagonals</span>
 <span class="sd">            of covariance matrices.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="n">regularized</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">diagonal</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">)</span>
-        <span class="n">projected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stack_mean_diagonal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">regularized</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">projected</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stack_mean_diagonal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">regularized</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiagonalNormalDistributions.sample">
@@ -895,16 +888,7 @@ document.write(`
 <span class="sd">        samples : array-like, shape=[..., n_samples, sample_dim]</span>
 <span class="sd">            Sample from multivariate normal distributions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">point</span><span class="p">:</span>
-            <span class="n">mean</span><span class="p">,</span> <span class="n">diag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-            <span class="n">cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
-            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiagonalNormalDistributions.point_to_pdf">
@@ -925,14 +909,11 @@ document.write(`
 <span class="sd">            Probability density function of the normal distribution with</span>
 <span class="sd">            parameters provided by point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span>
-        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="n">det_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">det_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for normal pdf.</span>
@@ -943,15 +924,14 @@ document.write(`
 <span class="sd">                Points at which to compute the probability</span>
 <span class="sd">                density function.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">diagonal</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
-            <span class="k">while</span> <span class="n">pdf_normalization</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">pdf</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-                <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="n">pdf_normalization</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">pdf_normalization</span> <span class="o">*</span> <span class="n">pdf</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">pdf</span>
+            <span class="n">x_</span><span class="p">,</span> <span class="p">(</span><span class="n">mean_</span><span class="p">,</span> <span class="n">diagonal_</span><span class="p">)</span> <span class="o">=</span> <span class="n">broadcast_to_multibatch</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">batch_shape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span>
+            <span class="p">)</span>
+
+            <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">x_</span> <span class="o">-</span> <span class="n">mean_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">diagonal_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                <span class="s2">&quot;...,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">pdf_normalization</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">pdf</span></div>
 </div>
@@ -977,9 +957,11 @@ document.write(`
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">factors</span><span class="o">=</span><span class="p">(</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">),</span> <span class="n">SPDMatrices</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">)),</span>
             <span class="n">default_point_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span>
+            <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">sample_dim</span><span class="p">,),</span>
             <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="o">=</span> <span class="n">sample_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">MultivariateNormalDistributionsRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_unstack_mean_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract mean and covariance matrix from a given point.</span>
@@ -996,12 +978,11 @@ document.write(`
 <span class="sd">        diagonal : array-like, shape=[..., sample_dim, sample_dim]</span>
 <span class="sd">            Covariance matrices from the input point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">point</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">]</span>
-        <span class="n">cov</span> <span class="o">=</span> <span class="n">point</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="p">:]</span>
-        <span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mean</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">]</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span> <span class="p">:]</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span>
 
 <div class="viewcode-block" id="GeneralNormalDistributions.sample">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.GeneralNormalDistributions.sample">[docs]</a>
@@ -1023,14 +1004,7 @@ document.write(`
 <span class="sd">        samples : array-like, shape=[..., n_samples, sample_dim]</span>
 <span class="sd">            Sample from multivariate normal distributions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">means</span><span class="p">,</span> <span class="n">covs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_covariance</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">means</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">covs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">covs</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">covs</span><span class="p">):</span>
-            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)))</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="GeneralNormalDistributions.point_to_pdf">
@@ -1051,15 +1025,11 @@ document.write(`
 <span class="sd">            Probability density function of the multivariate normal</span>
 <span class="sd">            distributions with parameters provided by point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
         <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack_mean_covariance</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">det_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
         <span class="n">inv_cov</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
-        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
+        <span class="n">pdf_normalization</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">)</span> <span class="o">*</span> <span class="n">det_cov</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for normal pdf.</span>
@@ -1070,15 +1040,14 @@ document.write(`
 <span class="sd">                Points at which to compute the probability</span>
 <span class="sd">                density function.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-                <span class="n">xi0</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">-</span> <span class="n">mean</span>
-                <span class="n">pdf_at_xi</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">xi0</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">inv_cov</span> <span class="o">@</span> <span class="n">xi0</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
-                <span class="n">pdf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pdf_at_xi</span><span class="p">))</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
-            <span class="n">pdf</span> <span class="o">=</span> <span class="n">pdf_normalization</span> <span class="o">*</span> <span class="n">pdf</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+            <span class="n">x_</span><span class="p">,</span> <span class="p">(</span><span class="n">mean_</span><span class="p">,</span> <span class="n">inv_cov_</span><span class="p">)</span> <span class="o">=</span> <span class="n">broadcast_to_multibatch</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">batch_shape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">inv_cov</span>
+            <span class="p">)</span>
+            <span class="n">aux_0</span> <span class="o">=</span> <span class="n">x_</span> <span class="o">-</span> <span class="n">mean_</span>
+            <span class="n">aux_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">aux_0</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">inv_cov_</span><span class="p">,</span> <span class="n">aux_0</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                <span class="s2">&quot;...,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">pdf_normalization</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">aux_1</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">pdf</span></div>
 </div>
@@ -1303,9 +1272,7 @@ document.write(`
 <span class="sd">        pairs : array-like, shape=[..., sample_dim, 2]</span>
 <span class="sd">            Pairs of parameters (e.g. means and variances).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">sample_dim</span><span class="p">,</span> <span class="n">point</span>
-        <span class="p">)</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">apply_sqrt</span><span class="p">:</span>
             <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">diagonal</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -1432,6 +1399,72 @@ document.write(`
         <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="UnivariateNormalDistributionsRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.UnivariateNormalDistributionsRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">UnivariateNormalDistributionsRandomVariable</span><span class="p">(</span><span class="n">ScipyUnivariateRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A univariate normal random variable.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">norm</span><span class="o">.</span><span class="n">rvs</span><span class="p">,</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_flatten_params</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">):</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">flat_loc</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">flat_scale</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">flat_loc</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="n">flat_scale</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="SharedMeanNormalDistributionsRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.SharedMeanNormalDistributionsRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">SharedMeanNormalDistributionsRandomVariable</span><span class="p">(</span><span class="n">ScipyMultivariateRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A multivariate normal random variable with zero mean.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">rvs</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">point</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">point</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">rvs</span><span class="p">,</span> <span class="n">pdf</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DiagonalNormalDistributionsRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.DiagonalNormalDistributionsRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">DiagonalNormalDistributionsRandomVariable</span><span class="p">(</span><span class="n">ScipyMultivariateRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A diagonal multivariate normal random variable.&quot;&quot;&quot;</span>
+
+    <span class="c1"># TODO: update other children</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">rvs</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">point</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">space</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">space</span><span class="o">.</span><span class="n">_unstack_mean_diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">rvs</span><span class="p">,</span> <span class="n">pdf</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MultivariateNormalDistributionsRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.normal.MultivariateNormalDistributionsRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">MultivariateNormalDistributionsRandomVariable</span><span class="p">(</span><span class="n">ScipyMultivariateRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A multivariate normal random variable.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">rvs</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">point</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">space</span><span class="o">.</span><span class="n">_unstack_mean_covariance</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">space</span><span class="o">.</span><span class="n">_unstack_mean_covariance</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">rvs</span><span class="p">,</span> <span class="n">pdf</span><span class="p">)</span></div>
 
 </pre></div>
 

@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -439,6 +439,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
 
 
 <div class="viewcode-block" id="NFoldManifold">
@@ -505,10 +506,13 @@ document.write(`
 <span class="sd">        belongs : array-like, shape=[..., n_copies, *base_shape]</span>
 <span class="sd">            Boolean evaluating if the point belongs to the manifold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
         <span class="n">each_belongs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_belongs</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+
+        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_belongs</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldManifold.is_tangent">
@@ -534,12 +538,15 @@ document.write(`
 <span class="sd">        is_tangent : bool</span>
 <span class="sd">            Boolean denoting if vector is a tangent vector at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">vector_</span><span class="p">,</span> <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">vector_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector_</span><span class="p">)</span>
+        <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">vector_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-        <span class="n">each_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">is_tangent</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="n">point_</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_tangent</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+        <span class="n">each_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">is_tangent</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+
+        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_tangent</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldManifold.to_tangent">
@@ -562,14 +569,14 @@ document.write(`
 <span class="sd">        tangent_vec : array-like, shape=[..., n_copies, *base_shape]</span>
 <span class="sd">            Tangent vector at base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">vector_</span><span class="p">,</span> <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">vector_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector_</span><span class="p">)</span>
         <span class="n">vector_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-        <span class="n">each_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="n">point_</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">each_tangent</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span></div>
+
+        <span class="n">each_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_tangent</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldManifold.random_point">
@@ -618,14 +625,12 @@ document.write(`
 <span class="sd">            Projected point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="p">,</span> <span class="s2">&quot;projection&quot;</span><span class="p">):</span>
+            <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
             <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
             <span class="n">projected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">point_</span><span class="p">)</span>
-            <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-                <span class="n">projected</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">projected</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;The base manifold does not implement a projection &quot;</span> <span class="s2">&quot;method.&quot;</span>
+            <span class="s2">&quot;The base manifold does not implement a projection method.&quot;</span>
         <span class="p">)</span></div>
 </div>
 
@@ -662,7 +667,7 @@ document.write(`
 
 <div class="viewcode-block" id="NFoldMetric.metric_matrix">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.nfold_manifold.NFoldMetric.metric_matrix">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the matrix of the inner-product.</span>
 
 <span class="sd">        Matrix of the inner-product defined by the Riemmanian metric</span>
@@ -672,7 +677,6 @@ document.write(`
 <span class="sd">        ----------</span>
 <span class="sd">        base_point : array-like, shape=[..., n_copies, *base_shape]</span>
 <span class="sd">            Point on the manifold at which to compute the inner-product matrix.</span>
-<span class="sd">            Optional, default: None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -680,15 +684,18 @@ document.write(`
 <span class="sd">            Matrix of the inner-product at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">base_manifold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">base_manifold</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">matrices</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">point_</span><span class="p">)</span>
-        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">dim</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">matrices</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;j,ijkl-&gt;ijkl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">,</span> <span class="n">matrices</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span></div>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">matrices</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;j,...jkl-&gt;...jkl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">,</span> <span class="n">reshaped</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">reshaped</span></div>
 
 
 <div class="viewcode-block" id="NFoldMetric.inner_product">
@@ -719,19 +726,24 @@ document.write(`
         <span class="n">tangent_vec_a_</span><span class="p">,</span> <span class="n">tangent_vec_b_</span><span class="p">,</span> <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span>
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">tangent_vec_a_</span><span class="p">)</span>
+
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">vector_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec_a_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">vector_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec_b_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">inner_each</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">vector_a</span><span class="p">,</span> <span class="n">vector_b</span><span class="p">,</span> <span class="n">point_</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">inner_each</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">))</span>
+
+        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">inner_each</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">,))</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;j,ij-&gt;ij&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">,</span> <span class="n">reshaped</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div>
+            <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;j,...j-&gt;...j&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">,</span> <span class="n">reshaped</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldMetric.exp">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.nfold_manifold.NFoldMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
 
 <span class="sd">        Parameters</span>
@@ -749,20 +761,18 @@ document.write(`
 <span class="sd">            of tangent_vec at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">base_manifold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">base_manifold</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">vector_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">each_exp</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vector_</span><span class="p">,</span> <span class="n">point_</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">each_exp</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">)</span> <span class="o">+</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_exp</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldMetric.log">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.nfold_manifold.NFoldMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        Parameters</span>
@@ -780,15 +790,13 @@ document.write(`
 <span class="sd">            of point at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">base_manifold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">base_manifold</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">base_point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">each_log</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
-        <span class="n">reshaped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">each_log</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_copies</span><span class="p">)</span> <span class="o">+</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">reshaped</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_log</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldMetric.geodesic">
@@ -833,27 +841,39 @@ document.write(`
                         <span class="s2">&quot; far from the initial tangent vector.&quot;</span>
                     <span class="p">)</span>
             <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">shooting_tangent_vec</span>
-        <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">landmarks_on_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">initial_point</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span>
+            <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span>
+        <span class="p">)</span>
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">initial_tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
 
-            <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...ij-&gt;...ij&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
 
-            <span class="k">def</span> <span class="nf">point_ok_landmarks</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span>
-                <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">exp</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="n">landmarks_at_time_t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span>
-                <span class="n">tangent_vecs</span><span class="p">,</span> <span class="n">point_ok_landmarks</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="s2">&quot;(i,j)-&gt;(i,j)&quot;</span>
+            <span class="k">def</span> <span class="nf">_path_single</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+                <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;...,...</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">-&gt;...</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">initial_point</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_path_single</span><span class="p">(</span><span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">_path_single</span><span class="p">(</span><span class="n">initial_tangent_vec_</span><span class="p">,</span> <span class="n">initial_point_</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">initial_tangent_vec_</span><span class="p">,</span> <span class="n">initial_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                        <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
+                    <span class="p">)</span>
+                <span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">landmarks_at_time_t</span>
-
-        <span class="k">return</span> <span class="n">landmarks_on_geodesic</span></div>
+        <span class="k">return</span> <span class="n">path</span></div>
 </div>
 
 </pre></div>

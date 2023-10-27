@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -439,22 +439,192 @@ document.write(`
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">check_is_batch</span>
 
-<span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">3</span>
+
+<div class="viewcode-block" id="GradientDescent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.GradientDescent">[docs]</a>
+<span class="k">class</span> <span class="nc">GradientDescent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient descent algorithm.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lrate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lrate</span> <span class="o">=</span> <span class="n">lrate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
+
+<div class="viewcode-block" id="GradientDescent.minimize">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.GradientDescent.minimize">[docs]</a>
+    <span class="k">def</span> <span class="nf">minimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_ini</span><span class="p">,</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">exp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a gradient descent until max_iter or a given tolerance is reached.&quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x_ini</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">grad_x</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">)</span>
+            <span class="n">grad_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">grad_x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">grad_norm</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">grad_x</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">lrate</span> <span class="o">*</span> <span class="n">grad_x</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">grad_x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
 
 
-<span class="k">def</span> <span class="nf">_gradient_descent</span><span class="p">(</span><span class="n">x_ini</span><span class="p">,</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">exp</span><span class="p">,</span> <span class="n">lrate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a gradient descent until max_iter or a given tolerance is reached.&quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x_ini</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
-        <span class="n">grad_x</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">)</span>
-        <span class="n">grad_norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">grad_x</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">grad_norm</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
-            <span class="k">break</span>
-        <span class="n">grad_x</span> <span class="o">=</span> <span class="o">-</span><span class="n">lrate</span> <span class="o">*</span> <span class="n">grad_x</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">grad_x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span>
+
+<div class="viewcode-block" id="TangentBundle">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle">[docs]</a>
+<span class="k">class</span> <span class="nc">TangentBundle</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tangent bundle of a space.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,)</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TangentBundle.default_metric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.default_metric">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">default_metric</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Metric to equip the space with if equip is True.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SasakiMetric</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_unstack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:],</span>
+            <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:],</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_stack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space_point</span><span class="p">,</span> <span class="n">space_tangent_vec</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">space_point</span><span class="p">,</span> <span class="n">space_tangent_vec</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TangentBundle.belongs">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.belongs">[docs]</a>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate if a point belongs to the manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point to evaluate.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        belongs : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if point belongs to the manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">space_point</span><span class="p">,</span> <span class="n">space_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">space_point</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">is_tangent</span><span class="p">(</span><span class="n">space_tangent_vec</span><span class="p">,</span> <span class="n">space_point</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TangentBundle.random_point">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.random_point">[docs]</a>
+    <span class="k">def</span> <span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample random points on the manifold according to some distribution.</span>
+
+<span class="sd">        If the manifold is compact, preferably a uniform distribution will be used.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        bound : float</span>
+<span class="sd">            Bound of the interval in which to sample for non compact manifolds.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Points sampled on the manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">space_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">bound</span><span class="p">)</span>
+        <span class="n">space_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">random_tangent_vec</span><span class="p">(</span><span class="n">space_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stack</span><span class="p">(</span><span class="n">space_point</span><span class="p">,</span> <span class="n">space_tangent_vec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TangentBundle.projection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.projection">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a point to the vector space.</span>
+
+<span class="sd">        This method is for compatibility and returns `point`. `point` should</span>
+<span class="sd">        have the right shape,</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point: array-like, shape[..., *point_shape]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point: array-like, shape[..., *point_shape]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TangentBundle.is_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.is_tangent">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether the vector is tangent at base_point.</span>
+
+<span class="sd">        Tangent vectors are identified with points of the vector space so</span>
+<span class="sd">        this checks the shape of the input vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Vector.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point in the vector space.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_tangent : array-like, shape=[...,]</span>
+<span class="sd">            Boolean denoting if vector is a tangent vector at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`is_tangent` is not implemented&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TangentBundle.to_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.to_tangent">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a vector to a tangent space.</span>
+
+<span class="sd">        This method is for compatibility and returns vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Vector.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point in the vector space</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`to_tangent` is not implemented&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TangentBundle.random_tangent_vec">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.TangentBundle.random_tangent_vec">[docs]</a>
+    <span class="k">def</span> <span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate random tangent vec.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`random_tangent_vec` is not implemented&quot;</span><span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="SasakiMetric">
@@ -478,10 +648,13 @@ document.write(`
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    space : Manifold</span>
-<span class="sd">        Base manifold of the tangent bundle.</span>
+<span class="sd">        Tangent bundle.</span>
 <span class="sd">    n_jobs: int</span>
 <span class="sd">        Number of jobs for parallel computing.</span>
 <span class="sd">        Optional, default: 1.</span>
+<span class="sd">    n_steps : int</span>
+<span class="sd">        Number of discrete time steps.</span>
+<span class="sd">        Optional, default: 3.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -494,18 +667,15 @@ document.write(`
 <span class="sd">        https://nbn-resolving.org/urn/resolver.pl?urn:nbn:de:0297-zib-87174</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
-
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">=</span> <span class="n">n_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_descent</span> <span class="o">=</span> <span class="n">GradientDescent</span><span class="p">()</span>
 
 <div class="viewcode-block" id="SasakiMetric.exp">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.SasakiMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a point.</span>
 
 <span class="sd">        Exponential map at base_point of tangent_vec computed by</span>
@@ -517,28 +687,24 @@ document.write(`
 <span class="sd">            Tangent vector in TTM at the base point in TM.</span>
 <span class="sd">        base_point : array-like, shape=[..., 2, M.dim]</span>
 <span class="sd">            Point in the tangent bundle TM of manifold M.</span>
-<span class="sd">        n_steps : int</span>
-<span class="sd">            Number of discrete time steps.</span>
-<span class="sd">            Optional, default: N_STEPS.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        exp : array-like, shape=[..., 2, M.dim]</span>
 <span class="sd">            Point on the tangent bundle TM.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">bs_pts</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">tngs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">bs_pts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">par_trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span>
 
-        <span class="n">par_trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span>
-        <span class="n">eps</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n_steps</span>
+        <span class="n">v0</span><span class="p">,</span> <span class="n">w0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">v0</span><span class="p">,</span> <span class="n">w0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">tngs</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">tngs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">bs_pts</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">bs_pts</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">eps</span> <span class="o">*</span> <span class="n">v0</span><span class="p">,</span> <span class="n">p0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">eps</span> <span class="o">*</span> <span class="n">v0</span><span class="p">,</span> <span class="n">p0</span><span class="p">)</span>
             <span class="n">u</span> <span class="o">=</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">u0</span> <span class="o">+</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">w0</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
             <span class="n">v</span> <span class="o">=</span> <span class="n">par_trans</span><span class="p">(</span>
-                <span class="n">v0</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="n">v0</span><span class="p">,</span> <span class="n">p0</span><span class="p">)),</span>
+                <span class="n">v0</span> <span class="o">-</span> <span class="n">eps</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="n">v0</span><span class="p">,</span> <span class="n">p0</span><span class="p">)),</span>
                 <span class="n">p0</span><span class="p">,</span>
                 <span class="n">end_point</span><span class="o">=</span><span class="n">p</span><span class="p">,</span>
             <span class="p">)</span>
@@ -546,12 +712,12 @@ document.write(`
             <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="n">p</span><span class="p">,</span> <span class="n">u</span>
             <span class="n">v0</span><span class="p">,</span> <span class="n">w0</span> <span class="o">=</span> <span class="n">v</span><span class="p">,</span> <span class="n">w</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">p</span><span class="p">,</span> <span class="n">u</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_stack</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SasakiMetric.log">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.SasakiMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        Logarithmic map at base_point of point computed by iteratively relaxing</span>
@@ -563,9 +729,6 @@ document.write(`
 <span class="sd">            Point in the tangent bundle TM of manifold M.</span>
 <span class="sd">        base_point : array-like, shape=[..., 2, M.dim]</span>
 <span class="sd">            Point in the tangent bundle TM of manifold M.</span>
-<span class="sd">        n_steps : int</span>
-<span class="sd">            Number of discrete time steps.</span>
-<span class="sd">            Optional, default: N_STEPS.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -573,30 +736,22 @@ document.write(`
 <span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">par_trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span>
 
-        <span class="n">pts</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">bs_pts</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">pu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_discrete</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">pu1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 
-        <span class="n">par_trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span>
+        <span class="n">p1</span><span class="p">,</span> <span class="n">u1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">pu1</span><span class="p">)</span>
+        <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">pu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_discrete</span><span class="p">(</span><span class="n">bs_pts</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">pu</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="n">pu1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">p1</span><span class="p">,</span> <span class="n">u1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">bs_pts</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">bs_pts</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p0</span><span class="p">)</span> <span class="o">-</span> <span class="n">u0</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">p1</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">p0</span><span class="p">)</span>
-        <span class="n">rslt</span> <span class="o">=</span> <span class="n">n_steps</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rslt</span><span class="p">),</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">p1</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">p0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_stack</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SasakiMetric.geodesic_discrete">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.sasaki_metric.SasakiMetric.geodesic_discrete">[docs]</a>
-    <span class="k">def</span> <span class="nf">geodesic_discrete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_points</span><span class="p">,</span> <span class="n">end_points</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">N_STEPS</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">geodesic_discrete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Sakai geodesic employing a variational time discretization.</span>
 
 <span class="sd">        Parameters</span>
@@ -605,10 +760,6 @@ document.write(`
 <span class="sd">            Points in the tangent bundle TM of manifold M.</span>
 <span class="sd">        initial_points : array-like, shape=[..., 2, M.shape]</span>
 <span class="sd">            Points in the tangent bundle TM of manifold M.</span>
-<span class="sd">        n_steps : int</span>
-<span class="sd">            n_steps - 1 is the number of intermediate points in the</span>
-<span class="sd">            discretization of the geodesic from initial_point to end_point</span>
-<span class="sd">            Optional, default: N_STEPS.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -616,7 +767,7 @@ document.write(`
 <span class="sd">            Discrete geodesics of form x(s)=(p(s), u(s)) in Sasaki metric</span>
 <span class="sd">            connecting initial_point = x(0) and end_point = x(1).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span>
+        <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span>
         <span class="n">par_trans</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span>
 
         <span class="k">def</span> <span class="nf">_grad</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">):</span>
@@ -628,21 +779,19 @@ document.write(`
                     <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">e_pt</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
                 <span class="p">]</span>
             <span class="p">)</span>
-
-            <span class="n">p</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">u</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">pu</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">pu</span><span class="p">)</span>
 
             <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span> <span class="o">=</span> <span class="n">p</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
             <span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">,</span> <span class="n">u3</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">u</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
 
-            <span class="n">eps</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n_steps</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span>
 
             <span class="n">v2</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p3</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span>
             <span class="n">w2</span> <span class="o">=</span> <span class="p">(</span><span class="n">par_trans</span><span class="p">(</span><span class="n">u3</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p2</span><span class="p">)</span> <span class="o">-</span> <span class="n">u2</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span>
 
             <span class="n">gp</span> <span class="o">=</span> <span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p3</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span> <span class="o">+</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
                 <span class="mi">2</span> <span class="o">*</span> <span class="n">eps</span><span class="o">**</span><span class="mi">2</span>
-            <span class="p">)</span> <span class="o">+</span> <span class="n">metric</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">w2</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+            <span class="p">)</span> <span class="o">-</span> <span class="n">metric</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">w2</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
 
             <span class="n">gu</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">par_trans</span><span class="p">(</span><span class="n">u3</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p2</span><span class="p">)</span>
@@ -650,26 +799,30 @@ document.write(`
                 <span class="o">+</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p2</span><span class="p">)</span>
             <span class="p">)</span> <span class="o">/</span> <span class="n">eps</span><span class="o">**</span><span class="mi">2</span>
 
-            <span class="k">return</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gp</span><span class="p">,</span> <span class="n">gu</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span>
+            <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_stack</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">gu</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span>
 
-        <span class="nd">@delayed</span>
-        <span class="k">def</span> <span class="nf">_geodesic_discrete</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">n_stps</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_geodesic_discrete_single</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Calculate the discrete geodesic.&quot;&quot;&quot;</span>
+            <span class="n">ijk</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+
+            <span class="k">def</span> <span class="nf">_scalarmul</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...,...</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;...</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+
             <span class="n">p0</span><span class="p">,</span> <span class="n">u0</span> <span class="o">=</span> <span class="n">initial_point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">initial_point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">pL</span><span class="p">,</span> <span class="n">uL</span> <span class="o">=</span> <span class="n">end_point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end_point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
             <span class="n">v</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pL</span><span class="p">,</span> <span class="n">p0</span><span class="p">)</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_stps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">pu_ini</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_stps</span><span class="p">):</span>
-                <span class="n">p_ini</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">,</span> <span class="n">p0</span><span class="p">)</span>
-                <span class="n">u_ini</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p_ini</span><span class="p">)</span> <span class="o">+</span> <span class="n">s</span><span class="p">[</span>
-                    <span class="n">i</span>
-                <span class="p">]</span> <span class="o">*</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">uL</span><span class="p">,</span> <span class="n">pL</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p_ini</span><span class="p">)</span>
-                <span class="n">pu_ini</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p_ini</span><span class="p">,</span> <span class="n">u_ini</span><span class="p">]))</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-            <span class="n">pu_ini</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pu_ini</span><span class="p">)</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">_gradient_descent</span><span class="p">(</span><span class="n">pu_ini</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">_grad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">)</span>
+            <span class="n">p_ini</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p, </span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;p</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">p0</span><span class="p">)</span>
+            <span class="n">u_ini</span> <span class="o">=</span> <span class="n">_scalarmul</span><span class="p">(</span>
+                <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s</span><span class="p">),</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p_ini</span><span class="p">)</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="n">_scalarmul</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">par_trans</span><span class="p">(</span><span class="n">uL</span><span class="p">,</span> <span class="n">pL</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">p_ini</span><span class="p">))</span>
+            <span class="n">pu_ini</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_stack</span><span class="p">(</span><span class="n">p_ini</span><span class="p">,</span> <span class="n">u_ini</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_descent</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+                <span class="n">pu_ini</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">_grad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span>
+            <span class="p">)</span>
 
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
                 <span class="p">[</span>
@@ -679,18 +832,18 @@ document.write(`
                 <span class="p">]</span>
             <span class="p">)</span>
 
-        <span class="n">i_pts</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">initial_points</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">e_pts</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">end_points</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_geodesic_discrete_single</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">e_pts</span><span class="p">)),</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+        <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">end_point</span><span class="p">)),</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
             <span class="n">rslt</span> <span class="o">=</span> <span class="n">parallel</span><span class="p">(</span>
-                <span class="n">_geodesic_discrete</span><span class="p">(</span><span class="n">i_pts</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_pts</span><span class="p">)],</span> <span class="n">e_pt</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e_pt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">e_pts</span><span class="p">)</span>
+                <span class="n">delayed</span><span class="p">(</span><span class="n">_geodesic_discrete_single</span><span class="p">)(</span><span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i_pt</span><span class="p">,</span> <span class="n">e_pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
             <span class="p">)</span>
-
-        <span class="n">rslt_shape</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">rslt_shape</span> <span class="o">=</span> <span class="n">rslt_shape</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">e_pts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">e_pts</span><span class="p">),)</span> <span class="o">+</span> <span class="n">rslt_shape</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rslt</span><span class="p">),</span> <span class="n">rslt_shape</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rslt</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SasakiMetric.inner_product">
@@ -712,15 +865,12 @@ document.write(`
 <span class="sd">        inner_product : array-like, shape=[..., 1]</span>
 <span class="sd">            Inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">pt</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">vec_a_0</span><span class="p">,</span> <span class="n">vec_a_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
+        <span class="n">vec_b_0</span><span class="p">,</span> <span class="n">vec_b_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="n">pt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_unstack</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span>
-        <span class="n">rslt</span> <span class="o">=</span> <span class="n">inner</span><span class="p">(</span><span class="n">vec_a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">vec_b</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">inner</span><span class="p">(</span>
-            <span class="n">vec_a</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">vec_b</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">pt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">rslt</span> <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rslt</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rslt</span><span class="p">)</span></div>
+        <span class="n">inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span>
+        <span class="k">return</span> <span class="n">inner</span><span class="p">(</span><span class="n">vec_a_0</span><span class="p">,</span> <span class="n">vec_b_0</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span> <span class="o">+</span> <span class="n">inner</span><span class="p">(</span><span class="n">vec_a_1</span><span class="p">,</span> <span class="n">vec_b_1</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

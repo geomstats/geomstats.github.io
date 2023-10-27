@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -431,11 +431,20 @@ document.write(`
   <h1>Source code for geomstats.information_geometry.base</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Mixin for manifolds of probability distributions.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
+
 
 <div class="viewcode-block" id="InformationManifoldMixin">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.InformationManifoldMixin">[docs]</a>
 <span class="k">class</span> <span class="nc">InformationManifoldMixin</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mixin for manifolds of probability distributions.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">support_shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">support_shape</span> <span class="o">=</span> <span class="n">support_shape</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="InformationManifoldMixin.sample">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.InformationManifoldMixin.sample">[docs]</a>
@@ -503,6 +512,160 @@ document.write(`
 <span class="sd">            parameters provided by point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`point_to_cdf` has not yet been implemented.&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ScipyRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">ScipyRandomVariable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A random variable.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">scp_rvs</span><span class="p">,</span> <span class="n">scp_pdf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scp_rvs</span> <span class="o">=</span> <span class="n">scp_rvs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scp_pdf</span> <span class="o">=</span> <span class="n">scp_pdf</span></div>
+
+
+
+<div class="viewcode-block" id="ScipyUnivariateRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyUnivariateRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">ScipyUnivariateRandomVariable</span><span class="p">(</span><span class="n">ScipyRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A univariate random variable.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_unflatten_res</span><span class="p">(</span><span class="n">flat_res</span><span class="p">,</span> <span class="n">expected_shape</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_res</span><span class="p">,</span> <span class="n">expected_shape</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ScipyUnivariateRandomVariable.rvs">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyUnivariateRandomVariable.rvs">[docs]</a>
+    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample from a univariate distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., *space.shape]</span>
+<span class="sd">            Point representing a univariate distribution.</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of points to sample with each pair of parameters in point.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., n_samples, *support_shape]</span>
+<span class="sd">            Sample from distribution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">)</span>
+
+        <span class="n">pre_flat_shape</span> <span class="o">=</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_params</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">)</span>
+
+        <span class="n">size</span> <span class="o">=</span> <span class="n">n_points</span> <span class="o">*</span> <span class="n">n_samples</span>
+        <span class="n">flat_sample</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scp_rvs</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">))</span>
+
+        <span class="n">expected_shape</span> <span class="o">=</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">support_shape</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unflatten_res</span><span class="p">(</span><span class="n">flat_sample</span><span class="p">,</span> <span class="n">expected_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ScipyUnivariateRandomVariable.pdf">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyUnivariateRandomVariable.pdf">[docs]</a>
+    <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the probability density function at x.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : array-like, shape=[n_samples, *support_shape]</span>
+<span class="sd">            Sample points at which to compute the probability density function.</span>
+<span class="sd">        point : array-like, shape=[..., *space.shape]</span>
+<span class="sd">            Point representing a distribution.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pdf_at_x : array-like, shape=[..., n_samples]</span>
+<span class="sd">            Values of pdf at x for each value of the parameters provided</span>
+<span class="sd">            by point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">)</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">pre_flat_shape</span> <span class="o">=</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_params</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">)</span>
+
+        <span class="n">sample_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="p">(</span><span class="n">n_points</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scp_pdf</span><span class="p">(</span><span class="n">sample_</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">))</span>
+
+        <span class="n">expected_shape</span> <span class="o">=</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">support_shape</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unflatten_res</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">expected_shape</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ScipyMultivariateRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyMultivariateRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">ScipyMultivariateRandomVariable</span><span class="p">(</span><span class="n">ScipyRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A multivariate random variable.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_rvs_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scp_rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)),</span>
+            <span class="n">to_ndim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">support_shape</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ScipyMultivariateRandomVariable.rvs">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyMultivariateRandomVariable.rvs">[docs]</a>
+    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample from a multivariate distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., *space.shape]</span>
+<span class="sd">            Point representing a distribution.</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of points to sample with each pair of parameters in point.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., n_samples, *support_shape]</span>
+<span class="sd">            Sample from distribution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_rvs_single</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">point_</span> <span class="ow">in</span> <span class="n">point</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rvs_single</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_pdf_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scp_pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">out</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ScipyMultivariateRandomVariable.pdf">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.base.ScipyMultivariateRandomVariable.pdf">[docs]</a>
+    <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the probability density function at x.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : array-like, shape=[n_samples, *support_shape]</span>
+<span class="sd">            Sample points at which to compute the probability density function.</span>
+<span class="sd">        point : array-like, shape=[..., *space.shape]</span>
+<span class="sd">            Point representing a distribution.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pdf_at_x : array-like, shape=[..., n_samples, *support_shape]</span>
+<span class="sd">            Values of pdf at x for each value of the parameters provided</span>
+<span class="sd">            by point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_pdf_single</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">point_</span><span class="p">)</span> <span class="k">for</span> <span class="n">point_</span> <span class="ow">in</span> <span class="n">point</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf_single</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

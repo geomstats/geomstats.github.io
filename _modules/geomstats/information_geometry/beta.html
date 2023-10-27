@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Oct 26, 2023, 2:09:49 PM"/>
+    <meta name="docbuild:last-update" content="Oct 27, 2023, 12:22:06 PM"/>
   </head>
   
   
@@ -437,7 +437,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">beta</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
-<span class="kn">import</span> <span class="nn">geomstats.errors</span>
+<span class="kn">from</span> <span class="nn">geomstats.information_geometry.base</span> <span class="kn">import</span> <span class="n">ScipyUnivariateRandomVariable</span>
 <span class="kn">from</span> <span class="nn">geomstats.information_geometry.dirichlet</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">DirichletDistributions</span><span class="p">,</span>
     <span class="n">DirichletMetric</span><span class="p">,</span>
@@ -462,6 +462,8 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">support_shape</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">BetaDistributionsRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BetaDistributions.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaDistributions.default_metric">[docs]</a>
@@ -490,14 +492,9 @@ document.write(`
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        samples : array-like, shape=[..., n_samples]</span>
-<span class="sd">            Sample from beta distributions.</span>
+<span class="sd">            Sample from beta distributions.)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_belongs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="ow">in</span> <span class="n">point</span><span class="p">:</span>
-            <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">beta</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BetaDistributions.point_to_pdf">
@@ -594,26 +591,46 @@ document.write(`
 <div class="viewcode-block" id="BetaMetric.metric_det">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.metric_det">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">metric_det</span><span class="p">(</span><span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">metric_det</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the determinant of the metric.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        param_a : array-like, shape=[...,]</span>
-<span class="sd">            First parameter of the beta distribution.</span>
-<span class="sd">        param_b : array-like, shape=[...,]</span>
-<span class="sd">            Second parameter of the beta distribution.</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point representing a beta distribution.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        metric_det : array-like, shape=[...,]</span>
 <span class="sd">            Determinant of the metric.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param_a</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">param_b</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">metric_det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span>
             <span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span>
         <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">metric_det</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="BetaDistributionsRandomVariable">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaDistributionsRandomVariable">[docs]</a>
+<span class="k">class</span> <span class="nc">BetaDistributionsRandomVariable</span><span class="p">(</span><span class="n">ScipyUnivariateRandomVariable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A beta random variable.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">beta</span><span class="o">.</span><span class="n">rvs</span><span class="p">,</span> <span class="n">beta</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_flatten_params</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">):</span>
+        <span class="n">param_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">param_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">flat_param_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">param_a</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">flat_param_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">param_b</span><span class="p">,</span> <span class="n">pre_flat_shape</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">flat_param_a</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">flat_param_b</span><span class="p">}</span></div>
 
 </pre></div>
 
