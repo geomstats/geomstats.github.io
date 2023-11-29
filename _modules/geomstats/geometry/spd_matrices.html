@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Nov 29, 2023, 2:23:48 PM"/>
+    <meta name="docbuild:last-update" content="Nov 29, 2023, 3:30:45 PM"/>
   </head>
   
   
@@ -445,15 +445,477 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.complex_matrices</span> <span class="kn">import</span> <span class="n">ComplexMatrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.diffeo</span> <span class="kn">import</span> <span class="n">Diffeo</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.general_linear</span> <span class="kn">import</span> <span class="n">GeneralLinear</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.positive_lower_triangular_matrices</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">PositiveLowerTriangularMatrices</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.hermitian_matrices</span> <span class="kn">import</span> <span class="n">apply_func_to_eigvalsh</span><span class="p">,</span> <span class="n">expmh</span><span class="p">,</span> <span class="n">powermh</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span><span class="p">,</span> <span class="n">MatricesMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.scalar_product_metric</span> <span class="kn">import</span> <span class="n">ScalarProductMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
+
+
+<div class="viewcode-block" id="logmh">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.logmh">[docs]</a>
+<span class="k">def</span> <span class="nf">logmh</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the matrix log for a Hermitian matrix.&quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">dim_3_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">])</span>
+    <span class="n">logm</span> <span class="o">=</span> <span class="n">apply_func_to_eigvalsh</span><span class="p">(</span><span class="n">dim_3_mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">check_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">logm</span><span class="p">,</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_aux_differential_power</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix power.</span>
+
+<span class="sd">    Auxiliary function to the functions differential_power and</span>
+<span class="sd">    inverse_differential_power.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    power : float</span>
+<span class="sd">        Power function to differentiate.</span>
+<span class="sd">    tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">        Tangent vector at base point.</span>
+<span class="sd">    base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">        Base point.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    eigvectors : array-like, shape=[..., n, n]</span>
+<span class="sd">    transp_eigvectors : array-like, shape=[..., n, n]</span>
+<span class="sd">    numerator : array-like, shape=[..., n, n]</span>
+<span class="sd">    denominator : array-like, shape=[..., n, n]</span>
+<span class="sd">    temp_result : array-like, shape=[..., n, n]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">eigvalues</span><span class="p">,</span> <span class="n">eigvectors</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">eigvalues</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">power</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+        <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">eigvalues</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">eigvalues</span><span class="o">**</span><span class="n">power</span>
+
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">numerator</span> <span class="o">=</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">null_denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">denominator</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
+    <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">null_denominator</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">numerator</span><span class="p">),</span> <span class="n">numerator</span><span class="p">)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">null_denominator</span><span class="p">,</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">denominator</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">power</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">null_denominator</span><span class="p">,</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">numerator</span>
+        <span class="p">)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">null_denominator</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">numerator</span><span class="p">),</span> <span class="n">denominator</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">null_denominator</span><span class="p">,</span> <span class="n">power</span> <span class="o">*</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">numerator</span>
+        <span class="p">)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">null_denominator</span><span class="p">,</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">denominator</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">base_point</span><span class="p">):</span>
+        <span class="n">transp_eigvectors</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transp_eigvectors</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">)</span>
+
+    <span class="n">temp_result</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transp_eigvectors</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">eigvectors</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">base_point</span><span class="p">):</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">temp_result</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">denominator</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">temp_result</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">,</span> <span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">,</span> <span class="n">temp_result</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SymMatrixLog">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SymMatrixLog">[docs]</a>
+<span class="k">class</span> <span class="nc">SymMatrixLog</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix logarithm diffeomorphism.</span>
+
+<span class="sd">    A diffeomorphism from the space of symmetric positive-definite matrices to</span>
+<span class="sd">    the space of symmetric matrices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SymMatrixLog.diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SymMatrixLog.diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the matrix log for a symmetric matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log : array_like, shape=[..., n, n]</span>
+<span class="sd">            Matrix logarithm of base_point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">logmh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SymMatrixLog.inverse_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SymMatrixLog.inverse_diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">inverse_diffeomorphism</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the matrix exponential for a symmetric matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exponential : array_like, shape=[..., n, n]</span>
+<span class="sd">            Exponential of image_point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">expmh</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SymMatrixLog.tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SymMatrixLog.tangent_diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tangent_diffeomorphism</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix logarithm.</span>
+
+<span class="sd">        Compute the differential of the matrix logarithm on SPD</span>
+<span class="sd">        matrices at base_point applied to tangent_vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        differential_log : array-like, shape=[..., n, n]</span>
+<span class="sd">            Differential of the matrix logarithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">eigvectors</span><span class="p">,</span>
+                <span class="n">transp_eigvectors</span><span class="p">,</span>
+                <span class="n">numerator</span><span class="p">,</span>
+                <span class="n">denominator</span><span class="p">,</span>
+                <span class="n">temp_result</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">eigvectors</span><span class="p">,</span>
+                <span class="n">transp_eigvectors</span><span class="p">,</span>
+                <span class="n">numerator</span><span class="p">,</span>
+                <span class="n">denominator</span><span class="p">,</span>
+                <span class="n">temp_result</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
+            <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SymMatrixLog.inverse_tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SymMatrixLog.inverse_tangent_diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix exponential.</span>
+
+<span class="sd">        Computes the differential of the matrix exponential on SPD</span>
+<span class="sd">        matrices at base_point applied to tangent_vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        differential_exp : array-like, shape=[..., n, n]</span>
+<span class="sd">            Differential of the matrix exponential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">eigvectors</span><span class="p">,</span>
+                <span class="n">transp_eigvectors</span><span class="p">,</span>
+                <span class="n">numerator</span><span class="p">,</span>
+                <span class="n">denominator</span><span class="p">,</span>
+                <span class="n">temp_result</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
+            <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">(</span>
+                <span class="n">eigvectors</span><span class="p">,</span>
+                <span class="n">transp_eigvectors</span><span class="p">,</span>
+                <span class="n">numerator</span><span class="p">,</span>
+                <span class="n">denominator</span><span class="p">,</span>
+                <span class="n">temp_result</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MatrixPower">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.MatrixPower">[docs]</a>
+<span class="k">class</span> <span class="nc">MatrixPower</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix power diffeomorphism.</span>
+
+<span class="sd">    A diffeomorphism from the space of symmetric positive-definite matrices to</span>
+<span class="sd">    itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span>
+
+<div class="viewcode-block" id="MatrixPower.diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.MatrixPower.diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the matrix power.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric matrix with non-negative eigenvalues.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        powerm : array_like or list of arrays, shape=[..., n, n]</span>
+<span class="sd">            Matrix power of mat.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixPower.inverse_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.MatrixPower.inverse_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">inverse_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inverse matrix power.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric matrix with non-negative eigenvalues.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        powerm : array_like or list of arrays, shape=[..., n, n]</span>
+<span class="sd">            Matrix power of mat.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">powermh</span><span class="p">(</span><span class="n">image_point</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixPower.tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.MatrixPower.tangent_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">tangent_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix power function.</span>
+
+<span class="sd">        Compute the differential of the power function on SPD(n)</span>
+<span class="sd">        (:math:`A^p=\exp(p \log(A))`) at base_point applied to tangent_vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        differential_power : array-like, shape=[..., n, n]</span>
+<span class="sd">            Differential of the power function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_diffeomorphism</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="p">(</span>
+            <span class="n">eigvectors</span><span class="p">,</span>
+            <span class="n">transp_eigvectors</span><span class="p">,</span>
+            <span class="n">numerator</span><span class="p">,</span>
+            <span class="n">denominator</span><span class="p">,</span>
+            <span class="n">temp_result</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixPower.inverse_tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.MatrixPower.inverse_tangent_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the inverse of the differential of the matrix power.</span>
+
+<span class="sd">        Compute the inverse of the differential of the power</span>
+<span class="sd">        function on SPD matrices (:math:`A^p=\exp(p \log(A))`) at base_point</span>
+<span class="sd">        applied to tangent_vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inverse_differential_power : array-like, shape=[..., n, n]</span>
+<span class="sd">            Inverse of the differential of the power function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_diffeomorphism</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="p">(</span>
+            <span class="n">eigvectors</span><span class="p">,</span>
+            <span class="n">transp_eigvectors</span><span class="p">,</span>
+            <span class="n">numerator</span><span class="p">,</span>
+            <span class="n">denominator</span><span class="p">,</span>
+            <span class="n">temp_result</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">_aux_differential_power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CholeskyMap">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.CholeskyMap">[docs]</a>
+<span class="k">class</span> <span class="nc">CholeskyMap</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cholesky map.</span>
+
+<span class="sd">    A diffeomorphism from the space of symmetric positive-definite matrices to</span>
+<span class="sd">    the space of positive lower triangular matrices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CholeskyMap.diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.CholeskyMap.diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute cholesky factor.</span>
+
+<span class="sd">        Compute cholesky factor for a symmetric positive definite matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            spd matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cf : array_like, shape=[..., n, n]</span>
+<span class="sd">            lower triangular matrix with positive diagonal elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CholeskyMap.inverse_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.CholeskyMap.inverse_diffeomorphism">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">inverse_diffeomorphism</span><span class="p">(</span><span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute gram matrix of rows.</span>
+
+<span class="sd">        Gram_matrix is mapping from point to point.point^{T}.</span>
+<span class="sd">        This is diffeomorphism between cholesky space and spd manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            element in cholesky space.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        projected: array-like, shape=[..., n, n]</span>
+<span class="sd">            SPD matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...kj-&gt;...ik&quot;</span><span class="p">,</span> <span class="n">image_point</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CholeskyMap.tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.CholeskyMap.tangent_diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tangent_diffeomorphism</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the cholesky factor map.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Image base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        differential_cf : array-like, shape=[..., n, n]</span>
+<span class="sd">            Differential of cholesky factor map</span>
+<span class="sd">            lower triangular matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">inv_base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="n">inv_transpose_base_point</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">)</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_lower_triangular_diagonal_scaled</span><span class="p">(</span>
+            <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">inv_transpose_base_point</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">image_point</span><span class="p">,</span> <span class="n">aux</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CholeskyMap.inverse_tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.CholeskyMap.inverse_tangent_diffeomorphism">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute differential of gram.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array_like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        image_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        differential_gram : array-like, shape=[..., n, n]</span>
+<span class="sd">            Differential of the gram.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">mat1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...kj-&gt;...ik&quot;</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
+        <span class="n">mat2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...kj-&gt;...ik&quot;</span><span class="p">,</span> <span class="n">image_point</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mat1</span> <span class="o">+</span> <span class="n">mat2</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="SPDMatrices">
@@ -588,348 +1050,8 @@ document.write(`
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_aux_differential_power</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix power.</span>
-
-<span class="sd">        Auxiliary function to the functions differential_power and</span>
-<span class="sd">        inverse_differential_power.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        power : float</span>
-<span class="sd">            Power function to differentiate.</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        eigvectors : array-like, shape=[..., n, n]</span>
-<span class="sd">        transp_eigvectors : array-like, shape=[..., n, n]</span>
-<span class="sd">        numerator : array-like, shape=[..., n, n]</span>
-<span class="sd">        denominator : array-like, shape=[..., n, n]</span>
-<span class="sd">        temp_result : array-like, shape=[..., n, n]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">eigvalues</span><span class="p">,</span> <span class="n">eigvectors</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">eigvalues</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">power</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
-            <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">eigvalues</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">powered_eigvalues</span> <span class="o">=</span> <span class="n">eigvalues</span><span class="o">**</span><span class="n">power</span>
-
-        <span class="n">denominator</span> <span class="o">=</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">numerator</span> <span class="o">=</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-
-        <span class="n">null_denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">denominator</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
-        <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">null_denominator</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">numerator</span><span class="p">),</span> <span class="n">numerator</span><span class="p">)</span>
-            <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                <span class="n">null_denominator</span><span class="p">,</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">denominator</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">power</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
-            <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                <span class="n">null_denominator</span><span class="p">,</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">numerator</span>
-            <span class="p">)</span>
-            <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                <span class="n">null_denominator</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">numerator</span><span class="p">),</span> <span class="n">denominator</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">numerator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                <span class="n">null_denominator</span><span class="p">,</span> <span class="n">power</span> <span class="o">*</span> <span class="n">powered_eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">numerator</span>
-            <span class="p">)</span>
-            <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                <span class="n">null_denominator</span><span class="p">,</span> <span class="n">eigvalues</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">denominator</span>
-            <span class="p">)</span>
-
-        <span class="n">transp_eigvectors</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">)</span>
-        <span class="n">temp_result</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transp_eigvectors</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">eigvectors</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">,</span> <span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">,</span> <span class="n">temp_result</span><span class="p">)</span>
-
-<div class="viewcode-block" id="SPDMatrices.differential_power">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.differential_power">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">differential_power</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix power function.</span>
-
-<span class="sd">        Compute the differential of the power function on SPD(n)</span>
-<span class="sd">        (:math:`A^p=\exp(p \log(A))`) at base_point applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        power : int</span>
-<span class="sd">            Power.</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        differential_power : array-like, shape=[..., n, n]</span>
-<span class="sd">            Differential of the power function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.inverse_differential_power">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.inverse_differential_power">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">inverse_differential_power</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the inverse of the differential of the matrix power.</span>
-
-<span class="sd">        Compute the inverse of the differential of the power</span>
-<span class="sd">        function on SPD matrices (:math:`A^p=\exp(p \log(A))`) at base_point</span>
-<span class="sd">        applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        power : int</span>
-<span class="sd">            Power.</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inverse_differential_power : array-like, shape=[..., n, n]</span>
-<span class="sd">            Inverse of the differential of the power function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">power</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.differential_log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.differential_log">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">differential_log</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix logarithm.</span>
-
-<span class="sd">        Compute the differential of the matrix logarithm on SPD</span>
-<span class="sd">        matrices at base_point applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        differential_log : array-like, shape=[..., n, n]</span>
-<span class="sd">            Differential of the matrix logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.inverse_differential_log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.inverse_differential_log">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">inverse_differential_log</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inverse of the differential of the matrix logarithm.</span>
-
-<span class="sd">        Compute the inverse of the differential of the matrix</span>
-<span class="sd">        logarithm on SPD matrices at base_point applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inverse_differential_log : array-like, shape=[..., n, n]</span>
-<span class="sd">            Inverse of the differential of the matrix logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.differential_exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.differential_exp">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">differential_exp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the matrix exponential.</span>
-
-<span class="sd">        Computes the differential of the matrix exponential on SPD</span>
-<span class="sd">        matrices at base_point applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        differential_exp : array-like, shape=[..., n, n]</span>
-<span class="sd">            Differential of the matrix exponential.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.inverse_differential_exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.inverse_differential_exp">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">inverse_differential_exp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inverse of the differential of the matrix exponential.</span>
-
-<span class="sd">        Computes the inverse of the differential of the matrix</span>
-<span class="sd">        exponential on SPD matrices at base_point applied to tangent_vec.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inverse_differential_exp : array-like, shape=[..., n, n]</span>
-<span class="sd">            Inverse of the differential of the matrix exponential.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">(</span>
-            <span class="n">eigvectors</span><span class="p">,</span>
-            <span class="n">transp_eigvectors</span><span class="p">,</span>
-            <span class="n">numerator</span><span class="p">,</span>
-            <span class="n">denominator</span><span class="p">,</span>
-            <span class="n">temp_result</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_aux_differential_power</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">power_operator</span> <span class="o">=</span> <span class="n">denominator</span> <span class="o">/</span> <span class="n">numerator</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">power_operator</span> <span class="o">*</span> <span class="n">temp_result</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.logm">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.logm">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">logm</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the matrix log for a symmetric matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array_like, shape=[..., n, n]</span>
-<span class="sd">            Symmetric matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array_like, shape=[..., n, n]</span>
-<span class="sd">            Matrix logarithm of mat.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">dim_3_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">])</span>
-        <span class="n">logm</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">apply_func_to_eigvals</span><span class="p">(</span>
-            <span class="n">dim_3_mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">check_positive</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">logm</span><span class="p">,</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
-
-    <span class="n">expm</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">expm</span>
-    <span class="n">powerm</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span>
     <span class="n">from_vector</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;from_vector&quot;</span><span class="p">]</span>
-    <span class="n">to_vector</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;to_vector&quot;</span><span class="p">]</span>
-
-<div class="viewcode-block" id="SPDMatrices.cholesky_factor">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.cholesky_factor">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">cholesky_factor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute cholesky factor.</span>
-
-<span class="sd">        Compute cholesky factor for a symmetric positive definite matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array_like, shape=[..., n, n]</span>
-<span class="sd">            spd matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        cf : array_like, shape=[..., n, n]</span>
-<span class="sd">            lower triangular matrix with positive diagonal elements.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDMatrices.differential_cholesky_factor">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDMatrices.differential_cholesky_factor">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">differential_cholesky_factor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the differential of the cholesky factor map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array_like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">            symmetric matrix.</span>
-
-<span class="sd">        base_point : array_like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-<span class="sd">            spd matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        differential_cf : array-like, shape=[..., n, n]</span>
-<span class="sd">            Differential of cholesky factor map</span>
-<span class="sd">            lower triangular matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cf</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">cholesky_factor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">PositiveLowerTriangularMatrices</span><span class="o">.</span><span class="n">inverse_differential_gram</span><span class="p">(</span>
-            <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">cf</span>
-        <span class="p">)</span></div>
-</div>
+    <span class="n">to_vector</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;to_vector&quot;</span><span class="p">]</span></div>
 
 
 
@@ -950,32 +1072,6 @@ document.write(`
 <span class="sd">        SPD matrices? A principled continuum of metrics&quot; Proc. of GSI,</span>
 <span class="sd">        2019. https://arxiv.org/abs/1906.01349</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">power_affine</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">power_affine</span> <span class="o">=</span> <span class="n">power_affine</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_aux_inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">inv_base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inner-product (auxiliary).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
-<span class="sd">        inv_base_point : array-like, shape=[..., n, n]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_product : array-like, shape=[...]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">aux_a</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">)</span>
-        <span class="n">aux_b</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-
-        <span class="c1"># Use product instead of matrix product and trace to save time</span>
-        <span class="n">inner_product</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">trace_product</span><span class="p">(</span><span class="n">aux_a</span><span class="p">,</span> <span class="n">aux_b</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">inner_product</span>
 
 <div class="viewcode-block" id="SPDAffineMetric.inner_product">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDAffineMetric.inner_product">[docs]</a>
@@ -999,54 +1095,12 @@ document.write(`
 <span class="sd">        inner_product : array-like, shape=[..., n, n]</span>
 <span class="sd">            Inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_affine</span>
-        <span class="n">spd_space</span> <span class="o">=</span> <span class="n">SPDMatrices</span>
+        <span class="n">inv_base_point</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">aux_a</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">)</span>
+        <span class="n">aux_b</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">power_affine</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">inv_base_point</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-            <span class="n">inner_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_inner_product</span><span class="p">(</span>
-                <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">inv_base_point</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">modified_tangent_vec_a</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span>
-                <span class="n">power_affine</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span>
-            <span class="p">)</span>
-            <span class="n">modified_tangent_vec_b</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span>
-                <span class="n">power_affine</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
-            <span class="p">)</span>
-            <span class="n">power_inv_base_point</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="o">-</span><span class="n">power_affine</span><span class="p">)</span>
-            <span class="n">inner_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_inner_product</span><span class="p">(</span>
-                <span class="n">modified_tangent_vec_a</span><span class="p">,</span> <span class="n">modified_tangent_vec_b</span><span class="p">,</span> <span class="n">power_inv_base_point</span>
-            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">trace_product</span><span class="p">(</span><span class="n">aux_a</span><span class="p">,</span> <span class="n">aux_b</span><span class="p">)</span></div>
 
-            <span class="n">inner_product</span> <span class="o">=</span> <span class="n">inner_product</span> <span class="o">/</span> <span class="p">(</span><span class="n">power_affine</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">inner_product</span></div>
-
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_aux_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the exponential map (auxiliary function).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">        sqrt_base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">        inv_sqrt_base_point : array-like, shape=[..., n, n]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., n, n]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
-            <span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span>
-        <span class="p">)</span>
-
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_symmetric</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
-        <span class="n">exp_from_id</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
-
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exp</span>
 
 <div class="viewcode-block" id="SPDAffineMetric.exp">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDAffineMetric.exp">[docs]</a>
@@ -1069,47 +1123,17 @@ document.write(`
 <span class="sd">        exp : array-like, shape=[..., n, n]</span>
 <span class="sd">            Riemannian exponential.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_affine</span>
+        <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">power_affine</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">powers</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">powers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">powers</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">modified_tangent_vec</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span>
-                <span class="n">power_affine</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span>
-            <span class="p">)</span>
-            <span class="n">power_sqrt_base_point</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
-                <span class="n">base_point</span><span class="p">,</span> <span class="n">power_affine</span> <span class="o">/</span> <span class="mi">2</span>
-            <span class="p">)</span>
-            <span class="n">power_inv_sqrt_base_point</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">power_sqrt_base_point</span><span class="p">)</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_exp</span><span class="p">(</span>
-                <span class="n">modified_tangent_vec</span><span class="p">,</span> <span class="n">power_sqrt_base_point</span><span class="p">,</span> <span class="n">power_inv_sqrt_base_point</span>
-            <span class="p">)</span>
-            <span class="n">exp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">power_affine</span><span class="p">)</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span>
+        <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">exp</span></div>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_symmetric</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
+        <span class="n">exp_from_id</span> <span class="o">=</span> <span class="n">expmh</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
 
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_aux_log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the log (auxiliary function).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., n, n]</span>
-<span class="sd">        sqrt_base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">        inv_sqrt_base_point : array-like, shape=[.., n, n]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., n, n]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">)</span>
-        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_symmetric</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
-
-        <span class="n">log_at_id</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">log_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log</span>
 
 <div class="viewcode-block" id="SPDAffineMetric.log">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDAffineMetric.log">[docs]</a>
@@ -1132,19 +1156,12 @@ document.write(`
 <span class="sd">        log : array-like, shape=[..., n, n]</span>
 <span class="sd">            Riemannian logarithm of point at base_point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_affine</span>
+        <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">)</span>
+        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_symmetric</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">power_affine</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">powers</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
-            <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">powers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">powers</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">power_point</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">power_affine</span><span class="p">)</span>
-            <span class="n">powers</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
-                <span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="n">power_affine</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">power_affine</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux_log</span><span class="p">(</span><span class="n">power_point</span><span class="p">,</span> <span class="n">powers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">powers</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">log</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">inverse_differential_power</span><span class="p">(</span><span class="n">power_affine</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log</span></div>
+        <span class="n">log_at_id</span> <span class="o">=</span> <span class="n">logmh</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">log_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SPDAffineMetric.parallel_transport">
@@ -1187,10 +1204,8 @@ document.write(`
         <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="c1"># compute B^1/2(B^-1/2 A B^-1/2)B^-1/2 instead of sqrtm(AB^-1)</span>
-        <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
-        <span class="n">pdt</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
-            <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span>
-        <span class="p">)</span>
+        <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">congruence_mat</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">congruent</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">congruence_mat</span><span class="p">)</span></div>
 
@@ -1327,8 +1342,8 @@ document.write(`
 <span class="sd">            Riemannian logarithm.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># compute B^1/2(B^-1/2 A B^-1/2)B^-1/2 instead of sqrtm(AB^-1)</span>
-        <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">])</span>
-        <span class="n">pdt</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">sqrt_bp</span><span class="p">),</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">])</span>
+        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">sqrt_bp</span><span class="p">),</span> <span class="mf">0.5</span><span class="p">)</span>
         <span class="n">sqrt_product</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
         <span class="n">transp_sqrt_product</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">sqrt_product</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sqrt_product</span> <span class="o">+</span> <span class="n">transp_sqrt_product</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">base_point</span></div>
@@ -1423,11 +1438,9 @@ document.write(`
             <span class="n">base_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span>
         <span class="p">)</span>
 
-        <span class="n">square_root_bp</span><span class="p">,</span> <span class="n">inverse_square_root_bp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
-            <span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">square_root_bp</span><span class="p">,</span> <span class="n">inverse_square_root_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">])</span>
         <span class="n">end_point_lift</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">square_root_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
-        <span class="n">square_root_lift</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">end_point_lift</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">square_root_lift</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">end_point_lift</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 
         <span class="n">horizontal_velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inverse_square_root_bp</span><span class="p">,</span> <span class="n">square_root_lift</span><span class="p">)</span>
         <span class="n">partial_horizontal_velocity</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">horizontal_velocity</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
@@ -1483,59 +1496,8 @@ document.write(`
 
 <div class="viewcode-block" id="SPDEuclideanMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SPDEuclideanMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SPDEuclideanMetric</span><span class="p">(</span><span class="n">MatricesMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the Euclidean metric on the SPD manifold.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">power_euclidean</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">power_euclidean</span> <span class="o">=</span> <span class="n">power_euclidean</span>
-
-<div class="viewcode-block" id="SPDEuclideanMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric.inner_product">[docs]</a>
-    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Euclidean inner-product.</span>
-
-<span class="sd">        Compute the inner-product of tangent_vec_a and tangent_vec_b</span>
-<span class="sd">        at point base_point using the power-Euclidean metric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_product : array-like, shape=[...,]</span>
-<span class="sd">            Inner-product.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_euclidean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_euclidean</span>
-        <span class="n">spd_space</span> <span class="o">=</span> <span class="n">SPDMatrices</span>
-
-        <span class="k">if</span> <span class="n">power_euclidean</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">inner_product</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
-                <span class="n">inner_product</span><span class="p">,</span>
-                <span class="n">tangent_vec_a</span><span class="p">,</span>
-                <span class="n">tangent_vec_b</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="n">modified_tangent_vec_a</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span>
-            <span class="n">power_euclidean</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span>
-        <span class="p">)</span>
-        <span class="n">modified_tangent_vec_b</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span>
-            <span class="n">power_euclidean</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span>
-            <span class="n">modified_tangent_vec_a</span><span class="p">,</span> <span class="n">modified_tangent_vec_b</span>
-        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">power_euclidean</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="SPDEuclideanMetric.exp_domain">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric.exp_domain">[docs]</a>
@@ -1558,7 +1520,7 @@ document.write(`
 <span class="sd">        exp_domain : array-like, shape=[..., 2]</span>
 <span class="sd">            Interval of time where the geodesic is defined.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">invsqrt_base_point</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">invsqrt_base_point</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
 
         <span class="n">reduced_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">invsqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">reduced_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">reduced_vec</span><span class="p">,</span> <span class="n">invsqrt_base_point</span><span class="p">)</span>
@@ -1591,252 +1553,62 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">eigen_values</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">eigen_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="SPDEuclideanMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Euclidean exponential map.</span>
-
-<span class="sd">        Compute the Euclidean exponential at point base_point</span>
-<span class="sd">        of tangent vector tangent_vec.</span>
-<span class="sd">        This gives a symmetric positive definite matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., n, n]</span>
-<span class="sd">            Euclidean exponential.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_euclidean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_euclidean</span>
-
-        <span class="k">if</span> <span class="n">power_euclidean</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">+</span> <span class="n">base_point</span>
-
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span>
-            <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">power_euclidean</span><span class="p">)</span>
-            <span class="o">+</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">differential_power</span><span class="p">(</span><span class="n">power_euclidean</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">),</span>
-            <span class="mi">1</span> <span class="o">/</span> <span class="n">power_euclidean</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">exp</span></div>
-
-
-<div class="viewcode-block" id="SPDEuclideanMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Euclidean logarithm map.</span>
-
-<span class="sd">        Compute the Euclidean logarithm at point base_point, of point.</span>
-<span class="sd">        This gives a tangent vector at point base_point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., n, n]</span>
-<span class="sd">            Euclidean logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">power_euclidean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_euclidean</span>
-
-        <span class="k">if</span> <span class="n">power_euclidean</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span>
-
-        <span class="n">log</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">inverse_differential_power</span><span class="p">(</span>
-            <span class="n">power_euclidean</span><span class="p">,</span>
-            <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">power_euclidean</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">powerm</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">power_euclidean</span><span class="p">),</span>
-            <span class="n">base_point</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">log</span></div>
-
-
-<div class="viewcode-block" id="SPDEuclideanMetric.parallel_transport">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDEuclideanMetric.parallel_transport">[docs]</a>
-    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
-
-<span class="sd">        Closed-form solution for the parallel transport of a tangent vector</span>
-<span class="sd">        along the geodesic between two points `base_point` and `end_point`</span>
-<span class="sd">        or alternatively defined by :math:`t \mapsto exp_{(base\_point)}(</span>
-<span class="sd">        t*direction)`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point to be transported.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point on the manifold. Point to transport from.</span>
-<span class="sd">        direction : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
-<span class="sd">            is computed.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point on the manifold. Point to transport to.</span>
-<span class="sd">            Optional, default: None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        transported_tangent_vec: array-like, shape=[..., n, n]</span>
-<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_euclidean</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">),</span>
-                <span class="n">tangent_vec</span><span class="p">,</span>
-                <span class="n">base_point</span><span class="p">,</span>
-                <span class="n">direction</span><span class="p">,</span>
-                <span class="n">end_point</span><span class="p">,</span>
-                <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Parallel transport is only implemented for power 1&quot;</span><span class="p">)</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="SPDLogEuclideanMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SPDLogEuclideanMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SPDLogEuclideanMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the Log-Euclidean metric on the SPD manifold.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SPDLogEuclideanMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric.inner_product">[docs]</a>
-    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Log-Euclidean inner-product.</span>
-
-<span class="sd">        Compute the inner-product of tangent_vec_a and tangent_vec_b</span>
-<span class="sd">        at point base_point using the log-Euclidean metric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_product : array-like, shape=[...,]</span>
-<span class="sd">            Inner-product.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">spd_space</span> <span class="o">=</span> <span class="n">SPDMatrices</span>
-
-        <span class="n">modified_tangent_vec_a</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_log</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">modified_tangent_vec_b</span> <span class="o">=</span> <span class="n">spd_space</span><span class="o">.</span><span class="n">differential_log</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">trace_product</span><span class="p">(</span><span class="n">modified_tangent_vec_a</span><span class="p">,</span> <span class="n">modified_tangent_vec_b</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">image_space</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">image_space</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_space</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">SymMatrixLog</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="p">,</span> <span class="n">image_space</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SPDLogEuclideanMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Log-Euclidean exponential map.</span>
 
-<span class="sd">        Compute the Riemannian exponential at point base_point</span>
-<span class="sd">        of tangent vector tangent_vec wrt the Log-Euclidean metric.</span>
-<span class="sd">        This gives a symmetric positive definite matrix.</span>
+<div class="viewcode-block" id="SPDPowerMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDPowerMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">SPDPowerMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Pullback metric induced by the power diffeomorphism.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
+<span class="sd">    Given an equipped image space, the pullback metric is given by</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., n, n]</span>
-<span class="sd">            Riemannian exponential.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log_base_point</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">dlog_tangent_vec</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">differential_log</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="n">log_base_point</span> <span class="o">+</span> <span class="n">dlog_tangent_vec</span><span class="p">)</span></div>
+<span class="sd">    .. math::</span>
 
+<span class="sd">        g_{\Sigma}^{(p)}(X, X)=</span>
+<span class="sd">        \frac{1}{p^2} g_{\Sigma^p}\left(d_{\Sigma}</span>
+<span class="sd">        \operatorname{pow}_p(X), d_{\Sigma} \operatorname{pow}_p(X)\right)</span>
 
-<div class="viewcode-block" id="SPDLogEuclideanMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Log-Euclidean logarithm map.</span>
+<span class="sd">    The image space must be equipped with a `ScalarProductMetric`. The scale</span>
+<span class="sd">    :math:`s` relates with power :math:`p` by</span>
 
-<span class="sd">        Compute the Riemannian logarithm at point base_point,</span>
-<span class="sd">        of point wrt the Log-Euclidean metric.</span>
-<span class="sd">        This gives a tangent vector at point base_point.</span>
+<span class="sd">    .. math::</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
+<span class="sd">        s = 1 / power^2</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., n, n]</span>
-<span class="sd">            Riemannian logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log_base_point</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">log_point</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">differential_exp</span><span class="p">(</span><span class="n">log_point</span> <span class="o">-</span> <span class="n">log_base_point</span><span class="p">,</span> <span class="n">log_base_point</span><span class="p">)</span></div>
+<span class="sd">    Check section 5.3 of [T2022]_ for more details.</span>
 
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2022] Thanwerdas, Y. (2022) Riemannian and stratified</span>
+<span class="sd">    geometries of covariance and correlation matrices. Theses.</span>
+<span class="sd">    Université Côte d’Azur. Available at:</span>
+<span class="sd">    https://hal.archives-ouvertes.fr/tel-03698752 (Accessed: 29 September 2022).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SPDLogEuclideanMetric.injectivity_radius">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric.injectivity_radius">[docs]</a>
-    <span class="k">def</span> <span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Radius of the largest ball where the exponential is injective.</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">image_space</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">ScalarProductMetric</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`image-space` must be equipped with a `ScalarProductMetric`&quot;</span>
+            <span class="p">)</span>
+        <span class="n">power</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">image_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">MatrixPower</span><span class="p">(</span><span class="n">power</span><span class="p">)</span>
 
-<span class="sd">        Because of this space is flat, the injectivity radius is infinite</span>
-<span class="sd">        everywhere.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        radius : array-like, shape=[...,]</span>
-<span class="sd">            Injectivity radius.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SPDLogEuclideanMetric.dist">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDLogEuclideanMetric.dist">[docs]</a>
-    <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute log euclidean distance.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point_a : array-like, shape=[..., dim]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        point_b : array-like, shape=[..., dim]</span>
-<span class="sd">            Point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dist : array-like, shape=[...,]</span>
-<span class="sd">            Distance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log_a</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span>
-        <span class="n">log_b</span> <span class="o">=</span> <span class="n">SPDMatrices</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">log_a</span> <span class="o">-</span> <span class="n">log_b</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span></div>
-</div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="p">,</span> <span class="n">image_space</span><span class="p">)</span></div>
 
 </pre></div>
 

@@ -51,7 +51,7 @@
     <link rel="prev" title="Information geometry" href="08_practical_methods__information_geometry.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Nov 29, 2023, 2:23:48 PM"/>
+    <meta name="docbuild:last-update" content="Nov 29, 2023, 3:30:45 PM"/>
   </head>
   
   
@@ -525,6 +525,18 @@ u, v \rightarrow &lt;df_x.u, df_x.v&gt;\end{split}\]</div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+
+<span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">ImmersedSet</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PullbackMetric</span><span class="p">,</span>
+    <span class="n">PullbackDiffeoMetric</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.diffeo</span> <span class="kn">import</span> <span class="n">Diffeo</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
+
 <span class="kn">import</span> <span class="nn">geomstats.visualization</span> <span class="k">as</span> <span class="nn">viz</span>
 </pre></div>
 </div>
@@ -537,24 +549,6 @@ u, v \rightarrow &lt;df_x.u, df_x.v&gt;\end{split}\]</div>
 INFO: Using autograd backend
 </pre></div></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
-</pre></div>
-</div>
-</div>
-<p>We import the main structures used in this notebook: the <code class="docutils literal notranslate"><span class="pre">ImmersedSet</span></code> and the <code class="docutils literal notranslate"><span class="pre">PullbackMetric</span></code>:</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">ImmersedSet</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackMetric</span>
-</pre></div>
-</div>
-</div>
 <section id="Immersed-manifolds:-the-example-of-the-2-sphere">
 <h2>Immersed manifolds: the example of the 2-sphere<a class="headerlink" href="#Immersed-manifolds:-the-example-of-the-2-sphere" title="Link to this heading">#</a></h2>
 <p>We first consider the simple example of the 2-sphere. We define the immersion of the 2-sphere <span class="math notranslate nohighlight">\(S^2\)</span> into the Euclidean space <span class="math notranslate nohighlight">\(\mathbb{R}^3\)</span> as follows:</p>
@@ -564,13 +558,10 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 (\theta, \phi) &amp;\mapsto (\cos\phi.\sin\theta, \sin\phi.\sin\theta, \cos\theta)
 \end{align}\end{split}\]</div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
-
-
-<span class="k">class</span> <span class="nc">SphereIntrinsic</span><span class="p">(</span><span class="n">ImmersedSet</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SphereIntrinsic</span><span class="p">(</span><span class="n">ImmersedSet</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
 
@@ -594,8 +585,8 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 <p>For the purpose of visualizing the results in the embedding space <span class="math notranslate nohighlight">\(\mathbb{R}^{3}\)</span>, we will need the jacobian of the immersion. Notice that <code class="docutils literal notranslate"><span class="pre">ImmersedSet</span></code> already takes care of it if we want to rely on automatic differentiation.</p>
 <p>We use the <code class="docutils literal notranslate"><span class="pre">PullbackMetric</span></code> structure to define the Riemannian metric on <span class="math notranslate nohighlight">\(S^2\)</span> from the immersion.</p>
 <p>Note that the Riemannian metric on the sphere is already implemented in Geomstats using closed forms with the class <code class="docutils literal notranslate"><span class="pre">Hypersphere</span></code>. However, this notebook showcases how we can recover the computations of Riemanian geometry by only relying on the immersion.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sphere</span> <span class="o">=</span> <span class="n">SphereIntrinsic</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -604,10 +595,19 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;__main__.SphereIntrinsic at 0x7fae463de390&gt;
+</pre></div></div>
+</div>
 <p>Now, we can access the methods from any Riemannian metric, i.e. the Riemannian exp and log maps, the parallel transport, etc.</p>
 <p>We first show the computation of the Riemannian exp map of a tangent vector at a point.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">])</span>
@@ -628,7 +628,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </div>
 <p>And visualize the result of the Riemannian exp map in the embedding space <span class="math notranslate nohighlight">\(\mathbb{R}^3\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -662,12 +662,12 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_16_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_16_0.png" />
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_13_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_13_0.png" />
 </div>
 </div>
 <p>Next, we show the computation of the parallel transport on the sphere. Note that <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">tol</span></code> and <code class="docutils literal notranslate"><span class="pre">alpha</span></code> are integration parameters that control the efficiency-accuracy tradeoff of the computation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">])</span>
@@ -703,7 +703,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Computing time for parallel transport:  0.48 secs
+Computing time for parallel transport:  0.14 secs
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -718,7 +718,7 @@ Computing time for parallel transport:  0.48 secs
 </div>
 <p>We visualize the result of the parallel transport in the embedding space <span class="math notranslate nohighlight">\(\mathbb{R}^3\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -738,8 +738,6 @@ Computing time for parallel transport:  0.48 secs
 
 <span class="c1"># We verify manually that the immersed tangent vector is actually tangent to the sphere</span>
 <span class="c1"># as the plot can be sometimes misleading. We use the method of the Hypersphere class.</span>
-
-<span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
 
 <span class="n">sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">is_tangent</span> <span class="o">=</span> <span class="n">sphere</span><span class="o">.</span><span class="n">is_tangent</span><span class="p">(</span>
@@ -784,7 +782,7 @@ is_tangent =  True
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_20_1.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_20_1.png" />
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_17_1.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_17_1.png" />
 </div>
 </div>
 </section>
@@ -801,7 +799,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 \end{align}\end{split}\]</div>
 <p>We first implement the graph and the immersion:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Surface</span><span class="p">(</span><span class="n">ImmersedSet</span><span class="p">):</span>
@@ -822,7 +820,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">surface</span> <span class="o">=</span> <span class="n">Surface</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -832,7 +830,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 <p>For the purpose of visualizing the results in the embedding space ℝ3 , we will need the jacobian of the immersion, which we compute here. Notice that <code class="docutils literal notranslate"><span class="pre">ImmersedSet</span></code> already takes care of it if we want to rely on automatic differentiation.</p>
 <p>We also add a utility function to visualization the surface in 3D:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -866,22 +864,31 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_28_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_28_0.png" />
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_25_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_25_0.png" />
 </div>
 </div>
 <p>We use the <code class="docutils literal notranslate"><span class="pre">PullbackMetric</span></code> structure to define the Riemannian metric on the surface from the immersion.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">surface</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">PullbackMetric</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;__main__.Surface at 0x7fae442f7190&gt;
+</pre></div></div>
+</div>
 <p>Now, we can access the methods from any Riemannian metric, i.e. the Riemannian exp and log maps, the parallel transport, etc.</p>
 <p>We show the computation of the Riemannian exp map:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">])</span>
@@ -902,7 +909,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </div>
 <p>And visualize the result:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -951,12 +958,12 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_35_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_35_0.png" />
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_32_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_32_0.png" />
 </div>
 </div>
 <p>Next, we show the computation of the parallel transport on the surface. Again, note that <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">tol</span></code> and <code class="docutils literal notranslate"><span class="pre">alpha</span></code> are integration parameters that control the efficiency-accuracy tradeoff of the computation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">])</span>
@@ -990,7 +997,7 @@ f : S^2 &amp;\rightarrow \mathbb{R}^3\\
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Computing time for parallel transport:  7.07 secs
+Computing time for parallel transport:  5.83 secs
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1005,7 +1012,7 @@ Computing time for parallel transport:  7.07 secs
 </div>
 <p>We visualize the result of the parallel transport.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -1065,7 +1072,7 @@ Computing time for parallel transport:  7.07 secs
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_39_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_39_0.png" />
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_36_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_36_0.png" />
 </div>
 </div>
 </section>
@@ -1079,27 +1086,6 @@ Computing time for parallel transport:  7.07 secs
 \vec{x} &amp;\mapsto \vec{u} = \tanh(R_\theta\cdot \vec{x})
 \end{align}\end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\theta\)</span> is the angle by which grid lines near the origin are rotated and <span class="math notranslate nohighlight">\(\tanh(\cdot)\)</span> is applied element-wise</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
-
-
-<span class="k">def</span> <span class="nf">get_warp</span><span class="p">(</span><span class="n">angle</span><span class="p">):</span>
-    <span class="n">rot_mat</span> <span class="o">=</span> <span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span>
-        <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">angle</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">])</span>
-    <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">warp</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
-        <span class="n">transformed_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ij,j...-&gt;i...&quot;</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="n">transformed_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">transformed_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">transformed_point</span>
-
-    <span class="k">return</span> <span class="n">warp</span>
-</pre></div>
-</div>
-</div>
 <p>The inverse diffeomorphism <span class="math notranslate nohighlight">\(\varphi^{-1}\)</span> is given by</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align}
@@ -1107,38 +1093,46 @@ Computing time for parallel transport:  7.07 secs
 \vec{u} &amp;\mapsto \vec{x} = R_{\theta}^{-1}\cdot \tanh^{-1}(\vec{u})
 \end{align}\end{split}\]</div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_inverse_warp</span><span class="p">(</span><span class="n">angle</span><span class="p">):</span>
-    <span class="n">inv_rot_mat</span> <span class="o">=</span> <span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span>
-        <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">angle</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">])</span>
-    <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Warp</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Warp diffeomoprhism.</span>
 
-    <span class="k">def</span> <span class="nf">inverse_warp</span><span class="p">(</span><span class="n">transformed_point</span><span class="p">):</span>
-        <span class="n">transformed_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i&quot;</span><span class="p">,</span> <span class="n">transformed_point</span><span class="p">)</span>
+<span class="sd">    A diffeomorphism from R^2 to R^2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rot_mat</span> <span class="o">=</span> <span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">angle</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv_rot_mat</span> <span class="o">=</span> <span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">matrix_from_rotation_vector</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">angle</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">])</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+        <span class="n">transformed_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ij,j...-&gt;i...&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rot_mat</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">transformed_point</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">inverse_warp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+        <span class="n">transformed_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i&quot;</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
         <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arctanh</span><span class="p">(</span><span class="n">transformed_point</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ij,j...-&gt;i...&quot;</span><span class="p">,</span> <span class="n">inv_rot_mat</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">point</span>
-
-    <span class="k">return</span> <span class="n">inverse_warp</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ij,j...-&gt;i...&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_rot_mat</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>Set the angle to <span class="math notranslate nohighlight">\(\theta = 15^{\circ}\)</span></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">theta</span> <span class="o">=</span> <span class="mi">15</span>
-<span class="n">warp</span> <span class="o">=</span> <span class="n">get_warp</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
-<span class="n">inverse_warp</span> <span class="o">=</span> <span class="n">get_inverse_warp</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffeo</span> <span class="o">=</span> <span class="n">Warp</span><span class="p">(</span><span class="n">angle</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>We visualize the warping of the plane:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_grid_warped</span><span class="p">(</span><span class="n">grid_warped</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">show_axis</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -1181,7 +1175,7 @@ Computing time for parallel transport:  7.07 secs
 <span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">grid</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">x_grid_warped</span><span class="p">,</span> <span class="n">y_grid_warped</span> <span class="o">=</span> <span class="n">warp</span><span class="p">((</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">))</span>
+<span class="n">x_grid_warped</span><span class="p">,</span> <span class="n">y_grid_warped</span> <span class="o">=</span> <span class="n">diffeo</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">((</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">))</span>
 
 
 <span class="n">grid_warped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x_grid_warped</span><span class="p">,</span> <span class="n">y_grid_warped</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -1214,48 +1208,50 @@ Computing time for parallel transport:  7.07 secs
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_48_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_48_0.png" />
-</div>
-</div>
-<p>We import the structure <code class="docutils literal notranslate"><span class="pre">PullbackDiffeoMetric</span></code></p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [24]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [25]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PlaneWarpMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">_define_embedding_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">warp</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">inverse_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">inverse_warp</span>
-
-
-<span class="n">pullback_diffeo_metric</span> <span class="o">=</span> <span class="n">PlaneWarpMetric</span><span class="p">()</span>
-</pre></div>
+<img alt="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_44_0.png" src="../_images/notebooks_09_practical_methods__implement_your_own_riemannian_geometry_44_0.png" />
 </div>
 </div>
 <p>We use the pullback metric to compute the distance between the origin and <span class="math notranslate nohighlight">\((1,1)\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PlaneWarpMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">Warp</span><span class="p">(</span><span class="n">angle</span><span class="o">=</span><span class="n">angle</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">image_space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">diffeo</span><span class="o">=</span><span class="n">diffeo</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">space</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
+    <span class="n">PlaneWarpMetric</span><span class="p">,</span>
+    <span class="n">angle</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;geomstats.geometry.euclidean.Euclidean at 0x7fae4230a610&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
 <span class="n">point_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
-<span class="n">distance</span> <span class="o">=</span> <span class="n">pullback_diffeo_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+<span class="n">distance</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
 </pre></div>
 </div>

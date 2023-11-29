@@ -51,7 +51,7 @@
     <link rel="prev" title="Align all and Compute for Graphs" href="19_practical_methods__aac.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Nov 29, 2023, 2:23:48 PM"/>
+    <meta name="docbuild:last-update" content="Nov 29, 2023, 3:30:45 PM"/>
   </head>
   
   
@@ -506,7 +506,7 @@ document.write(`
 <p>This notebook studies <em>Osteosarcoma</em> (bone cancer) cells and the impact of drug treatment on their <em>morphological shapes</em>, by analyzing cell images obtained from fluorescence microscopy.</p>
 <p>This analysis relies on the <em>elastic metric between discrete curves</em> from Geomstats. We will study to which extent this metric can detect how the cell shape is associated with the response to treatment.</p>
 <p>This notebook is adapted from Florent Michel’s submission to the <a class="reference external" href="https://github.com/geomstats/challenge-iclr-2021">ICLR 2021 Computational Geometry and Topology challenge</a>.</p>
-<center><p><img alt="e2d5ace5ca0c47f48aa04b547c2b944a" class="no-scaled-link" src="../_images/cells_image.png" style="width: 600px;" /></p>
+<center><p><img alt="ce18d11d4676498f8f80844519d145b0" class="no-scaled-link" src="../_images/cells_image.png" style="width: 600px;" /></p>
 </center><p>Figure 1: Representative images of the cell lines using fluorescence microscopy, studied in this notebook (Image credit : Ashok Prasad). The cells nuclei (blue), the actin cytoskeleton (green) and the lipid membrane (red) of each cell are stained and colored. We only focus on the cell shape in our analysis.</p>
 </section>
 <section id="1.-Introduction-and-Motivation">
@@ -540,7 +540,7 @@ INFO: Using numpy backend
 <p>We study a dataset of mouse <em>Osteosarcoma</em> imaged cells (AXCFP2019). The dataset contains two different cancer cell lines : <em>DLM8</em> and <em>DUNN</em>, respectively representing a more agressive and a less agressive cancer. Among these cells, some have also been treated with different single drugs that perturb the cellular cytoskeleton. Overall, we can label each cell according to their cell line (<em>DLM8</em> and <em>DUNN</em>), and also if it is a <em>control</em> cell (no treatment), or has been treated
 with one of the following drugs : <em>Jasp</em> (jasplakinolide) and <em>Cytd</em> (cytochalasin D).</p>
 <p>Each cell comes from a raw image containing a set of cells, which was thresholded to generate binarized images.</p>
-<td><p><img alt="75bcf6b471b84079962885f26ee301b2" class="no-scaled-link" src="../_images/binarized_cells.png" style="width: 400px;" /></p>
+<td><p><img alt="16cb3eb0de834b1d85452a1e7437f968" class="no-scaled-link" src="../_images/binarized_cells.png" style="width: 400px;" /></p>
 </td><p>After binarizing the images, contouring was used to isolate each cell, and to extract their boundaries as a counter-clockwise ordered list of 2D coordinates, which corresponds to the representation of discrete curve in Geomstats. We load these discrete curves into the notebook.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
@@ -1077,12 +1077,15 @@ Shape of BASE_CURVE: (200, 2)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">DiscreteCurves</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">DiscreteCurvesStartingAtOrigin</span>
 
-<span class="n">CURVES_SPACE_SRV</span> <span class="o">=</span> <span class="n">DiscreteCurves</span><span class="p">(</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">CURVES_SPACE_SRV</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span><span class="n">ambient_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">cell_start_at_origin</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">cell_start</span><span class="p">)</span>
+<span class="n">cell_end_at_origin</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">cell_end</span><span class="p">)</span>
 
 <span class="n">geodesic_func</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-    <span class="n">initial_point</span><span class="o">=</span><span class="n">cell_start</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">cell_end</span>
+    <span class="n">initial_point</span><span class="o">=</span><span class="n">cell_start_at_origin</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">cell_end_at_origin</span>
 <span class="p">)</span>
 
 <span class="n">n_times</span> <span class="o">=</span> <span class="mi">30</span>
@@ -1172,7 +1175,9 @@ Shape of BASE_CURVE: (200, 2)
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
 
 <span class="n">mean</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="p">)</span>
-<span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cell_shapes</span><span class="p">[:</span><span class="mi">500</span><span class="p">])</span>
+
+<span class="n">cell_shapes_at_origin</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">cell_shapes</span><span class="p">)</span>
+<span class="n">mean</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cell_shapes_at_origin</span><span class="p">[:</span><span class="mi">500</span><span class="p">])</span>
 
 <span class="n">mean_estimate</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">estimate_</span>
 
@@ -1196,7 +1201,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">)))</span>
 <span class="n">mean_estimate_clean</span> <span class="o">=</span> <span class="n">mean_estimate</span><span class="p">[</span><span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mean_estimate</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="p">:]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">mean_estimate_clean</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+<span class="n">mean_estimate_clean</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">,</span> <span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">)))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
@@ -1208,9 +1213,9 @@ Shape of BASE_CURVE: (200, 2)
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 0
-(200, 2)
+(199, 2)
 0
-(200, 2)
+(199, 2)
 </pre></div></div>
 </div>
 <p>We plot the mean cell shape, superimposed on top of the dataset of cells (displayed in light grey underneath).</p>
@@ -1218,9 +1223,9 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">cell_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cell_shapes</span><span class="p">:</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">cell_shapes_at_origin</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">cell_at_origin</span> <span class="ow">in</span> <span class="n">cell_shapes_at_origin</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell_at_origin</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell_at_origin</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
     <span class="n">mean_estimate_clean</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_estimate_clean</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span>
@@ -1234,7 +1239,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(650, 200, 2)
+(650, 199, 2)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1249,12 +1254,10 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned</span> <span class="o">=</span> <span class="mf">1.55</span> <span class="o">*</span> <span class="p">(</span>
-    <span class="n">mean_estimate_clean</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mean_estimate_clean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned</span> <span class="o">=</span> <span class="mf">1.55</span> <span class="o">*</span> <span class="n">mean_estimate_clean</span>
 
-<span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cell_shapes</span><span class="p">:</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">cell_at_origin</span> <span class="ow">in</span> <span class="n">cell_shapes_at_origin</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cell_at_origin</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cell_at_origin</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
     <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span>
@@ -1270,25 +1273,17 @@ Shape of BASE_CURVE: (200, 2)
 <img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_62_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_62_0.png" />
 </div>
 </div>
-<p>We visualize the same plot, but now: - closing the mean shape that becomes a closed curve - plotting underneath the mean shape the distribution of the sampling points of all the curves of the dataset, through a kernel density estimation.</p>
+<p>We visualize the same plot, but now: - plotting underneath the mean shape the distribution of the sampling points of all the curves of the dataset, through a kernel density estimation.</p>
 <p>Visualizing the full datasets of 640+ cells takes a long time. Therefore, we also select only 200 cells, randomly, within the dataset.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimate_aligned_bis</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">mean_estimate_aligned</span><span class="p">[</span><span class="mi">4</span><span class="p">:],</span> <span class="n">mean_estimate_aligned</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">gaussian_kde</span>
 
-<span class="n">cells_to_plot</span> <span class="o">=</span> <span class="n">cell_shapes</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_shapes</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">200</span><span class="p">)]</span>
+<span class="n">cells_to_plot</span> <span class="o">=</span> <span class="n">cell_shapes_at_origin</span><span class="p">[</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_shapes_at_origin</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="p">]</span>
 <span class="n">points_to_plot</span> <span class="o">=</span> <span class="n">cells_to_plot</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
 <span class="n">z</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">points_to_plot</span><span class="o">.</span><span class="n">T</span><span class="p">)(</span><span class="n">points_to_plot</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
@@ -1296,8 +1291,8 @@ Shape of BASE_CURVE: (200, 2)
 
 <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">points_to_plot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points_to_plot</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">z_norm</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-    <span class="n">mean_estimate_aligned_bis</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
-    <span class="n">mean_estimate_aligned_bis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">mean_estimate_aligned</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
     <span class="s2">&quot;black&quot;</span><span class="p">,</span>
     <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean cell&quot;</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1312,7 +1307,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_65_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_65_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_64_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_64_0.png" />
 </div>
 </div>
 <p>This plot allows to verify that the mean shape that has been computed makes sense.</p>
@@ -1321,11 +1316,14 @@ Shape of BASE_CURVE: (200, 2)
 <h1>Analyze Distances to the “Global” Mean Shape<a class="headerlink" href="#Analyze-Distances-to-the-%22Global%22-Mean-Shape" title="Link to this heading">#</a></h1>
 <p>We consider each of the subgroups of cells, defined by their treatment and cell line. We wish to study how far each of this group is from the global mean shape. We compute the list of distances to the global mean shape.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
-    <span class="n">ds_align</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean_estimate_aligned</span><span class="p">)</span>
+    <span class="n">ds_align</span><span class="p">,</span>
+    <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+        <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">mean_estimate_aligned</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 
 <span class="n">dists_to_global_mean_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1337,10 +1335,32 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>As an example, the following code shows the 5 first distances of cell shapes.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dists_to_global_mean_list</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.49463408231382466,
+ 0.45931006158373244,
+ 0.39849340162938063,
+ 0.4113497616700805,
+ 0.37043235963232773]
+</pre></div></div>
+</div>
+<p>We compute a few statistics about this list of distances to the global mean shape, checking: - that there are no NaNs, - what are the values of the min and max distances.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1350,33 +1370,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[0.4946340823138247,
- 0.45931006158373244,
- 0.3984934016293808,
- 0.41134976167008047,
- 0.37043235963232785]
-</pre></div></div>
-</div>
-<p>We compute a few statistics about this list of distances to the global mean shape, checking: - that there are no NaNs, - what are the values of the min and max distances.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [30]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
 (array([], dtype=int64),)
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dists_to_global_mean_list</span><span class="p">)</span>
@@ -1390,11 +1388,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.32850164542970467 1.2685983914707755
+0.3285016454297047 1.2685983914707757
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [31]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xx</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">min_dists</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_dists</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
@@ -1403,7 +1401,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <p>We plot the distances to the mean global shape, by splitting them into the three treatment groups.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
@@ -1411,7 +1409,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [33]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -1446,12 +1444,12 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_78_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_78_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_77_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_77_0.png" />
 </div>
 </div>
 <p>We observe that each of these distributions seems to be bimodal, which might corresponds to the fact that we have actually two cell lines per treatment. We verify this hypothesis.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -1484,13 +1482,13 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_80_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_80_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_79_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_79_0.png" />
 </div>
 </div>
 <p>For the treatments jasp and cytd, it seems indeed that the bimodality is explained by the two cell lines.</p>
 <p>In order to better understand which cells correspond to which distance, on the above plot, we run the following code. This code find a given number of quantiles within the distance’s histogram, and plots the corresponding cell, for each treatment and each cell line.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [35]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">10</span>
@@ -1541,7 +1539,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_83_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_83_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_82_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_82_0.png" />
 </div>
 </div>
 </section>
@@ -1550,36 +1548,39 @@ Shape of BASE_CURVE: (200, 2)
 <p>What happens if we change the metric on the space of cell shapes? E.g. if we penalize bending more, such that paths (of cell shapes) that bend the boundary of the cells have a longer “length” in th shape space.</p>
 <p>We define the elastic metric, as a generalization of the srv metric — with two hyperparameters a and b that penalize bending and stretching. The case a=1 and b=1/2 corresponds to the srv metric we have used until now.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticMetric</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="n">ElasticTranslationMetric</span>
 
 <span class="n">a</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
 
-<span class="n">CURVES_SPACE_ELASTIC</span> <span class="o">=</span> <span class="n">DiscreteCurves</span><span class="p">(</span>
-    <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
+<span class="n">CURVES_SPACE_ELASTIC</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
+    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
-<span class="n">CURVES_SPACE_ELASTIC</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">ElasticMetric</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
+<span class="n">CURVES_SPACE_ELASTIC</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">ElasticTranslationMetric</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [36]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;geomstats.geometry.discrete_curves.DiscreteCurves at 0x7fd25876aad0&gt;
+&lt;geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin at 0x7fe29d6aea10&gt;
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [38]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [37]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_dists_to_global_mean</span> <span class="o">=</span> <span class="n">apply_func_to_ds</span><span class="p">(</span>
-    <span class="n">ds_align</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">CURVES_SPACE_ELASTIC</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean_estimate_aligned</span><span class="p">)</span>
+    <span class="n">ds_align</span><span class="p">,</span>
+    <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">CURVES_SPACE_ELASTIC</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+        <span class="n">CURVES_SPACE_ELASTIC</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">mean_estimate_aligned</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 
 <span class="n">elastic_dists_to_global_mean_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1590,7 +1591,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [39]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [38]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elastic_min_dists</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">elastic_dists_to_global_mean_list</span><span class="p">)</span>
@@ -1605,11 +1606,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.8661587455377187 3.103265148539176
+0.8661587455378381 3.103265148539284
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [39]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -1644,11 +1645,11 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_88_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_88_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_87_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_87_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -1681,15 +1682,14 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_88_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_88_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [41]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># n_quantiles = 10</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
     <span class="n">nrows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">),</span>
     <span class="n">ncols</span><span class="o">=</span><span class="n">n_quantiles</span><span class="p">,</span>
     <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">LINES</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">TREATMENTS</span><span class="p">)),</span>
@@ -1738,7 +1738,7 @@ Shape of BASE_CURVE: (200, 2)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_90_0.png" />
+<img alt="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" src="../_images/notebooks_11_real_world_applications__cell_shapes_analysis_89_0.png" />
 </div>
 </div>
 </section>
@@ -1748,7 +1748,7 @@ Shape of BASE_CURVE: (200, 2)
 <p>To evaluate this fact quantitatively, we perform a hypothesis test. Specifically, we test the null hypothesis that two subgroups are at the same distance to the mean global shape.</p>
 <p>This is realized through a t-test with unequal variances. We choose a significance level of 0.01. The p-values that are lower than this significance level, after correction for multiple hypothesis testing, correspond to the tests that reject the null hypothesis and thus demonstrate an inequality of means at 0.01.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [42]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">scipy</span>
@@ -1756,7 +1756,7 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line_1</span><span class="p">,</span> <span class="n">line_2</span> <span class="o">=</span> <span class="n">LINES</span>
@@ -1790,11 +1790,11 @@ Shape of BASE_CURVE: (200, 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=-7.119641927083624, pvalue=3.0954021594097243e-12, df=601.821812334073)
+TtestResult(statistic=-7.1196419270836175, pvalue=3.0954021594098366e-12, df=601.8218123340728)
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [44]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1838,7 +1838,7 @@ TtestResult(statistic=-7.119641927083624, pvalue=3.0954021594097243e-12, df=601.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=-18.91033116839886, pvalue=1.5942047693178366e-51, df=272.537293447805)
+TtestResult(statistic=-18.91033116839886, pvalue=1.5942047693177678e-51, df=272.5372934478051)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1855,7 +1855,7 @@ TtestResult(statistic=-18.91033116839886, pvalue=1.5942047693178366e-51, df=272.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=-9.029282700140131, pvalue=2.018213894034199e-17, df=304.63782613884155)
+TtestResult(statistic=-9.029282700140122, pvalue=2.0182138940343153e-17, df=304.63782613884166)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1872,7 +1872,7 @@ TtestResult(statistic=-9.029282700140131, pvalue=2.018213894034199e-17, df=304.6
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=10.293250508487535, pvalue=1.2621209911040707e-21, df=316.70165636925606)
+TtestResult(statistic=10.29325050848754, pvalue=1.2621209911040255e-21, df=316.70165636925606)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1884,7 +1884,7 @@ TtestResult(statistic=10.293250508487535, pvalue=1.2621209911040707e-21, df=316.
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TREATMENT_LINE_CLASSES</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([(</span><span class="n">t</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TREATMENTS</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">])</span>
@@ -1892,7 +1892,7 @@ TtestResult(statistic=10.293250508487535, pvalue=1.2621209911040707e-21, df=316.
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1925,7 +1925,7 @@ TtestResult(statistic=10.293250508487535, pvalue=1.2621209911040707e-21, df=316.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dunn vs jasp-dunn
+ --- Test equality of means: jasp-dlm8 vs control-dlm8
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1933,7 +1933,7 @@ TtestResult(statistic=10.293250508487535, pvalue=1.2621209911040707e-21, df=316.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=10.620144035734349, pvalue=2.6930383406537364e-20, df=160.7787112628514)
+TtestResult(statistic=2.6620427578386927, pvalue=0.008802500812866125, df=123.2479753494618)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1942,7 +1942,7 @@ TtestResult(statistic=10.620144035734349, pvalue=2.6930383406537364e-20, df=160.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dunn vs control-dlm8
+ --- Test equality of means: jasp-dlm8 vs cytd-dunn
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1950,7 +1950,143 @@ TtestResult(statistic=10.620144035734349, pvalue=2.6930383406537364e-20, df=160.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=25.733072716232908, pvalue=1.2147188349651639e-56, df=148.72020192652585)
+TtestResult(statistic=-21.22532840794736, pvalue=1.9868071249630913e-47, df=152.8507694252556)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: jasp-dlm8 vs jasp-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-13.823886158709495, pvalue=1.3180986251513859e-27, df=134.6358168194752)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: jasp-dlm8 vs cytd-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-8.932180097318074, pvalue=5.7842919303757325e-15, df=120.42923401288259)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: jasp-dlm8 vs control-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-1.8913523475476335, pvalue=0.06028562535773357, df=169.24532926463593)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dlm8 vs cytd-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-25.733072716232915, pvalue=1.2147188349650771e-56, df=148.7202019265259)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dlm8 vs jasp-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-19.22981943021983, pvalue=6.47331676027872e-47, df=195.06423335807054)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dlm8 vs cytd-dlm8
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-11.070853589195252, pvalue=2.426787682326568e-19, df=105.01458635645855)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: control-dlm8 vs control-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=-5.024339985563299, pvalue=8.483653891852089e-07, df=314.8644756653143)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ --- Test equality of means: cytd-dunn vs jasp-dunn
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TtestResult(statistic=10.62014403573436, pvalue=2.6930383406535432e-20, df=160.77871126285143)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1993,40 +2129,6 @@ TtestResult(statistic=20.31432725147372, pvalue=2.252938903820217e-49, df=188.68
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 
- --- Test equality of means: cytd-dunn vs jasp-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=21.225328407947355, pvalue=1.986807124963176e-47, df=152.85076942525558)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dunn vs control-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=19.229819430219838, pvalue=6.473316760278353e-47, df=195.0642333580705)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
  --- Test equality of means: jasp-dunn vs cytd-dlm8
 </pre></div></div>
 </div>
@@ -2035,7 +2137,7 @@ TtestResult(statistic=19.229819430219838, pvalue=6.473316760278353e-47, df=195.0
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=-0.4573842766431796, pvalue=0.6482733344380001, df=112.96066271339437)
+TtestResult(statistic=-0.45738427664318804, pvalue=0.6482733344379941, df=112.96066271339437)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2052,75 +2154,7 @@ TtestResult(statistic=-0.4573842766431796, pvalue=0.6482733344380001, df=112.960
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-TtestResult(statistic=12.505967524150524, pvalue=1.2633229491333856e-28, df=270.4187382156102)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: jasp-dunn vs jasp-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=13.823886158709499, pvalue=1.3180986251513484e-27, df=134.6358168194752)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: control-dlm8 vs cytd-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=-11.070853589195249, pvalue=2.426787682326586e-19, df=105.01458635645852)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: control-dlm8 vs control-dunn
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=-5.024339985563292, pvalue=8.483653891852384e-07, df=314.86447566531433)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: control-dlm8 vs jasp-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=-2.662042757838693, pvalue=0.00880250081286611, df=123.24797534946165)
+TtestResult(statistic=12.505967524150511, pvalue=1.263322949133476e-28, df=270.41873821561023)
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -2140,40 +2174,6 @@ TtestResult(statistic=-2.662042757838693, pvalue=0.00880250081286611, df=123.247
 TtestResult(statistic=7.880739330613508, pvalue=1.6113498589931301e-12, df=120.74115274332416)
 </pre></div></div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: cytd-dlm8 vs jasp-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=8.932180097318069, pvalue=5.7842919303759005e-15, df=120.42923401288256)
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-
- --- Test equality of means: control-dunn vs jasp-dlm8
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.2453292646359)
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
@@ -2187,6 +2187,14 @@ TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.245
 <h1>Visualization of the Mean of each Treatment<a class="headerlink" href="#Visualization-of-the-Mean-of-each-Treatment" title="Link to this heading">#</a></h1>
 <p>The mean distances to the global mean shape differ. We also plot the mean shape for each of the subgroup, to get intuition on how the mean shape of each subgroup looks like.</p>
 <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [47]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [48]:
 </pre></div>
 </div>
@@ -2195,8 +2203,7 @@ TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.245
     <span class="n">treatment_cells</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
         <span class="n">treatment_cells</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-    <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="p">)</span>
-    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">treatment_cells</span><span class="p">[:</span><span class="mi">30</span><span class="p">]))</span>
+    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">treatment_cells</span><span class="p">[:</span><span class="mi">30</span><span class="p">])))</span>
     <span class="n">mean_treatment_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
 </pre></div>
 </div>
@@ -2235,8 +2242,7 @@ TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.245
     <span class="n">line_cells</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
         <span class="n">line_cells</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
-    <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="p">)</span>
-    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">line_cells</span><span class="p">[:</span><span class="mi">225</span><span class="p">]))</span>
+    <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">line_cells</span><span class="p">[:</span><span class="mi">225</span><span class="p">])))</span>
     <span class="n">mean_line_cells</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
 </pre></div>
 </div>
@@ -2274,8 +2280,7 @@ TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.245
 <span class="k">for</span> <span class="n">treatment</span> <span class="ow">in</span> <span class="n">TREATMENTS</span><span class="p">:</span>
     <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">LINES</span><span class="p">:</span>
-        <span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="p">)</span>
-        <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][:</span><span class="mi">20</span><span class="p">])</span>
+        <span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">][:</span><span class="mi">20</span><span class="p">]))</span>
         <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_estimator</span><span class="o">.</span><span class="n">estimate_</span>
 </pre></div>
 </div>
@@ -2324,7 +2329,9 @@ TtestResult(statistic=1.8913523475476266, pvalue=0.06028562535773443, df=169.245
         <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i_curve</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ds_align</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]):</span>
-            <span class="n">one_dist</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">])</span>
+            <span class="n">one_dist</span> <span class="o">=</span> <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+                <span class="n">CURVES_SPACE_SRV</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve</span><span class="p">),</span> <span class="n">mean_cells</span><span class="p">[</span><span class="n">treatment</span><span class="p">][</span><span class="n">line</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">one_dist</span><span class="p">):</span>
                 <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">one_dist</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
