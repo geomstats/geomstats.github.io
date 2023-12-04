@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Nov 30, 2023, 10:49:50 AM"/>
+    <meta name="docbuild:last-update" content="Dec 4, 2023, 9:50:00 AM"/>
   </head>
   
   
@@ -1509,6 +1509,117 @@ document.write(`
 <span class="sd">            Points sampled on the manifold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`random_point` is not implemented yet&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DiffeomorphicManifold">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.DiffeomorphicManifold">[docs]</a>
+<span class="k">class</span> <span class="nc">DiffeomorphicManifold</span><span class="p">(</span><span class="n">Manifold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A manifold defined by a diffeomorphism.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">diffeo</span><span class="p">,</span> <span class="n">image_space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span> <span class="o">=</span> <span class="n">diffeo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_space</span> <span class="o">=</span> <span class="n">image_space</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DiffeomorphicManifold.to_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.DiffeomorphicManifold.to_tangent">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a vector to a tangent space of the manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Vector.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">image_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">tangent_diffeomorphism</span><span class="p">(</span>
+            <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="n">image_point</span>
+        <span class="p">)</span>
+        <span class="n">image_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">image_vector</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+            <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="n">image_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffeomorphicManifold.random_point">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.DiffeomorphicManifold.random_point">[docs]</a>
+    <span class="k">def</span> <span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample random points on the manifold according to some distribution.</span>
+
+<span class="sd">        If the manifold is compact, preferably a uniform distribution will be used.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        bound : float</span>
+<span class="sd">            Bound of the interval in which to sample for non compact manifolds.</span>
+<span class="sd">            Optional, default: 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        samples : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Points sampled on the manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">inverse_diffeomorphism</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffeomorphicManifold.regularize">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.DiffeomorphicManifold.regularize">[docs]</a>
+    <span class="k">def</span> <span class="nf">regularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Regularize a point to the canonical representation for the manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        regularized_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Regularized point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">regularized_image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">inverse_diffeomorphism</span><span class="p">(</span><span class="n">regularized_image_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiffeomorphicManifold.random_tangent_vec">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.DiffeomorphicManifold.random_tangent_vec">[docs]</a>
+    <span class="k">def</span> <span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate random tangent vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        base_point :  array-like, shape={[n_samples, *point_shape], [*point_shape,]}</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vec at base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">image_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">random_tangent_vec</span><span class="p">(</span>
+            <span class="n">image_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeo</span><span class="o">.</span><span class="n">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+            <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="n">image_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>
