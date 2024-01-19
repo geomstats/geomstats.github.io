@@ -51,7 +51,7 @@
     <link rel="prev" title="Implement your own Riemannian Geometry" href="09_practical_methods__implement_your_own_riemannian_geometry.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 19, 2024, 8:27:15 AM"/>
+    <meta name="docbuild:last-update" content="Jan 19, 2024, 10:53:11 AM"/>
   </head>
   
   
@@ -493,20 +493,18 @@ document.write(`
 </div><section id="Shape-analysis-of-curves-with-the-Square-Root-Velocity-metric">
 <h1>Shape analysis of curves with the Square Root Velocity metric<a class="headerlink" href="#Shape-analysis-of-curves-with-the-Square-Root-Velocity-metric" title="Link to this heading">#</a></h1>
 <p>Lead author: Alice Le Brigant.</p>
-<p>In this notebook, we demonstrate how to compute distances between curves in a way that does not depend on parametrization, i.e. that only depends on the shapes of the curves. This is achieved using the Square Root Velocity metric (see <a class="reference internal" href="#References"><span class="std std-ref">SKJJ2011</span></a>) on the space of parametrized curves starting at origin, and by quotienting out the action of reparametrization through an optimal matching algorithm (see <a class="reference internal" href="#References"><span class="std std-ref">LAB2017</span></a>). We will use the
-<code class="docutils literal notranslate"><span class="pre">`discrete_curves.py</span></code> &lt;<a class="github reference external" href="https://github.com/geomstats/geomstats/blob/master/geomstats/geometry/discrete_curves.py">geomstats/geomstats</a>&gt;`__ module. Rotation can also be quotiented out using the <code class="docutils literal notranslate"><span class="pre">align</span></code> method of the <code class="docutils literal notranslate"><span class="pre">`pre-shape.py</span></code> &lt;<a class="github reference external" href="https://github.com/geomstats/geomstats/blob/master/geomstats/geometry/pre_shape.py">geomstats/geomstats</a>&gt;`__ module, but we will not deal with these aspects here. See this
-<a class="reference external" href="https://github.com/geomstats/geomstats/blob/master/notebooks/usecase_optic_nerve_heads_analysis_in_kendall_shape_space.ipynb">usecase</a> for details on the <code class="docutils literal notranslate"><span class="pre">pre_shape.py</span></code> module, or this <a class="reference external" href="https://github.com/geomstats/challenge-iclr-2021/blob/main/Florent-Michel__Shape-Analysis-of-Cancer-Cells/submission_cell_shape_analysis.ipynb">other usecase</a> for an application where both modules are used.</p>
+<p>In this notebook, we demonstrate how to compute distances between shapes of curves in <span class="math notranslate nohighlight">\(\mathbb R^2\)</span> and <span class="math notranslate nohighlight">\(\mathbb R^3\)</span> using the <code class="docutils literal notranslate"><span class="pre">`discrete_curves.py</span></code> &lt;<a class="github reference external" href="https://github.com/geomstats/geomstats/blob/master/geomstats/geometry/discrete_curves.py">geomstats/geomstats</a>&gt;`__ module. This is achieved by using a reparametrization-invariant metric - here, we use the Square Root Velocity metric (see <a class="reference internal" href="#References"><span class="std std-ref">SKJJ2011</span></a>) - and by quotienting out several shape-preserving actions. Translation and scaling can be
+removed by respectively translating the curve to start at the origin and rescaling it to have length one, while rotation and reparametrization are quotiented out by alignment procedures. In particular, we will focus on quotienting out the action of reparametrization using an optimal matching algorithm (see <a class="reference internal" href="#References"><span class="std std-ref">LAB2017</span></a>).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.discrete_curves</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">,</span>
-    <span class="n">SRVTranslationMetric</span><span class="p">,</span>
+    <span class="n">SRVMetric</span><span class="p">,</span>
     <span class="n">insert_zeros</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -520,38 +518,8 @@ document.write(`
 INFO: Using numpy backend
 </pre></div></div>
 </div>
-<section id="Example-1:-plane-curves">
-<h2>Example 1: plane curves<a class="headerlink" href="#Example-1:-plane-curves" title="Link to this heading">#</a></h2>
-<p>We start with a basic example in <span class="math notranslate nohighlight">\(\mathbb R^2\)</span>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">r2</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">20</span>
-
-<span class="n">curves_r2</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
-    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parametrized_curve_a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-    <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">)])</span>
-<span class="p">)</span>
-<span class="n">parametrized_curve_b</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-    <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>In practice, we work with discrete curves, i.e. sample points from the parametrized curves.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_curve</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;o-k&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -565,12 +533,44 @@ INFO: Using numpy backend
     <span class="k">return</span> <span class="n">ax</span>
 
 
-<span class="n">sampling_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
-<span class="n">curve_a_trans</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
-<span class="n">curve_b_trans</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">plot_geodesic</span><span class="p">(</span><span class="n">geod</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
 
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a_trans</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b_trans</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">geod</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span><span class="n">geod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">translation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">geod</span> <span class="o">=</span> <span class="n">geod</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">translation</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-b&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-r&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;k&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k_sampling_points</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;--k&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+</pre></div>
+</div>
+</div>
+<section id="1.-A-first-example-in-2D">
+<h2>1. A first example in 2D<a class="headerlink" href="#1.-A-first-example-in-2D" title="Link to this heading">#</a></h2>
+<p>We start by showing the basic steps to compare shapes of 2D curves. More details on the operations shown below will be given in Section 2.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="n">xx</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+<span class="n">curve_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">xx</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">xx</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">curve_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">xx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">xx</span><span class="p">))</span><span class="o">.</span><span class="n">T</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -579,88 +579,51 @@ INFO: Using numpy backend
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_8_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_8_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_5_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_5_0.png" />
 </div>
 </div>
-<p>We also need to remove translation (to obtain curves starting at origin), which can be seen as the projection of a point from the discrete curves to the discrete curves starting at origin.</p>
-<div class="nbinput docutils container">
+<p>We first remove translation by translating both curves to the origin, which can be seen as a projection from the space of discrete curves to the space of discrete curves starting at the origin <code class="docutils literal notranslate"><span class="pre">curves_r2</span></code>. Notice that we remove <span class="math notranslate nohighlight">\((0., 0.)\)</span> from the representation as we know all the curves start at the origin, so that projected curves have shape <code class="docutils literal notranslate"><span class="pre">(k_sampling_points</span> <span class="pre">-</span> <span class="pre">1,</span> <span class="pre">2)</span></code>. Then we remove scaling by normalizing the curves, i.e. rescaling them to have unit length.</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curve_a</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a_trans</span><span class="p">)</span>
-<span class="n">curve_b</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b_trans</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
+    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">)</span>
-<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">curve_a</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a</span><span class="p">)</span>
+<span class="n">curve_b</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b</span><span class="p">)</span>
+
+<span class="n">curve_a</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">curve_a</span><span class="p">)</span>
+<span class="n">curve_b</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">curve_b</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;Figure size 700x700 with 0 Axes&gt;
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_10_1.png" src="../_images/notebooks_10_practical_methods__shape_analysis_10_1.png" />
-</div>
-</div>
-<p>NB: we remove <span class="math notranslate nohighlight">\((0., 0.)\)</span> from the representation as we know all the curves start at the origin (though we still use it in the plot).</p>
-<section id="Distance-between-parametrized-curves-starting-at-origin">
-<h3>Distance between parametrized curves starting at origin<a class="headerlink" href="#Distance-between-parametrized-curves-starting-at-origin" title="Link to this heading">#</a></h3>
-<p>The metric we use to compare parametrized curves is the so-called Square Root Velocity metric, that computes an <span class="math notranslate nohighlight">\(L^2\)</span> distance between the velocities of the curves, suitably renormalized to get reparametrization invariance. See <a class="reference internal" href="#References"><span class="std std-ref">SKJJ2011</span></a> for more details.</p>
+<p>We then equip the space of curves <code class="docutils literal notranslate"><span class="pre">curves_r2</span></code> with a reparametrization invariant metric - here, the Square Root Velocity metric (see <a class="reference internal" href="#References"><span class="std std-ref">SKJJ2011</span></a>) - and we quotient out rotations and reparametrizations. The alignment procedure is then accessible through <code class="docutils literal notranslate"><span class="pre">curves_r2.fiber_bundle.align</span></code>. During alignment, the first curve stays fixed while the second curve is alternatively rotated and reparametrized to best “fit” the first curve.</p>
+<p>The quotient metric induced on the shape space (space of curves modulo rotations and reparametrizations) can be called using <code class="docutils literal notranslate"><span class="pre">curves_r2.quotient.metric</span></code>. For example, we can compute the geodesic between the shapes of the two curves for this quotient metric. It corresponds to a horizontal geodesic in the space of curves, see Section 2.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SRVTranslationMetric</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SRVMetric</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;rotations and reparametrizations&quot;</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
 
-<span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="o">=</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">point_b</span><span class="o">=</span><span class="n">curve_b</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [6]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-1.972134949925512
-</pre></div></div>
-</div>
-<p>The distance, as any Riemannian distance, is computed as the length of the geodesic.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_geodesic</span><span class="p">(</span><span class="n">geod_points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">add_origin</span><span class="p">:</span>
-        <span class="n">geod_points</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span><span class="n">geod_points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-b&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-k&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">geod_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">geod_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o-r&quot;</span><span class="p">)</span>
+<span class="n">curve_b_aligned</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="n">curve_a</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">ax</span>
-
-
-<span class="n">geod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">)</span>
+<span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">)</span>
 
 <span class="n">n_times</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
-<span class="n">geod</span> <span class="o">=</span> <span class="n">geod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<span class="n">hgeod</span> <span class="o">=</span> <span class="n">hgeod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
 
-<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic for the Square Root Velocity metric&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b_aligned</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Aligned curves&quot;</span><span class="p">)</span>
+
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Horizontal geodesic&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -669,44 +632,132 @@ INFO: Using numpy backend
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_16_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_16_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_9_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_9_0.png" />
 </div>
 </div>
-<p>The Square Root Velocity metric is reparametrization invariant in the sense that, if the two curves are reparametrized <em>in the same way</em>, the distance does not change.</p>
-<div class="nbinput docutils container">
+<section id="Remarks:">
+<h3>Remarks:<a class="headerlink" href="#Remarks:" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>In the discrete case, reparametrization corresponds to resampling, and we can see that the second (red) curve has been resampled so that parts of both curves that have similar “slope” are matched together.</p></li>
+<li><p>Computing the standard geodesic (i.e., for the metric between discrete curves) between the aligned curves yields the same result as computing the quotient metric geodesic between the initial curves.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_aligned</span><span class="p">)(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">geod</span> <span class="o">-</span> <span class="n">hgeod</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<ul class="simple">
+<li><p>It is possible to obtain the optimal rotation that aligns the second curve to the first. This can be useful to make sure that the points of the aligned curve indeed belong to the rotated initial curve.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curve_a_trans_resampled</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">curve_b_trans_resampled</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">rotation</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="n">curve_a</span><span class="p">,</span> <span class="n">return_rotation</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">curve_b_rotated</span> <span class="o">=</span> <span class="n">curve_b</span> <span class="o">@</span> <span class="n">rotation</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+</div>
+<ul class="simple">
+<li><p>Notice that it is also possible to align only with respect to rotations, and only with respect to reparametrizations. If we do the first alignment followed by the second, we get a different result than when we perform both alignments simultaneously as above. This is because, when performed simultaneously, both alignements are alternatively made until convergence is reached.</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;rotations&quot;</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
 
-<span class="n">curve_a_resampled</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a_trans_resampled</span><span class="p">)</span>
-<span class="n">curve_b_resampled</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b_trans_resampled</span><span class="p">)</span>
+<span class="n">curve_b_rotated</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="n">curve_a</span><span class="p">)</span>
 
-<span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a_resampled</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;reparametrizations&quot;</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
+
+<span class="n">curve_b_aligned</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">curve_b_rotated</span><span class="p">,</span> <span class="n">curve_a</span><span class="p">)</span>
+
+<span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_aligned</span><span class="p">)</span>
+<span class="n">hgeod</span> <span class="o">=</span> <span class="n">hgeod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b_aligned</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Aligned curves&quot;</span><span class="p">)</span>
+
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Horizontal geodesic&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [8]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-1.9694017211949013
-</pre></div></div>
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_15_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_15_0.png" />
 </div>
-<p>NB: the (small) difference we see in the distances is related with the number of sampling points: it will go to zero as it increases.</p>
-<p>The geodesic keeps the same shape.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
+</div>
+</section>
+</section>
+<section id="2.-Focus-on-quotienting-out-reparametrizations">
+<h2>2. Focus on quotienting out reparametrizations<a class="headerlink" href="#2.-Focus-on-quotienting-out-reparametrizations" title="Link to this heading">#</a></h2>
+<p>We now examine another basic example of 2D curves and focus on quotienting out the action of reparametrizations. We consider the following parametrized curves.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_fun_1</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a_resampled</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">)</span>
-<span class="n">geod_1</span> <span class="o">=</span> <span class="n">geod_fun_1</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parametrized_curve_a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span><span class="p">)])</span>
+<span class="p">)</span>
+<span class="n">parametrized_curve_b</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In practice, we work with discrete curves, i.e. sample points from the parametrized curves.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">sampling_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
 
-<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod_1</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic when both curves are reparametrized in the same way&quot;</span><span class="p">)</span>
+<span class="n">curve_a</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
+<span class="n">curve_b</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_19_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_19_0.png" />
+</div>
+</div>
+<p>We also remove translation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
+    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="n">curve_a0</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a</span><span class="p">)</span>
+<span class="n">curve_b0</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">)</span>
+<span class="n">plot_curve</span><span class="p">(</span><span class="n">curve_b0</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -718,33 +769,42 @@ INFO: Using numpy backend
 <img alt="../_images/notebooks_10_practical_methods__shape_analysis_21_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_21_0.png" />
 </div>
 </div>
-<p>However, if the curves are reparametrized in <em>different</em> ways, the distance changes, and so does the shape of the geodesic.</p>
+<section id="2.1.-Comparing-parametrized-curves">
+<h3>2.1. Comparing parametrized curves<a class="headerlink" href="#2.1.-Comparing-parametrized-curves" title="Link to this heading">#</a></h3>
+<p>Here we use again the so-called Square Root Velocity metric to compare parametrized curves. This metric computes an <span class="math notranslate nohighlight">\(L^2\)</span> distance between the velocities of the curves, suitably renormalized to get reparametrization invariance. See <a class="reference internal" href="#References"><span class="std std-ref">SKJJ2011</span></a> for more details.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SRVMetric</span><span class="p">)</span>
+
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="o">=</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">point_b</span><span class="o">=</span><span class="n">curve_b0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-2.0180332363264095
+1.972134949925512
 </pre></div></div>
 </div>
+<p>The distance, as any Riemannian distance, is computed as the length of the geodesic. Although this is a geodesic between curves starting at the origin, we can visualize it as a geodesic between the initial curves <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> and <code class="docutils literal notranslate"><span class="pre">curve_b</span></code> by adding a translation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_fun_2</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">)</span>
-<span class="n">geod_2</span> <span class="o">=</span> <span class="n">geod_fun_2</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0</span><span class="p">)</span>
 
-<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod_2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic when only the red curve is reparametrized&quot;</span><span class="p">)</span>
+<span class="n">n_times</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
+<span class="n">geod</span> <span class="o">=</span> <span class="n">geod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<span class="n">translation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">curve_a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">curve_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_times</span><span class="p">)</span>
+
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod</span><span class="p">,</span> <span class="n">translation</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic for the Square Root Velocity metric&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -753,49 +813,43 @@ INFO: Using numpy backend
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_24_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_24_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_26_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_26_0.png" />
 </div>
 </div>
-</section>
-<section id="Distance-between-unparametrized-curves">
-<h3>Distance between unparametrized curves<a class="headerlink" href="#Distance-between-unparametrized-curves" title="Link to this heading">#</a></h3>
-<p>In order to completely quotient out parametrization, distances are computed in the base space of a fiber bundle where the fibers represent equivalent classes of curves with the same shape (i.e. equal modulo reparametrization). Any infinitesimal deformation of a curve can be split into the sum of vertical deformation (tangent to the fiber) that simply reparametrizes the curve without changing its shape, and a horizontal deformation (orthogonal to the fiber) that changes the shape. The distance
-between two unparametrized curves is then computed as the length of a horizontal geodesic linking their two fibers.</p>
-<p>In practice, to compute the horizontal geodesic linking the fibers of two discrete parametrized curves <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> and <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>, we can fix the parametrization of <code class="docutils literal notranslate"><span class="pre">curve_a</span></code>, and search for a reparametrization of <code class="docutils literal notranslate"><span class="pre">curve_b</span></code> (i.e. another discrete curve with same shape as <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>) that best “matches” <code class="docutils literal notranslate"><span class="pre">curve_a</span></code>.</p>
-<p>Since geodesics that start with a horizontal velocity stay horizontal, a first idea would be the following:</p>
-<ul class="simple">
-<li><p>compute the geodesic between <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> and <code class="docutils literal notranslate"><span class="pre">curve_b</span></code></p></li>
-<li><p>compute the horizontal part of its initial velocity vector</p></li>
-<li><p>shoot from <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> using this horizontal vector.</p></li>
-</ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;reparametrizations&quot;</span><span class="p">)</span>
-<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
-
-<span class="n">geod_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="n">geod_velocity_hor</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">horizontal_projection</span><span class="p">(</span>
-    <span class="n">geod_velocity</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="p">)</span>
-<span class="n">geod_velocity_ver</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span><span class="n">geod_velocity</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="n">shooted_geod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-    <span class="n">initial_point</span><span class="o">=</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">geod_velocity_hor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="p">)</span>
-<span class="n">shooted_geod</span> <span class="o">=</span> <span class="n">shooted_geod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<p>The problem with this idea is that, while it yields a horizontal geodesic starting at <code class="docutils literal notranslate"><span class="pre">curve_a</span></code>, its end point does not belong to the fiber of <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>: as we can see below, the end curve of the horizontal geodesic is not a reparametrization of the initial red curve, it does not have the same shape.</p>
+<p>The Square Root Velocity metric is reparametrization invariant in the sense that, if the two curves are reparametrized <em>in the same way</em>, the distance does not change. The (small) difference we see in the distances is due to discretization, and will go to zero as the number of sampling points increases.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_geodesic</span><span class="p">(</span><span class="n">shooted_geod</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Shooting with horizontal part of initial geodesic velocity vector&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curve_a_resampled</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">curve_b_resampled</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">curve_a0_resampled</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a_resampled</span><span class="p">)</span>
+<span class="n">curve_b0_resampled</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b_resampled</span><span class="p">)</span>
+
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0_resampled</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.9694017211949013
+</pre></div></div>
+</div>
+<p>The geodesic keeps the same “shape”.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_fun_1</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a0_resampled</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">)</span>
+<span class="n">geod_1</span> <span class="o">=</span> <span class="n">geod_fun_1</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod_1</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="n">translation</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic when both curves are reparametrized in the same way&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -807,20 +861,105 @@ between two unparametrized curves is then computed as the length of a horizontal
 <img alt="../_images/notebooks_10_practical_methods__shape_analysis_30_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_30_0.png" />
 </div>
 </div>
-<p>To obtain a horizontal geodesic starting at <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> and ending at a curve with same shape as <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>, we use an iterative optimal matching algorithm <a class="reference internal" href="#References"><span class="std std-ref">LAB2017</span></a>. This algorithm moves along the fiber of <code class="docutils literal notranslate"><span class="pre">curve_b</span></code> to find the best representative with respect to <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> by iterating the following steps:</p>
+<p>However, if the curves are reparametrized in <em>different</em> ways, the distance changes, and so does the shape of the geodesic.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.0180332363264095
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_fun_2</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">)</span>
+<span class="n">geod_2</span> <span class="o">=</span> <span class="n">geod_fun_2</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">geod_2</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="n">translation</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic when only the red curve is reparametrized&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_33_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_33_0.png" />
+</div>
+</div>
+</section>
+<section id="2.2.-Comparing-unparametrized-curves">
+<h3>2.2. Comparing unparametrized curves<a class="headerlink" href="#2.2.-Comparing-unparametrized-curves" title="Link to this heading">#</a></h3>
+<p>In order to completely quotient out parametrization, distances are computed in the base space of a fiber bundle where the fibers represent equivalent classes of curves with the same shape (i.e. equal modulo reparametrization). Any infinitesimal deformation of a curve can be split into the sum of vertical deformation (tangent to the fiber) that simply reparametrizes the curve without changing its shape, and a horizontal deformation (orthogonal to the fiber) that changes the shape. The distance
+between two unparametrized curves is then computed as the length of a horizontal geodesic linking their two fibers.</p>
+<p>In practice, to compute the horizontal geodesic linking the fibers of two discrete parametrized curves <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code> and <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>, we can fix the parametrization of <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code>, and search for a reparametrization of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code> (i.e. another discrete curve with same shape as <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>) that best “matches” <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code>.</p>
+<p>In order to completely quotient out parametrization, distances are computed in the base space of a fiber bundle where the fibers represent equivalent classes of curves with the same shape (i.e. equal modulo reparametrization). Any infinitesimal deformation of a curve can be split into the sum of vertical deformation (tangent to the fiber) that simply reparametrizes the curve without changing its shape, and a horizontal deformation (orthogonal to the fiber) that changes the shape. The distance
+between two unparametrized curves is then computed as the length of a horizontal geodesic linking their two fibers.</p>
+<p>In practice, to compute the horizontal geodesic linking the fibers of two discrete parametrized curves <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code> and <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>, we can fix the parametrization of <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code>, and search for a reparametrization of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code> (i.e. another discrete curve with same shape as <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>) that best “matches” <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;reparametrizations&quot;</span><span class="p">)</span>
+<span class="n">curves_r2</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
+
+<span class="n">geod_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">bundle</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">fiber_bundle</span>
+<span class="n">geod_velocity_hor</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">horizontal_projection</span><span class="p">(</span><span class="n">geod_velocity</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">geod_velocity_ver</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span><span class="n">geod_velocity</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">shooted_geod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+    <span class="n">initial_point</span><span class="o">=</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">geod_velocity_hor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">shooted_geod</span> <span class="o">=</span> <span class="n">shooted_geod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The problem with this idea is that, while it yields a horizontal geodesic starting at <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code>, its end point does not belong to the fiber of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>: as we can see below, the end curve of the horizontal geodesic is not a reparametrization of the initial red curve, it does not have the same shape.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_geodesic</span><span class="p">(</span><span class="n">shooted_geod</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="n">translation</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Shooting with horizontal part of initial geodesic velocity vector&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_37_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_37_0.png" />
+</div>
+</div>
+<p>To obtain a horizontal geodesic starting at <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code> and ending at a curve with same shape as <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code>, we use an iterative optimal matching algorithm <a class="reference internal" href="#References"><span class="std std-ref">LAB2017</span></a>. This algorithm moves along the fiber of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code> to find the best representative with respect to <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code> by iterating the following steps:</p>
 <ul class="simple">
-<li><p>step 1: compute the geodesic between <code class="docutils literal notranslate"><span class="pre">curve_a</span></code> and the current representative of <code class="docutils literal notranslate"><span class="pre">curve_b</span></code> (initially, <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>)</p></li>
-<li><p>step 2: compute the path whose velocity is a reparametrization of the horizontal part of the geodesic velocity at all time, and set the new representative of <code class="docutils literal notranslate"><span class="pre">curve_b</span></code> to be the end point of this path.</p></li>
+<li><p>step 1: compute the geodesic between <code class="docutils literal notranslate"><span class="pre">curve_a0</span></code> and the current representative of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code> (initially, <code class="docutils literal notranslate"><span class="pre">curve_b</span></code>)</p></li>
+<li><p>step 2: compute the path whose velocity is a reparametrization of the horizontal part of the geodesic velocity at all time, and set the new representative of <code class="docutils literal notranslate"><span class="pre">curve_b0</span></code> to be the end point of this path.</p></li>
 </ul>
 <p>Note that the first step yields a geodesic that is not horizontal, while the second step yields a horizontal path that is not geodesic. By iterating these two steps, the algorithm converges to a horizontal geodesic.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0</span><span class="p">)</span>
 <span class="n">hgeod</span> <span class="o">=</span> <span class="n">hgeod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
 
-<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">)</span>
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="n">translation</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Horizontal geodesic&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -830,12 +969,12 @@ between two unparametrized curves is then computed as the length of a horizontal
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_32_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_32_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_39_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_39_0.png" />
 </div>
 </div>
 <p>We can check the horizontality of this geodesic by computing the norm of the vertical part of its velocity for all times.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_vertical_norm</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">geod_velocity_ver</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -847,8 +986,8 @@ between two unparametrized curves is then computed as the length of a horizontal
 <span class="n">hgeod_vertical_norm</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">hgeod_velocity_ver</span><span class="p">,</span> <span class="n">hgeod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">geod_vertical_norm</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;initial geodesic&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hgeod_vertical_norm</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;horizontal geodesic&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">geod_vertical_norm</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;initial geodesic&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hgeod_vertical_norm</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;horizontal geodesic&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Norm of the vertical part of the geodesic velocity&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -859,18 +998,18 @@ between two unparametrized curves is then computed as the length of a horizontal
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_34_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_34_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_41_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_41_0.png" />
 </div>
 </div>
 <p>We can also check that this horizontal geodesic does not change if we resample the end curve.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">)</span>
 <span class="n">hgeod</span> <span class="o">=</span> <span class="n">hgeod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
 
-<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">)</span>
+<span class="n">plot_geodesic</span><span class="p">(</span><span class="n">hgeod</span><span class="p">,</span> <span class="n">translation</span><span class="o">=</span><span class="n">translation</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Horizontal geodesic when the red curve is reparametrized&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -880,18 +1019,18 @@ between two unparametrized curves is then computed as the length of a horizontal
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_36_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_36_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_43_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_43_0.png" />
 </div>
 </div>
 <p>Finally, we can check that the quotient distance remains approximately constant for any parametrizations of the curves.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a_resampled</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a_resampled</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b_resampled</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0_resampled</span><span class="p">,</span> <span class="n">curve_b0</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0_resampled</span><span class="p">,</span> <span class="n">curve_b0</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">curves_r2</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="n">curve_b0_resampled</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -900,46 +1039,19 @@ between two unparametrized curves is then computed as the length of a horizontal
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-1.7862021494546856
-1.7857776083275845
-1.7857776083275845
-1.786264087205128
+1.7862729308547018
+1.7858568350137172
+1.7858568350137172
+1.7862625702843318
 </pre></div></div>
 </div>
 </section>
 </section>
-<section id="Example-2:-3D-curves">
-<h2>Example 2: 3D curves<a class="headerlink" href="#Example-2:-3D-curves" title="Link to this heading">#</a></h2>
-<p>Below we follow similar steps for curves in <span class="math notranslate nohighlight">\(\mathbb R^3\)</span>. In this example, we can see that the horizontal geodesic “straightens out” the original geodesic.</p>
+<section id="3.-Example-in-3D">
+<h2>3. Example in 3D<a class="headerlink" href="#3.-Example-in-3D" title="Link to this heading">#</a></h2>
+<p>Finally, we show an example for curves in <span class="math notranslate nohighlight">\(\mathbb R^3\)</span>. We will use the following functions to plot our results.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">100</span>
-
-<span class="n">r3</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">curves_r3</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
-    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">k_sampling_points</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parametrized_curve_a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
-<span class="p">)</span>
-<span class="n">parametrized_curve_b</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_curve_3d</span><span class="p">(</span><span class="n">curve</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -955,29 +1067,7 @@ between two unparametrized curves is then computed as the length of a horizontal
     <span class="k">return</span> <span class="n">ax</span>
 
 
-<span class="n">sampling_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
-<span class="n">curve_a_trans</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
-<span class="n">curve_b_trans</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
-
-
-<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_a_trans</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_b_trans</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_43_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_43_0.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_geodesic_3d</span><span class="p">(</span><span class="n">geod_points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plot_geodesic_3d</span><span class="p">(</span><span class="n">geod_points</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">n_times</span> <span class="o">=</span> <span class="n">geod_points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">geod_points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
 
@@ -990,26 +1080,48 @@ between two unparametrized curves is then computed as the length of a horizontal
 
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">geod_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)],</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">geod_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)],</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">geod_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)],</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">geod_points</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)],</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ax</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">k_sampling_points</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="n">curves_r3</span> <span class="o">=</span> <span class="n">DiscreteCurvesStartingAtOrigin</span><span class="p">(</span>
+    <span class="n">ambient_dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">k_sampling_points</span><span class="o">=</span><span class="n">k_sampling_points</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parametrized_curve_a</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
+<span class="p">)</span>
+<span class="n">parametrized_curve_b</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+    <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+<span class="p">)</span>
+
+<span class="n">sampling_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+<span class="n">curve_a</span> <span class="o">=</span> <span class="n">parametrized_curve_a</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
+<span class="n">curve_b</span> <span class="o">=</span> <span class="n">parametrized_curve_b</span><span class="p">(</span><span class="n">sampling_points</span><span class="p">)</span>
 
 
-<span class="n">curve_a</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a_trans</span><span class="p">)</span>
-<span class="n">curve_b</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b_trans</span><span class="p">)</span>
-
-
-<span class="n">geod_fun</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">)</span>
-
-<span class="n">n_times</span> <span class="o">=</span> <span class="mi">20</span>
-<span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_times</span><span class="p">)</span>
-<span class="n">geod</span> <span class="o">=</span> <span class="n">geod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
-
-<span class="n">plot_geodesic_3d</span><span class="p">(</span><span class="n">geod</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;SRV geodesic&quot;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_b</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">add_origin</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1018,21 +1130,32 @@ between two unparametrized curves is then computed as the length of a horizontal
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_44_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_44_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_49_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_49_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curve_a0</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_a</span><span class="p">)</span>
+<span class="n">curve_b0</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">curve_b</span><span class="p">)</span>
+
+<span class="n">curve_a0</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">)</span>
+<span class="n">curve_b0</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">curve_b0</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [30]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r3</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;reparametrizations&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">curves_r3</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="s2">&quot;rotations and reparametrizations&quot;</span><span class="p">)</span>
 <span class="n">curves_r3</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
 
-<span class="n">hgeod_fun</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">curve_a</span><span class="p">,</span> <span class="n">curve_b</span><span class="p">)</span>
-<span class="n">hgeod</span> <span class="o">=</span> <span class="n">hgeod_fun</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<span class="n">curve_b0_aligned</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">curve_b0</span><span class="p">,</span> <span class="n">curve_a0</span><span class="p">)</span>
 
-<span class="n">plot_geodesic_3d</span><span class="p">(</span><span class="n">hgeod</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Horizontal SRV geodesic&quot;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_a0</span><span class="p">,</span> <span class="s2">&quot;o-b&quot;</span><span class="p">)</span>
+<span class="n">plot_curve_3d</span><span class="p">(</span><span class="n">curve_b0_aligned</span><span class="p">,</span> <span class="s2">&quot;o-r&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1041,37 +1164,7 @@ between two unparametrized curves is then computed as the length of a horizontal
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_45_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_45_0.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">geod_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">geod_velocity_ver</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span><span class="n">geod_velocity</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">geod_vertical_norm</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">geod_velocity_ver</span><span class="p">,</span> <span class="n">geod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="n">hgeod_velocity</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hgeod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">hgeod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">hgeod_velocity_ver</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span>
-    <span class="n">hgeod_velocity</span><span class="p">,</span> <span class="n">hgeod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="p">)</span>
-<span class="n">hgeod_vertical_norm</span> <span class="o">=</span> <span class="n">curves_r3</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">hgeod_velocity_ver</span><span class="p">,</span> <span class="n">hgeod</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">geod_vertical_norm</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;initial geodesic&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hgeod_vertical_norm</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;horizontal geodesic&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Norm of the vertical part of the geodesic velocity&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_10_practical_methods__shape_analysis_46_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_46_0.png" />
+<img alt="../_images/notebooks_10_practical_methods__shape_analysis_51_0.png" src="../_images/notebooks_10_practical_methods__shape_analysis_51_0.png" />
 </div>
 </div>
 </section>
@@ -1140,12 +1233,16 @@ between two unparametrized curves is then computed as the length of a horizontal
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-1:-plane-curves">Example 1: plane curves</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Distance-between-parametrized-curves-starting-at-origin">Distance between parametrized curves starting at origin</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Distance-between-unparametrized-curves">Distance between unparametrized curves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-A-first-example-in-2D">1. A first example in 2D</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Remarks:">Remarks:</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-2:-3D-curves">Example 2: 3D curves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Focus-on-quotienting-out-reparametrizations">2. Focus on quotienting out reparametrizations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.1.-Comparing-parametrized-curves">2.1. Comparing parametrized curves</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.2.-Comparing-unparametrized-curves">2.2. Comparing unparametrized curves</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-Example-in-3D">3. Example in 3D</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#References">References</a></li>
 </ul>
   </nav></div>

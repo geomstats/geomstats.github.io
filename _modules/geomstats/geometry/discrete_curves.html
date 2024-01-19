@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 19, 2024, 8:27:15 AM"/>
+    <meta name="docbuild:last-update" content="Jan 19, 2024, 10:53:11 AM"/>
   </head>
   
   
@@ -437,7 +437,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">math</span>
 
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">CubicSpline</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">CubicSpline</span><span class="p">,</span> <span class="n">PchipInterpolator</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.algebra_utils</span> <span class="kn">import</span> <span class="n">from_vector_to_diagonal_matrix</span>
@@ -446,6 +446,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.fiber_bundle</span> <span class="kn">import</span> <span class="n">FiberBundle</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.landmarks</span> <span class="kn">import</span> <span class="n">Landmarks</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.nfold_manifold</span> <span class="kn">import</span> <span class="n">NFoldManifold</span><span class="p">,</span> <span class="n">NFoldMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.quotient_metric</span> <span class="kn">import</span> <span class="n">QuotientMetric</span>
@@ -613,7 +614,7 @@ document.write(`
     <span class="n">zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="n">first</span><span class="p">,</span> <span class="n">second</span> <span class="o">=</span> <span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">zeros</span><span class="p">)</span> <span class="k">if</span> <span class="n">end</span> <span class="k">else</span> <span class="p">(</span><span class="n">zeros</span><span class="p">,</span> <span class="n">array</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="p">(</span><span class="n">array_ndim</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="n">array_ndim</span><span class="p">)</span></div>
 
 
 
@@ -630,7 +631,7 @@ document.write(`
 <span class="sd">    space M, with non-vanishing derivative.</span>
 
 <span class="sd">    .. math::</span>
-<span class="sd">        Imm(I, M)=\{c \in C^{\infty}(I, M) \|c&#39;(t)\|\neq 0 \forall t \in I \},</span>
+<span class="sd">        Imm(I, M)=\{c \in C^{\infty}(I, M) \|c&#39;(s)\|\neq 0 \forall s \in I \},</span>
 
 <span class="sd">    where the interval of parameters I is taken to be I = [0, 1]</span>
 <span class="sd">    without loss of generality.</span>
@@ -650,12 +651,21 @@ document.write(`
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="p">(</span><span class="n">SRVTranslationMetric</span><span class="p">,</span> <span class="s2">&quot;reparametrizations&quot;</span><span class="p">):</span> <span class="p">(</span>
-                <span class="n">SRVTranslationReparametrizationBundle</span><span class="p">,</span>
-                <span class="n">SRVTranslationReparametrizationQuotientMetric</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;rotations&quot;</span><span class="p">):</span> <span class="p">(</span>
+                <span class="n">SRVRotationBundle</span><span class="p">,</span>
+                <span class="n">SRVRotationQuotientMetric</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;reparametrizations&quot;</span><span class="p">):</span> <span class="p">(</span>
+                <span class="n">SRVReparametrizationBundle</span><span class="p">,</span>
+                <span class="n">SRVReparametrizationQuotientMetric</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;rotations and reparametrizations&quot;</span><span class="p">):</span> <span class="p">(</span>
+                <span class="n">SRVRotationReparametrizationBundle</span><span class="p">,</span>
+                <span class="n">SRVRotationReparametrizationQuotientMetric</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">ambient_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_curves_with_l2</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.new">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.new">[docs]</a>
@@ -678,12 +688,21 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of sampling points for the discrete curves.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_copies</span> <span class="o">+</span> <span class="mi">1</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">discrete_curves_with_l2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy of discrete curves with the L^2 metric.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_curves_with_l2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_curves_with_l2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
+                <span class="n">L2CurvesMetric</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_curves_with_l2</span>
+
 <div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.default_metric">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">default_metric</span><span class="p">():</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Metric to equip the space with if equip is True.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">SRVTranslationMetric</span></div>
+        <span class="k">return</span> <span class="n">SRVMetric</span></div>
 
 
 <div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.insert_origin">
@@ -732,6 +751,76 @@ document.write(`
             <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">initial_tangent_vec</span>
         <span class="p">)(</span><span class="n">sampling_times</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.interpolate">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.interpolate">[docs]</a>
+    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate between the sampling points of a discrete curve.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points, ambient_dim]</span>
+<span class="sd">            Discrete curve starting at the origin.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        spline : function</span>
+<span class="sd">            Cubic spline that interpolates between the sampling points</span>
+<span class="sd">            of the discrete curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_sampling_points</span>
+        <span class="n">t_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+        <span class="n">point_with_origin</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">interpolating_curve</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span>
+                    <span class="n">CubicSpline</span><span class="p">(</span><span class="n">t_space</span><span class="p">,</span> <span class="n">point_with_origin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span>
+                        <span class="n">CubicSpline</span><span class="p">(</span><span class="n">t_space</span><span class="p">,</span> <span class="n">point_with_origin_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)(</span>
+                            <span class="n">t</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">point_with_origin_</span> <span class="ow">in</span> <span class="n">point_with_origin</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">interpolating_curve</span></div>
+
+
+<div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.length">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.length">[docs]</a>
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the length of a discrete curve.</span>
+
+<span class="sd">        This is the integral of the absolute value of the velocity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points, ambient_dim]</span>
+<span class="sd">            Discrete curve starting at the origin.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        length : array-like, shape=[..., ]</span>
+<span class="sd">            Length of the discrete curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">point_with_origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert_origin</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="n">forward_difference</span><span class="p">(</span><span class="n">point_with_origin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="n">l2_metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_curves_with_l2</span><span class="o">.</span><span class="n">metric</span>
+        <span class="k">return</span> <span class="n">l2_metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">point_with_origin</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span></div>
+
+
+<div class="viewcode-block" id="DiscreteCurvesStartingAtOrigin.normalize">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.normalize">[docs]</a>
+    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rescale discrete curve to have unit length.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...ij,...-&gt;...ij&quot;</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">(</span><span class="n">point</span><span class="p">))</span></div>
 </div>
 
 
@@ -808,7 +897,7 @@ document.write(`
 <span class="sd">        Retrieve a curve from its square root velocity representation.</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">            c(t) = c(0) + \int_0^t q(s) |q(s)|ds</span>
+<span class="sd">            c(s) = c(0) + \int_0^s q(u) |q(u)|du</span>
 
 <span class="sd">        with:</span>
 
@@ -855,9 +944,9 @@ document.write(`
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
 <span class="sd">            Tangent vector to curve.</span>
-<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambiend_dim]</span>
+<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
 <span class="sd">            Discrete curve.</span>
-<span class="sd">        image_point : array-like, shape=[..., k_sampling_points - 1, ambiend_dim]</span>
+<span class="sd">        image_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
 <span class="sd">            SRV representation.</span>
 
 <span class="sd">        Returns</span>
@@ -1136,7 +1225,7 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        image_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            F tranform representation of a discrete curve.</span>
+<span class="sd">            F transform representation of a discrete curve.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1247,9 +1336,9 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="ElasticTranslationMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.ElasticTranslationMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">ElasticTranslationMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<div class="viewcode-block" id="ElasticMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.ElasticMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">ElasticMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Elastic metric on the space of discrete curves.</span>
 
 <span class="sd">    Family of elastic metric parametrized by bending and stretching parameters</span>
@@ -1298,9 +1387,9 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="SRVTranslationMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVTranslationMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<div class="viewcode-block" id="SRVMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Square Root Velocity metric on the space of discrete curves.</span>
 
 <span class="sd">    The SRV metric is equivalent to the elastic metric chosen with</span>
@@ -1351,18 +1440,24 @@ document.write(`
 <div class="viewcode-block" id="IterativeHorizontalGeodesicAligner">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.IterativeHorizontalGeodesicAligner">[docs]</a>
 <span class="k">class</span> <span class="nc">IterativeHorizontalGeodesicAligner</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterative horizontal geodesic algorithm.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Align two curves through iterative horizontal geodesic algorithm.</span>
 
-<span class="sd">    The horizontal geodesic is computed by an interative procedure where</span>
-<span class="sd">    the initial curve stays fixed and the sampling points are moved on the</span>
-<span class="sd">    end curve to obtain its optimal parametrization with respect to the</span>
-<span class="sd">    initial curve. This optimal matching algorithm sets current_end_curve</span>
-<span class="sd">    to be the end curve and iterates three steps:</span>
+<span class="sd">    This algorithm computes the horizontal geodesic between two curves in the shape</span>
+<span class="sd">    bundle of curves modulo reparametrizations, and at the same time, aligns the</span>
+<span class="sd">    end curve with respect to the initial curve. This is done through an iterative</span>
+<span class="sd">    procedure where the initial curve stays fixed and the sampling points are moved</span>
+<span class="sd">    on the end curve to obtain its optimal parametrization with respect to the initial</span>
+<span class="sd">    curve. This procedure is based on the decomposition of any path of curves into a</span>
+<span class="sd">    horizontal path of curves composed with a path of reparametrizations:</span>
+<span class="sd">    :math:`c(t, s) = c_h(t, phi(t, s))` where :math:`d/dt c_h(t, .)` is horizontal.</span>
+<span class="sd">    Here t is the time parameter of the path and s the space parameter of the curves.</span>
+
+<span class="sd">    The algorithm sets current_end_curve to be the end curve and iterates three steps:</span>
 <span class="sd">    1) compute the geodesic between the initial curve and current_end_curve</span>
-<span class="sd">    2) compute the path of reparametrizations that transforms this geodesic</span>
-<span class="sd">    into a horizontal path of curves</span>
-<span class="sd">    3) invert this path of reparametrizations to find the horizontal path</span>
-<span class="sd">    and update current_end_curve to be its end point.</span>
+<span class="sd">    2) compute the path of reparametrizations such that the path of its inverses</span>
+<span class="sd">    transforms this geodesic into a horizontal path of curves</span>
+<span class="sd">    3) invert this path of reparametrizations to find the horizontal path and update</span>
+<span class="sd">    current_end_curve to be its end point.</span>
 <span class="sd">    The algorithm stops when the new current_end_curve is sufficiently</span>
 <span class="sd">    close to the former current_end_curve.</span>
 
@@ -1376,26 +1471,118 @@ document.write(`
 <span class="sd">        Optional, default: 1e-3.</span>
 <span class="sd">    max_iter : int</span>
 <span class="sd">        Maximum number of iterations.</span>
+<span class="sd">        Optional, default: 20.</span>
+<span class="sd">    tol: float</span>
+<span class="sd">        Minimal spacing between time samples in the unit segment when</span>
+<span class="sd">        reparametrizing the end curve.</span>
+<span class="sd">        Optional, default: 1e-3.</span>
+<span class="sd">    verbose: boolean</span>
+<span class="sd">        Optional, default: False.</span>
 <span class="sd">    save_history : bool</span>
 <span class="sd">        If True, history is saved in a `self.history`.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [LAB2017] A. Le Brigant, &quot;Optimal matching between curves in a manifold&quot;,</span>
+<span class="sd">        in Geometric Science of Information. Springer Lecture Notes in Computer</span>
+<span class="sd">        Science 10589 (2017), 57 - 64. https://hal.science/hal-04374199.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">n_time_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">save_history</span><span class="o">=</span><span class="kc">False</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_time_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">tol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">save_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_time_grid</span> <span class="o">=</span> <span class="n">n_time_grid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">save_history</span> <span class="o">=</span> <span class="n">save_history</span>
         <span class="k">if</span> <span class="n">save_history</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="kc">None</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_euler_step_forward</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">increment</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">tol</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Perform Euler step while enforcing increasing solution.</span>
+
+<span class="sd">        Compute the new state phi(t+dt,.) from the current state phi(t,.) using</span>
+<span class="sd">        the Euler step: new = current + step * increment, i.e.</span>
+<span class="sd">        :math:`phi(t+dt,.) = phi(t,.) + dt * d/dt phi(t,.)`</span>
+<span class="sd">        while ensuring that the result is an increasing function on the unit</span>
+<span class="sd">        interval that preserves the end points 0 and 1. This is done by alternatively</span>
+<span class="sd">        computing phi(t+dt,s) and phi(t+dt,1-s), for s increasing from 0 to 0.5,</span>
+<span class="sd">        in a way that ensures that the spacing with the previous and following</span>
+<span class="sd">        sampling points are greater than a given tolerance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">max_index</span> <span class="o">=</span> <span class="n">k_sampling_points</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">tol</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_index</span><span class="p">):</span>
+            <span class="n">new_index</span> <span class="o">=</span> <span class="n">current</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">increment</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">new_index_min</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tol</span>
+            <span class="n">new_index_max</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">new</span><span class="p">[</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="n">index</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">index</span><span class="p">)</span> <span class="o">*</span> <span class="n">tol</span>
+            <span class="p">)</span>
+            <span class="n">new_index</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sign</span> <span class="o">*</span> <span class="n">new_index</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_index_min</span><span class="p">)</span>
+            <span class="n">new</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">sign</span> <span class="o">*</span> <span class="n">new_index</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_index_max</span><span class="p">)</span>
+
+            <span class="n">symindex</span> <span class="o">=</span> <span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">index</span>
+            <span class="n">new_symindex</span> <span class="o">=</span> <span class="n">current</span><span class="p">[</span><span class="n">symindex</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">increment</span><span class="p">[</span><span class="n">symindex</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">new_symindex_min</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">tol</span>
+            <span class="n">new_symindex_max</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">symindex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tol</span>
+            <span class="n">new_symindex</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+                <span class="n">sign</span> <span class="o">*</span> <span class="n">new_symindex</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_symindex_max</span>
+            <span class="p">)</span>
+            <span class="n">new</span><span class="p">[</span><span class="n">symindex</span><span class="p">]</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="n">sign</span> <span class="o">*</span> <span class="n">new_symindex</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_symindex_min</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">k_sampling_points</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">new_midindex</span> <span class="o">=</span> <span class="n">current</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">step</span> <span class="o">*</span> <span class="n">increment</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="n">new_midindex_min</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+</span> <span class="n">tol</span>
+            <span class="n">new_midindex_max</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">tol</span>
+            <span class="n">new_midindex</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="n">sign</span> <span class="o">*</span> <span class="n">new_midindex</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_midindex_min</span>
+            <span class="p">)</span>
+            <span class="n">new</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+                <span class="n">sign</span> <span class="o">*</span> <span class="n">new_midindex</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">new_midindex_max</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new</span>
+
+    <span class="k">def</span> <span class="nf">_euler_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">increment</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Perform Euler step while enforcing increasing solution.</span>
+
+<span class="sd">        Symmetric version of previous function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_euler_step_forward</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">increment</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_euler_step_forward</span><span class="p">(</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">increment</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                    <span class="n">step</span><span class="p">,</span>
+                    <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
     <span class="k">def</span> <span class="nf">_construct_reparametrization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vertical_norm</span><span class="p">,</span> <span class="n">space_deriv_norm</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Construct path of reparametrizations.</span>
 
-<span class="sd">        Construct path of reparametrizations phi(t, u) that transforms</span>
-<span class="sd">        a path of curves c(t, u) into a horizontal path of curves, i.e.</span>
-<span class="sd">        :math:`d/dt c(t, phi(t, u))` is a horizontal vector.</span>
+<span class="sd">        Construct path of reparametrizations phi(t, s) in the decomposition</span>
+<span class="sd">        of the path of curves</span>
+<span class="sd">        :math:`c(t, s) = c_h(t, phi(t, s))` where :math:`d/dt c_h(t, .)` is horizontal.</span>
+<span class="sd">        This is done by solving a partial differential equation, using an Euler</span>
+<span class="sd">        step that enforces that the solution phi(t,.) is an increasing function of</span>
+<span class="sd">        the unit interval that preserves the end points 0 and 1, for all time t.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1408,9 +1595,8 @@ document.write(`
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        repar : array-like, shape=[n_times, k_sampling_points]</span>
-<span class="sd">            Path of parametrizations, such that the path of curves</span>
-<span class="sd">            composed with the path of parametrizations is a horizontal</span>
-<span class="sd">            path.</span>
+<span class="sd">            Path of parametrizations, such that the path of curves composed</span>
+<span class="sd">            with the path of inverse parametrizations is a horizontal path.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_times</span> <span class="o">=</span> <span class="n">vertical_norm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">vertical_norm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -1428,25 +1614,16 @@ document.write(`
                 <span class="n">repar_diff</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="n">repar_time_deriv</span> <span class="o">=</span> <span class="n">repar_space_deriv</span> <span class="o">*</span> <span class="n">quotient</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">repar_i_mid</span> <span class="o">=</span> <span class="n">repar</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">repar_time_deriv</span> <span class="o">/</span> <span class="n">n_times</span>
+            <span class="n">repar</span> <span class="o">=</span> <span class="n">repar_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_euler_step</span><span class="p">(</span><span class="n">repar</span><span class="p">,</span> <span class="n">repar_time_deriv</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n_times</span><span class="p">)</span>
 
-            <span class="n">repar</span> <span class="o">=</span> <span class="n">repar_i</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]),</span> <span class="n">repar_i_mid</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])]</span>
-            <span class="p">)</span>
             <span class="n">repars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">repar_i</span><span class="p">)</span>
-
-            <span class="n">test_repar</span> <span class="o">=</span> <span class="n">repar</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">repar</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">test_repar</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Warning: phi(t) is non increasing for at least &quot;</span>
-                    <span class="s2">&quot;one time t. Solution may be inaccurate.&quot;</span>
-                <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">repars</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_invert_reparametrize_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_space</span><span class="p">,</span> <span class="n">repar</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invert path of reparametrizations, non vectorized.&quot;&quot;&quot;</span>
         <span class="n">spline</span> <span class="o">=</span> <span class="n">CubicSpline</span><span class="p">(</span><span class="n">t_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">repar_inverse</span> <span class="o">=</span> <span class="n">CubicSpline</span><span class="p">(</span><span class="n">repar</span><span class="p">,</span> <span class="n">t_space</span><span class="p">)</span>
+        <span class="n">repar_inverse</span> <span class="o">=</span> <span class="n">PchipInterpolator</span><span class="p">(</span><span class="n">repar</span><span class="p">,</span> <span class="n">t_space</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">spline</span><span class="p">(</span><span class="n">repar_inverse</span><span class="p">(</span><span class="n">t_space</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">_invert_reparametrization</span><span class="p">(</span>
@@ -1455,18 +1632,18 @@ document.write(`
         <span class="n">repar</span><span class="p">,</span>
         <span class="n">path_of_curves</span><span class="p">,</span>
         <span class="n">repar_inverse_end</span><span class="p">,</span>
-        <span class="n">spline_end</span><span class="p">,</span>
+        <span class="n">end_spline</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Invert path of reparametrizations.</span>
 
-<span class="sd">        Given a path of curves c(t, u) and a path of reparametrizations</span>
-<span class="sd">        phi(t, u), compute:</span>
-<span class="sd">        :math:`c(t, phi_inv(t, u))` where `phi_inv(t, .) = phi(t, .)^{-1}`</span>
+<span class="sd">        Given a path of curves c(t, s) and a path of reparametrizations</span>
+<span class="sd">        phi(t, s), compute:</span>
+<span class="sd">        :math:`c(t, phi_inv(t, s))` where `phi_inv(t, .) = phi(t, .)^{-1}`</span>
 
 <span class="sd">        The computation for the last time t=1 is done differently, using</span>
 <span class="sd">        the spline function associated to the end curve and the composition</span>
 <span class="sd">        of the inverse reparametrizations contained in rep_inverse_end:</span>
-<span class="sd">        :math:`spline_end_curve ° phi_inv(1, .) ° ... ° phi_inv(0, .)`.</span>
+<span class="sd">        :math:`end_spline ° phi_inv(1, .) ° ... ° phi_inv(0, .)`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1477,6 +1654,8 @@ document.write(`
 <span class="sd">        repar_inverse_end: list</span>
 <span class="sd">            List of the inverses of the reparametrizations applied to</span>
 <span class="sd">            the end curve during the optimal matching algorithm.</span>
+<span class="sd">        end_spline : function</span>
+<span class="sd">            Spline interpolation of the end point of the path of curves.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1495,11 +1674,11 @@ document.write(`
             <span class="k">for</span> <span class="n">repar_i</span><span class="p">,</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">repar</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">path_of_curves</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="p">]</span>
 
-        <span class="n">repar_inverse_end</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CubicSpline</span><span class="p">(</span><span class="n">repar</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t_space</span><span class="p">))</span>
+        <span class="n">repar_inverse_end</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PchipInterpolator</span><span class="p">(</span><span class="n">repar</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t_space</span><span class="p">))</span>
         <span class="n">arg</span> <span class="o">=</span> <span class="n">t_space</span>
         <span class="k">for</span> <span class="n">repar_inverse</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">repar_inverse_end</span><span class="p">):</span>
             <span class="n">arg</span> <span class="o">=</span> <span class="n">repar_inverse</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-        <span class="n">end_curve_repar</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">spline_end</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+        <span class="n">end_curve_repar</span> <span class="o">=</span> <span class="n">end_spline</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
         <span class="n">reparametrized_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_curve_repar</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">reparametrized_path</span><span class="p">)</span>
@@ -1512,9 +1691,9 @@ document.write(`
         <span class="n">initial_point</span><span class="p">,</span>
         <span class="n">end_point</span><span class="p">,</span>
         <span class="n">repar_inverse_end</span><span class="p">,</span>
-        <span class="n">spline_end</span><span class="p">,</span>
+        <span class="n">end_spline</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform one step of the aligment algorithm.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform one step of the alignment algorithm.&quot;&quot;&quot;</span>
         <span class="n">ndim</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span>
 
         <span class="n">total_space_geod_fun</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
@@ -1543,20 +1722,26 @@ document.write(`
         <span class="p">)</span>
 
         <span class="n">horizontal_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invert_reparametrization</span><span class="p">(</span>
-            <span class="n">t_space</span><span class="p">,</span> <span class="n">repar</span><span class="p">,</span> <span class="n">geod_points_with_origin</span><span class="p">,</span> <span class="n">repar_inverse_end</span><span class="p">,</span> <span class="n">spline_end</span>
+            <span class="n">t_space</span><span class="p">,</span> <span class="n">repar</span><span class="p">,</span> <span class="n">geod_points_with_origin</span><span class="p">,</span> <span class="n">repar_inverse_end</span><span class="p">,</span> <span class="n">end_spline</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">horizontal_path</span>
 
-    <span class="k">def</span> <span class="nf">_discrete_horizontal_geodesic_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Horizontal geodesic between two curves.</span>
+    <span class="k">def</span> <span class="nf">_discrete_horizontal_geodesic_single</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">end_spline</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute discrete horizontal geodesic, non vectorized.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        bundle : SRVReparametrizationBundle</span>
+<span class="sd">            Fiber bundle of curves modulo reparametrizations.</span>
 <span class="sd">        initial_point : array-like, shape=[k_sampling_points, ambient_dim]</span>
 <span class="sd">            Initial discrete curve.</span>
 <span class="sd">        end_point : array-like, shape=[k_sampling_points, ambient_dim]</span>
 <span class="sd">            End discrete curve.</span>
+<span class="sd">        end_spline : function</span>
+<span class="sd">            Spline interpolation of end point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1568,14 +1753,9 @@ document.write(`
         <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">k_sampling_points</span>
         <span class="n">t_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
 
-        <span class="n">end_point_with_origin</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span>
-            <span class="n">end_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span>
-        <span class="p">)</span>
-        <span class="n">spline_end</span> <span class="o">=</span> <span class="n">CubicSpline</span><span class="p">(</span><span class="n">t_space</span><span class="p">,</span> <span class="n">end_point_with_origin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
         <span class="n">current_end_point</span> <span class="o">=</span> <span class="n">end_point</span>
         <span class="n">repar_inverse_end</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
             <span class="n">horizontal_path_with_origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate</span><span class="p">(</span>
                 <span class="n">bundle</span><span class="p">,</span>
                 <span class="n">times</span><span class="p">,</span>
@@ -1583,16 +1763,19 @@ document.write(`
                 <span class="n">initial_point</span><span class="p">,</span>
                 <span class="n">current_end_point</span><span class="p">,</span>
                 <span class="n">repar_inverse_end</span><span class="p">,</span>
-                <span class="n">spline_end</span><span class="p">,</span>
+                <span class="n">end_spline</span><span class="p">,</span>
             <span class="p">)</span>
-
             <span class="n">new_end_point</span> <span class="o">=</span> <span class="n">horizontal_path_with_origin</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
-            <span class="n">gap</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">new_end_point</span> <span class="o">-</span> <span class="n">current_end_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">l2_metric</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">discrete_curves_with_l2</span><span class="o">.</span><span class="n">metric</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">l2_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">new_end_point</span><span class="p">,</span> <span class="n">current_end_point</span><span class="p">)</span>
             <span class="n">current_end_point</span> <span class="o">=</span> <span class="n">new_end_point</span>
 
             <span class="k">if</span> <span class="n">gap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Convergence of alignment reached after </span><span class="si">{</span><span class="n">index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="s2">&quot;iterations.&quot;</span>
+                    <span class="p">)</span>
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -1602,7 +1785,7 @@ document.write(`
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_history</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-                <span class="n">spline</span><span class="o">=</span><span class="n">spline_end</span><span class="p">,</span>
+                <span class="n">spline</span><span class="o">=</span><span class="n">end_spline</span><span class="p">,</span>
                 <span class="n">repar_inverse</span><span class="o">=</span><span class="n">repar_inverse_end</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -1610,15 +1793,21 @@ document.write(`
 
 <div class="viewcode-block" id="IterativeHorizontalGeodesicAligner.discrete_horizontal_geodesic">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.IterativeHorizontalGeodesicAligner.discrete_horizontal_geodesic">[docs]</a>
-    <span class="k">def</span> <span class="nf">discrete_horizontal_geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Discrete horizontal geodesic.</span>
+    <span class="k">def</span> <span class="nf">discrete_horizontal_geodesic</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">end_spline</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute discrete horizontal geodesic.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        bundle : SRVReparametrizationBundle</span>
+<span class="sd">            Fiber bundle of curves modulo reparametrizations.</span>
 <span class="sd">        initial_point : array-like, shape=[..., k_sampling_points, ambient_dim]</span>
 <span class="sd">            Initial discrete curve.</span>
 <span class="sd">        end_point : array-like, shape=[..., k_sampling_points, ambient_dim]</span>
 <span class="sd">            End discrete curve.</span>
+<span class="sd">        end_spline : function</span>
+<span class="sd">            Spline interpolation of end point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1631,7 +1820,7 @@ document.write(`
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_horizontal_geodesic_single</span><span class="p">(</span>
-                <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span>
+                <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">end_spline</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">initial_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">end_point</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
@@ -1640,9 +1829,11 @@ document.write(`
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_horizontal_geodesic_single</span><span class="p">(</span>
-                    <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point_</span><span class="p">,</span> <span class="n">end_point_</span>
+                    <span class="n">bundle</span><span class="p">,</span> <span class="n">initial_point_</span><span class="p">,</span> <span class="n">end_point_</span><span class="p">,</span> <span class="n">end_spline_</span>
                 <span class="p">)</span>
-                <span class="k">for</span> <span class="n">initial_point_</span><span class="p">,</span> <span class="n">end_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">initial_point_</span><span class="p">,</span> <span class="n">end_point_</span><span class="p">,</span> <span class="n">end_spline_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">end_spline</span>
+                <span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)</span></div>
 
@@ -1654,17 +1845,25 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        bundle : SRVReparametrizationBundle</span>
+<span class="sd">            Fiber bundle of curves modulo reparametrizations.</span>
 <span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            Initial discrete curve.</span>
+<span class="sd">            Discrete curve to align.</span>
 <span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            End discrete curve.</span>
+<span class="sd">            Reference discrete curve.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
-<span class="sd">            Action of the optimal g on point.</span>
+<span class="sd">            Curve reparametrized in an optimal way with respect to reference curve.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_horizontal_geodesic</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">)[</span>
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="n">spline</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spline</span> <span class="o">=</span> <span class="p">[</span><span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">point_</span><span class="p">)</span> <span class="k">for</span> <span class="n">point_</span> <span class="ow">in</span> <span class="n">point</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_horizontal_geodesic</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">spline</span><span class="p">)[</span>
             <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:</span>
         <span class="p">]</span></div>
 </div>
@@ -1868,20 +2067,23 @@ document.write(`
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_align_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_sdist</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Align point to base point.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Align point to base point, non vectorized.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        bundle : SRVReparametrizationBundle</span>
+<span class="sd">            Fiber bundle of curves modulo reparametrizations.</span>
 <span class="sd">        point : array-like, shape=[k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            Point to align.</span>
+<span class="sd">            Discrete curve to align.</span>
 <span class="sd">        base_point : array-like, shape=[k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            Reference point.</span>
+<span class="sd">            Reference discrete curve.</span>
 <span class="sd">        return_sdist : bool</span>
 <span class="sd">            If True, also returns squared distance.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        aligned : array, shape=[k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Curve reparametrized in an optimal way with respect to reference curve.</span>
 <span class="sd">        squared_dist : float</span>
 <span class="sd">            Quotient distance between point and base point.</span>
 <span class="sd">            If return_sdist is True.</span>
@@ -1952,21 +2154,23 @@ document.write(`
 <div class="viewcode-block" id="DynamicProgrammingAligner.align">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DynamicProgrammingAligner.align">[docs]</a>
     <span class="k">def</span> <span class="nf">align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bundle</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_sdist</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Vectorize the dynamic programming algorithm.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align point to base point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        bundle : SRVReparametrizationBundle</span>
+<span class="sd">            Fiber bundle of curves modulo reparametrizations.</span>
 <span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            Initial discrete curve.</span>
+<span class="sd">            Discrete curve to align.</span>
 <span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
-<span class="sd">            End discrete curve.</span>
+<span class="sd">            Reference discrete curve.</span>
 <span class="sd">        return_sdist : bool</span>
 <span class="sd">            If True, also returns squared distance.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
-<span class="sd">            Action of the optimal g on point.</span>
+<span class="sd">            Curve reparametrized in an optimal way with respect to reference curve.</span>
 <span class="sd">        squared_dist : array, shape=[...,]</span>
 <span class="sd">            Quotient distance between point and base point.</span>
 <span class="sd">            If return_sdist is True.</span>
@@ -1998,46 +2202,40 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="SRVTranslationReparametrizationBundle">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationReparametrizationBundle">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVTranslationReparametrizationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Principal bundle of shapes of curves induced by the SRV metric.</span>
+<div class="viewcode-block" id="SRVReparametrizationBundle">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationBundle">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVReparametrizationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Principal bundle of curves modulo reparameterizations with the SRV metric.</span>
 
-<span class="sd">    The space of parameterized curves is the total space of a principal</span>
-<span class="sd">    bundle where the group action is given by reparameterization and the</span>
-<span class="sd">    base space is the shape space of curves modulo reparametrization, i.e.</span>
-<span class="sd">    unparametrized curves. In the discrete case, reparametrization corresponds</span>
-<span class="sd">    to resampling.</span>
+<span class="sd">    The space of parameterized curves is the total space of a principal bundle</span>
+<span class="sd">    where the group action is given by reparameterization and the base space is</span>
+<span class="sd">    the shape space of curves modulo reparametrization, i.e.unparametrized</span>
+<span class="sd">    curves. In the discrete case, reparametrization corresponds to resampling.</span>
 
-<span class="sd">    Each tangent vector to the space of parameterized curves can be</span>
-<span class="sd">    split into a vertical part (tangent to the fibers of the principal</span>
-<span class="sd">    bundle) and a horizontal part (orthogonal to the vertical part with</span>
-<span class="sd">    respect to the SRV metric). Horizontal geodesics in the total space</span>
-<span class="sd">    can be computed using an algorithm that iteratively finds the best</span>
-<span class="sd">    correspondence between two fibers of the principal bundle, see Reference</span>
-<span class="sd">    below.</span>
+<span class="sd">    Each tangent vector to the space of parameterized curves can be split into a</span>
+<span class="sd">    vertical part (tangent to the fibers of the principal bundle) and a</span>
+<span class="sd">    horizontal part (orthogonal to the vertical part with respect to the SRV</span>
+<span class="sd">    metric). The geodesic between the shapes of two curves is computed by</span>
+<span class="sd">    aligning (i.e. reparametrizing) one of the two curves with respect to the</span>
+<span class="sd">    other, and computing the geodesic between the aligned curves. This geodesic</span>
+<span class="sd">    will be horizontal, and will project to a geodesic on the shape space.</span>
+
+<span class="sd">    Two different aligners are available:</span>
+<span class="sd">    - IterativeHorizontalGeodesicAligner (default)</span>
+<span class="sd">    - DynamicProgrammingAligner.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ambient_manifold : Manifold</span>
-<span class="sd">        Manifold in which curves take values.</span>
-<span class="sd">    k_sampling_points : int</span>
-<span class="sd">        Number of sampling points for the discrete curves.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    .. [LAB2017] A. Le Brigant,</span>
-<span class="sd">        &quot;A discrete framework to find the optimal matching between manifold-</span>
-<span class="sd">        valued curves,&quot; in Journal of Mathematical Imaging and Vision, 61,</span>
-<span class="sd">        pp. 40-70, 2019.</span>
+<span class="sd">    total_space : DiscreteCurvesStartingAtOrigin</span>
+<span class="sd">        Space of discrete curves starting at the origin</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span> <span class="o">=</span> <span class="n">IterativeHorizontalGeodesicAligner</span><span class="p">()</span>
 
-<div class="viewcode-block" id="SRVTranslationReparametrizationBundle.vertical_projection">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationReparametrizationBundle.vertical_projection">[docs]</a>
+<div class="viewcode-block" id="SRVReparametrizationBundle.vertical_projection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationBundle.vertical_projection">[docs]</a>
     <span class="k">def</span> <span class="nf">vertical_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute vertical part of tangent vector at base point.</span>
 
@@ -2069,7 +2267,6 @@ document.write(`
         <span class="n">base_point_with_origin</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="n">ndim</span><span class="p">)</span>
 
         <span class="n">position</span> <span class="o">=</span> <span class="n">base_point_with_origin</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="c1"># TODO: why delta=1?</span>
         <span class="n">delta</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="n">d_pos</span> <span class="o">=</span> <span class="n">centered_difference</span><span class="p">(</span><span class="n">base_point_with_origin</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="n">ndim</span><span class="p">)</span>
         <span class="n">d_vec</span> <span class="o">=</span> <span class="n">centered_difference</span><span class="p">(</span><span class="n">tangent_vec_with_zeros</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="n">ndim</span><span class="p">)</span>
@@ -2135,8 +2332,8 @@ document.write(`
         <span class="k">return</span> <span class="n">tangent_vec_ver</span></div>
 
 
-<div class="viewcode-block" id="SRVTranslationReparametrizationBundle.horizontal_projection">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationReparametrizationBundle.horizontal_projection">[docs]</a>
+<div class="viewcode-block" id="SRVReparametrizationBundle.horizontal_projection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationBundle.horizontal_projection">[docs]</a>
     <span class="k">def</span> <span class="nf">horizontal_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute horizontal part of tangent vector at base point.</span>
 
@@ -2156,8 +2353,8 @@ document.write(`
         <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="n">tangent_vec_ver</span></div>
 
 
-<div class="viewcode-block" id="SRVTranslationReparametrizationBundle.align">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationReparametrizationBundle.align">[docs]</a>
+<div class="viewcode-block" id="SRVReparametrizationBundle.align">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationBundle.align">[docs]</a>
     <span class="k">def</span> <span class="nf">align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find optimal reparametrization of curve with respect to base curve.</span>
 
@@ -2183,15 +2380,280 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="SRVTranslationReparametrizationQuotientMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVTranslationReparametrizationQuotientMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVTranslationReparametrizationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
+<div class="viewcode-block" id="SRVReparametrizationQuotientMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationQuotientMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVReparametrizationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on the space of unparametrized curves.</span>
 
 <span class="sd">    This is the class for the quotient metric induced by the SRV Metric</span>
 <span class="sd">    on the shape space of unparametrized curves, i.e. the space of parametrized</span>
 <span class="sd">    curves quotiented by the group of reparametrizations. In the discrete case,</span>
 <span class="sd">    reparametrization corresponds to resampling.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="SRVRotationBundle">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationBundle">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVRotationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Principal bundle of curves modulo rotations with the SRV metric.</span>
+
+<span class="sd">    This is the fiber bundle where the total space is the space of parameterized</span>
+<span class="sd">    curves equipped with the SRV metric, the action is given by rotations, and</span>
+<span class="sd">    the base space is the shape space of curves modulo rotations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    total_space : DiscreteCurvesStartingAtOrigin</span>
+<span class="sd">        Space of discrete curves starting at the origin</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_transpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transpose discrete curve starting at origin.&quot;&quot;&quot;</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">rotation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rotate discrete curve starting at origin.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="SRVRotationBundle.align">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationBundle.align">[docs]</a>
+    <span class="k">def</span> <span class="nf">align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_rotation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align point to base point.</span>
+
+<span class="sd">        Find optimal rotation of curve with respect to base curve.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Discrete curve to align.</span>
+<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Reference discrete curve.</span>
+<span class="sd">        return_rotation : boolean</span>
+<span class="sd">            If true, returns the optimal rotation used for the alignment.</span>
+<span class="sd">            Optional, default : False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
+<span class="sd">            Curve optimally rotated with respect to reference curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">srv_transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">diffeo</span>
+        <span class="n">initial_srv</span> <span class="o">=</span> <span class="n">srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">end_srv</span> <span class="o">=</span> <span class="n">srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transpose</span><span class="p">(</span><span class="n">initial_srv</span><span class="p">),</span> <span class="n">end_srv</span><span class="p">)</span>
+        <span class="n">u_svd</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">vt_svd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">u_svd</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">))</span>
+        <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...j-&gt;...j&quot;</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">u_svd</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">)</span>
+
+        <span class="n">point_aligned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_rotation</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">point_aligned</span><span class="p">,</span> <span class="n">rotation</span>
+
+        <span class="k">return</span> <span class="n">point_aligned</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SRVRotationQuotientMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationQuotientMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVRotationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on space of curves modulo rotations.</span>
+
+<span class="sd">    This is the class for the quotient metric induced by the SRV Metric on the</span>
+<span class="sd">    space of parametrized curves quotiented by the action of rotations.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="SRVRotationReparametrizationBundle">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVRotationReparametrizationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV principal bundle of curves modulo rotations and reparametrizations.</span>
+
+<span class="sd">    This is the fiber bundle where the total space is the space of parameterized</span>
+<span class="sd">    curves equipped with the SRV metric, the action is the joint action of rotations</span>
+<span class="sd">    and reparametrizations, and the base space is the shape space of curves modulo</span>
+<span class="sd">    rotations and reparametrizations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    total_space : DiscreteCurvesStartingAtOrigin</span>
+<span class="sd">        Space of discrete curves starting at the origin</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        Parameter used in the alignment of a curve with respect to a base curve.</span>
+<span class="sd">        When the difference between the new curve and the current curve becomes lower</span>
+<span class="sd">        than this threshold, the alignment algorithm stops.</span>
+<span class="sd">        Optional, default: 1e-3.</span>
+<span class="sd">    max_iter : int</span>
+<span class="sd">        Maximum number of iterations in the alignment of a curve with respect to a base.</span>
+<span class="sd">        curve.</span>
+<span class="sd">        Optional, default: 20.</span>
+<span class="sd">    verbose : boolean</span>
+<span class="sd">        Parameter used in the alignment of a curve with respect to a base curve.</span>
+<span class="sd">        Optional, default: False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rotations_bundle</span> <span class="o">=</span> <span class="n">SRVRotationBundle</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reparameterizations_bundle</span> <span class="o">=</span> <span class="n">SRVReparametrizationBundle</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SRVRotationReparametrizationBundle.align_rotation">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle.align_rotation">[docs]</a>
+    <span class="k">def</span> <span class="nf">align_rotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_rotation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find optimal rotation of curve with respect to base curve.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Discrete curve to align.</span>
+<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Reference discrete curve.</span>
+<span class="sd">        return_rotation : boolean</span>
+<span class="sd">            If true, returns the optimal rotation used for the alignment.</span>
+<span class="sd">            Optional, default : False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
+<span class="sd">            Curve optimally rotated with respect to reference curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotations_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_rotation</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SRVRotationReparametrizationBundle.align_reparametrization">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle.align_reparametrization">[docs]</a>
+    <span class="k">def</span> <span class="nf">align_reparametrization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">spline</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find optimal parametrization of a curve with respect to a base curve.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Discrete curve to align.</span>
+<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Reference discrete curve.</span>
+<span class="sd">        spline : function</span>
+<span class="sd">            Spline function that interpolates between the points of the curve to</span>
+<span class="sd">            align.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
+<span class="sd">            Curve optimally reparametrized with respect to reference curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reparameterizations_bundle</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">discrete_horizontal_geodesic</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reparameterizations_bundle</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">spline</span>
+        <span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_align_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align point to base point, non vectorized.&quot;&quot;&quot;</span>
+        <span class="n">aligned_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">new_aligned_point</span><span class="p">,</span> <span class="n">new_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">align_rotation</span><span class="p">(</span>
+                <span class="n">aligned_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_rotation</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">rotation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">new_rotation</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
+            <span class="n">rotated_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotations_bundle</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
+            <span class="n">rotated_spline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">rotated_point</span><span class="p">)</span>
+
+            <span class="n">new_aligned_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">align_reparametrization</span><span class="p">(</span>
+                <span class="n">new_aligned_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">rotated_spline</span>
+            <span class="p">)</span>
+            <span class="n">l2_metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">discrete_curves_with_l2</span><span class="o">.</span><span class="n">metric</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">l2_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">aligned_point</span><span class="p">,</span> <span class="n">new_aligned_point</span><span class="p">)</span>
+            <span class="n">aligned_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">new_aligned_point</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">gap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Convergence of alignment reached after </span><span class="si">{</span><span class="n">index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="s2">&quot;iterations.&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached during &quot;</span>
+                <span class="s2">&quot;alignment with respect to rotations and reparametrizations. &quot;</span>
+                <span class="s2">&quot;The result may be inaccurate.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">aligned_point</span><span class="p">,</span> <span class="n">rotation</span>
+
+<div class="viewcode-block" id="SRVRotationReparametrizationBundle.align">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle.align">[docs]</a>
+    <span class="k">def</span> <span class="nf">align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">return_rotation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align point to base point.</span>
+
+<span class="sd">        This is achieved by iteratively rotating and reparametrizing the curve to align</span>
+<span class="sd">        with respect to the reference curve until convergence.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Discrete curve to align.</span>
+<span class="sd">        base_point : array-like, shape=[..., k_sampling_points - 1, ambient_dim]</span>
+<span class="sd">            Reference discrete curve.</span>
+<span class="sd">        return_rotation : boolean</span>
+<span class="sd">            If true, returns the optimal rotation used for the alignment.</span>
+<span class="sd">            Optional, default : False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
+<span class="sd">             Curve rotated and reparametrized in an optimal way with respect to</span>
+<span class="sd">             the reference curve.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">point</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="n">aligned_point</span><span class="p">,</span> <span class="n">rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_single</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_rotation</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">aligned_point</span><span class="p">,</span> <span class="n">rotation</span>
+
+            <span class="k">return</span> <span class="n">aligned_point</span>
+
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_align_single</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">aligned_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">out_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">out_</span> <span class="ow">in</span> <span class="n">out</span><span class="p">])</span>
+        <span class="n">rotations</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">out_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">out_</span> <span class="ow">in</span> <span class="n">out</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">return_rotation</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">aligned_points</span><span class="p">,</span> <span class="n">rotations</span>
+
+        <span class="k">return</span> <span class="n">aligned_points</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SRVRotationReparametrizationQuotientMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationQuotientMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">SRVRotationReparametrizationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on space of curves modulo rotations and reparametrizations.</span>
+
+<span class="sd">    This is the class for the quotient metric induced by the SRV Metric on the</span>
+<span class="sd">    space of parametrized curves quotiented by the action of rotations and</span>
+<span class="sd">    reparametrizations. In the discrete case, reparametrization corresponds to</span>
+<span class="sd">    resampling.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 </pre></div>

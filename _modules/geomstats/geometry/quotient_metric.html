@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 19, 2024, 8:27:15 AM"/>
+    <meta name="docbuild:last-update" content="Jan 19, 2024, 10:53:11 AM"/>
   </head>
   
   
@@ -910,6 +910,63 @@ document.write(`
             <span class="o">-</span> <span class="n">a_x_ver_nabla_curvature_top</span>
             <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">nabla_x_a_y_a_x_y</span> <span class="o">-</span> <span class="n">a_x_a_y_a_x_y</span><span class="p">)</span>
         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QuotientMetric.geodesic">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.quotient_metric.QuotientMetric.geodesic">[docs]</a>
+    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
+
+<span class="sd">        Geodesic curve defined by either:</span>
+
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        - an initial point and an end point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
+<span class="sd">            an initial tangent vector must be given.</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim],</span>
+<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
+<span class="sd">            represents the different initial conditions, and the second</span>
+<span class="sd">            corresponds to time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
+                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot specify both an end point and an initial tangent vector.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">initial_fiber_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">lift</span><span class="p">(</span><span class="n">initial_point</span><span class="p">)</span>
+            <span class="n">end_fiber_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">lift</span><span class="p">(</span><span class="n">end_point</span><span class="p">)</span>
+            <span class="n">aligned_end_fiber_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
+                <span class="n">end_fiber_point</span><span class="p">,</span> <span class="n">initial_fiber_point</span>
+            <span class="p">)</span>
+            <span class="n">geodesic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="o">=</span><span class="n">initial_fiber_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="n">aligned_end_fiber_point</span>
+            <span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">projected_geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fiber_bundle</span><span class="o">.</span><span class="n">riemannian_submersion</span><span class="p">(</span><span class="n">geodesic</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">projected_geodesic</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geodesic_ivp</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
