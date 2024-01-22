@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 19, 2024, 2:28:01 PM"/>
+    <meta name="docbuild:last-update" content="Jan 22, 2024, 4:14:54 PM"/>
   </head>
   
   
@@ -653,15 +653,15 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;rotations&quot;</span><span class="p">):</span> <span class="p">(</span>
                 <span class="n">SRVRotationBundle</span><span class="p">,</span>
-                <span class="n">SRVRotationQuotientMetric</span><span class="p">,</span>
+                <span class="n">QuotientMetric</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;reparametrizations&quot;</span><span class="p">):</span> <span class="p">(</span>
                 <span class="n">SRVReparametrizationBundle</span><span class="p">,</span>
-                <span class="n">SRVReparametrizationQuotientMetric</span><span class="p">,</span>
+                <span class="n">QuotientMetric</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="s2">&quot;rotations and reparametrizations&quot;</span><span class="p">):</span> <span class="p">(</span>
                 <span class="n">SRVRotationReparametrizationBundle</span><span class="p">,</span>
-                <span class="n">SRVRotationReparametrizationQuotientMetric</span><span class="p">,</span>
+                <span class="n">QuotientMetric</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">ambient_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
@@ -1806,7 +1806,7 @@ document.write(`
 <span class="sd">            Initial discrete curve.</span>
 <span class="sd">        end_point : array-like, shape=[..., k_sampling_points, ambient_dim]</span>
 <span class="sd">            End discrete curve.</span>
-<span class="sd">        end_spline : function</span>
+<span class="sd">        end_spline : callable or list[callable]</span>
 <span class="sd">            Spline interpolation of end point.</span>
 
 <span class="sd">        Returns</span>
@@ -1857,12 +1857,13 @@ document.write(`
 <span class="sd">        aligned : array-like, shape=[..., k_sampling_points - 1, ambient_dim</span>
 <span class="sd">            Curve reparametrized in an optimal way with respect to reference curve.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">:</span>
             <span class="n">spline</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">:</span>
+                <span class="n">spline</span> <span class="o">=</span> <span class="p">[</span><span class="n">spline</span><span class="p">]</span> <span class="o">*</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">spline</span> <span class="o">=</span> <span class="p">[</span><span class="n">bundle</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">point_</span><span class="p">)</span> <span class="k">for</span> <span class="n">point_</span> <span class="ow">in</span> <span class="n">point</span><span class="p">]</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_horizontal_geodesic</span><span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">spline</span><span class="p">)[</span>
             <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:</span>
         <span class="p">]</span></div>
@@ -2380,19 +2381,6 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="SRVReparametrizationQuotientMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVReparametrizationQuotientMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVReparametrizationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on the space of unparametrized curves.</span>
-
-<span class="sd">    This is the class for the quotient metric induced by the SRV Metric</span>
-<span class="sd">    on the shape space of unparametrized curves, i.e. the space of parametrized</span>
-<span class="sd">    curves quotiented by the group of reparametrizations. In the discrete case,</span>
-<span class="sd">    reparametrization corresponds to resampling.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
-
-
-
 <div class="viewcode-block" id="SRVRotationBundle">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationBundle">[docs]</a>
 <span class="k">class</span> <span class="nc">SRVRotationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
@@ -2419,6 +2407,13 @@ document.write(`
     <span class="k">def</span> <span class="nf">_rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">rotation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Rotate discrete curve starting at origin.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transpose</span><span class="p">(</span><span class="n">point</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="SRVRotationBundle.horizontal_projection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationBundle.horizontal_projection">[docs]</a>
+    <span class="k">def</span> <span class="nf">horizontal_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project to horizontal subspace.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Horizontal projection is not implemented.&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="SRVRotationBundle.align">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationBundle.align">[docs]</a>
@@ -2461,17 +2456,6 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="SRVRotationQuotientMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationQuotientMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVRotationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on space of curves modulo rotations.</span>
-
-<span class="sd">    This is the class for the quotient metric induced by the SRV Metric on the</span>
-<span class="sd">    space of parametrized curves quotiented by the action of rotations.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
-
-
-
 <div class="viewcode-block" id="SRVRotationReparametrizationBundle">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle">[docs]</a>
 <span class="k">class</span> <span class="nc">SRVRotationReparametrizationBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
@@ -2508,6 +2492,13 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rotations_bundle</span> <span class="o">=</span> <span class="n">SRVRotationBundle</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reparameterizations_bundle</span> <span class="o">=</span> <span class="n">SRVReparametrizationBundle</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SRVRotationReparametrizationBundle.horizontal_projection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle.horizontal_projection">[docs]</a>
+    <span class="k">def</span> <span class="nf">horizontal_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project to horizontal subspace.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Horizontal projection is not implemented.&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="SRVRotationReparametrizationBundle.align_rotation">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationBundle.align_rotation">[docs]</a>
@@ -2642,19 +2633,6 @@ document.write(`
 
         <span class="k">return</span> <span class="n">aligned_points</span></div>
 </div>
-
-
-
-<div class="viewcode-block" id="SRVRotationReparametrizationQuotientMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.SRVRotationReparametrizationQuotientMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">SRVRotationReparametrizationQuotientMetric</span><span class="p">(</span><span class="n">QuotientMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SRV quotient metric on space of curves modulo rotations and reparametrizations.</span>
-
-<span class="sd">    This is the class for the quotient metric induced by the SRV Metric on the</span>
-<span class="sd">    space of parametrized curves quotiented by the action of rotations and</span>
-<span class="sd">    reparametrizations. In the discrete case, reparametrization corresponds to</span>
-<span class="sd">    resampling.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
 
 </pre></div>
 
