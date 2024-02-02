@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 30, 2024, 12:27:23 PM"/>
+    <meta name="docbuild:last-update" content="Feb 2, 2024, 9:05:09 AM"/>
   </head>
   
   
@@ -437,11 +437,94 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
-<span class="kn">from</span> <span class="nn">geomstats.numerics.geodesic</span> <span class="kn">import</span> <span class="n">ExpODESolver</span><span class="p">,</span> <span class="n">LogShootingSolver</span>
-<span class="kn">from</span> <span class="nn">geomstats.numerics.ivp</span> <span class="kn">import</span> <span class="n">GSIVPIntegrator</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.bvp</span> <span class="kn">import</span> <span class="n">ScipySolveBVP</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.geodesic</span> <span class="kn">import</span> <span class="n">ExpODESolver</span><span class="p">,</span> <span class="n">LogODESolver</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.ivp</span> <span class="kn">import</span> <span class="n">ScipySolveIVP</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+
+<div class="viewcode-block" id="InvariantMetricMatrixExpODESolver">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.invariant_metric.InvariantMetricMatrixExpODESolver">[docs]</a>
+<span class="k">class</span> <span class="nc">InvariantMetricMatrixExpODESolver</span><span class="p">(</span><span class="n">ExpODESolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An exp solver adapted to _InvariantMetricMatrix.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="InvariantMetricMatrixExpODESolver.exp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.invariant_metric.InvariantMetricMatrixExpODESolver.exp">[docs]</a>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
+
+<span class="sd">        If :math:`\gamma` is a geodesic, then it satisfies the</span>
+<span class="sd">        Euler-Poincare equation [Kolev]_:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \dot{\gamma}(t) = (dL_{\gamma(t)}) X(t)</span>
+<span class="sd">            \dot{X}(t) = ad^*_{X(t)}X(t)</span>
+
+<span class="sd">        where :math:`ad^*` is the dual adjoint map with respect to the</span>
+<span class="sd">        metric. For a right-invariant metric, :math:`dR` is used instead of</span>
+<span class="sd">        :math:`dL` and :math:`ad^*` is replaced by :math:`-ad^*`. The</span>
+<span class="sd">        exponential map is approximated by numerical integration</span>
+<span class="sd">        of this equation, with initial conditions :math:`\dot{\gamma}(0)`</span>
+<span class="sd">        given by the argument `tangent_vec` and :math:`\gamma(0)` by</span>
+<span class="sd">        `base_point`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at a base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group.</span>
+<span class="sd">            Optional, defaults to identity if None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point in the group equal to the Riemannian exponential</span>
+<span class="sd">            of tangent_vec at the base point.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Runge–Kutta_methods</span>
+
+<span class="sd">        .. [Kolev]   Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
+<span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
+<span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">left_angular_vel</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InvariantMetricMatrixExpODESolver.geodesic_ivp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.invariant_metric.InvariantMetricMatrixExpODESolver.geodesic_ivp">[docs]</a>
+    <span class="k">def</span> <span class="nf">geodesic_ivp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for initial value problem.&quot;&quot;&quot;</span>
+        <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">geodesic_ivp</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">left_angular_vel</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="InvariantMetricMatrixLogODESolver">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.invariant_metric.InvariantMetricMatrixLogODESolver">[docs]</a>
+<span class="k">class</span> <span class="nc">InvariantMetricMatrixLogODESolver</span><span class="p">(</span><span class="n">LogODESolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A log solver adapted to _InvariantMetricMatrix.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="InvariantMetricMatrixLogODESolver.log">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.invariant_metric.InvariantMetricMatrixLogODESolver.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Logarithm map.&quot;&quot;&quot;</span>
+        <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
+            <span class="n">space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span>
+                <span class="n">left_angular_vel</span>
+            <span class="p">),</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">class</span> <span class="nc">_InvariantMetricMatrix</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
@@ -485,9 +568,11 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">_instantiate_solvers</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_instantiate_solvers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">LogShootingSolver</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">ExpODESolver</span><span class="p">(</span>
-            <span class="n">integrator</span><span class="o">=</span><span class="n">GSIVPIntegrator</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">step_type</span><span class="o">=</span><span class="s2">&quot;rk4&quot;</span><span class="p">),</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">InvariantMetricMatrixLogODESolver</span><span class="p">(</span>
+            <span class="n">n_nodes</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_jac</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">integrator</span><span class="o">=</span><span class="n">ScipySolveBVP</span><span class="p">(</span><span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">InvariantMetricMatrixExpODESolver</span><span class="p">(</span>
+            <span class="n">integrator</span><span class="o">=</span><span class="n">ScipySolveIVP</span><span class="p">(</span><span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
         <span class="p">)</span>
 
     <span class="nd">@property</span>
@@ -981,55 +1066,6 @@ document.write(`
 
         <span class="k">return</span> <span class="n">base_point</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="n">left_angular_vel</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian exponential of tan. vector wrt to base point.</span>
-
-<span class="sd">        If :math:`\gamma` is a geodesic, then it satisfies the</span>
-<span class="sd">        Euler-Poincare equation [Kolev]_:</span>
-
-<span class="sd">        .. math::</span>
-
-<span class="sd">            \dot{\gamma}(t) = (dL_{\gamma(t)}) X(t)</span>
-<span class="sd">            \dot{X}(t) = ad^*_{X(t)}X(t)</span>
-
-<span class="sd">        where :math:`ad^*` is the dual adjoint map with respect to the</span>
-<span class="sd">        metric. For a right-invariant metric, :math:`dR` is used instead of</span>
-<span class="sd">        :math:`dL` and :math:`ad^*` is replaced by :math:`-ad^*`. The</span>
-<span class="sd">        exponential map is approximated by numerical integration</span>
-<span class="sd">        of this equation, with initial conditions :math:`\dot{\gamma}(0)`</span>
-<span class="sd">        given by the argument `tangent_vec` and :math:`\gamma(0)` by</span>
-<span class="sd">        `base_point`. A Runge-Kutta scheme of order 2 or 4 is used for</span>
-<span class="sd">        integration.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector at a base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point in the group.</span>
-<span class="sd">            Optional, defaults to identity if None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., n, n]</span>
-<span class="sd">            Point in the group equal to the Riemannian exponential</span>
-<span class="sd">            of tangent_vec at the base point.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        https://en.wikipedia.org/wiki/Runge–Kutta_methods</span>
-
-<span class="sd">        .. [Kolev]   Kolev, Boris. “Lie Groups and Mechanics: An Introduction.”</span>
-<span class="sd">                     Journal of Nonlinear Mathematical Physics 11, no. 4, 2004:</span>
-<span class="sd">                     480–98. https://doi.org/10.2991/jnmp.2004.11.4.5.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
-            <span class="n">left_angular_vel</span><span class="p">,</span>
-            <span class="n">base_point</span><span class="p">,</span>
-        <span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute Riemannian logarithm of a point from a base point.</span>
 
@@ -1071,61 +1107,7 @@ document.write(`
                 <span class="s2">&quot;The Logarithm map is not well-defined for&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot; antipodal matrices: </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">base_point</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">),</span>
-            <span class="n">base_point</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
-
-<span class="sd">        Geodesic curve defined by either:</span>
-
-<span class="sd">        - an initial point and an initial tangent vector,</span>
-<span class="sd">        - an initial point and an end point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
-<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
-<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
-<span class="sd">            an initial tangent vector must be given.</span>
-<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
-<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
-<span class="sd">            represents the different initial conditions, and the second</span>
-<span class="sd">            corresponds to time.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
-                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Cannot specify both an end point and an initial tangent vector.&quot;</span>
-                <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">geodesic_bvp</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
-                <span class="n">end_point</span><span class="p">,</span>
-                <span class="n">initial_point</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="n">initial_point</span><span class="p">,</span> <span class="n">left_angular_vel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_exp</span><span class="p">(</span>
-            <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">geodesic_ivp</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">left_angular_vel</span><span class="p">,</span> <span class="n">initial_point</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1208,21 +1190,28 @@ document.write(`
 
         <span class="k">def</span> <span class="nf">acceleration</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute the right-hand-side of the parallel transport eq.&quot;&quot;&quot;</span>
-            <span class="n">omega</span><span class="p">,</span> <span class="n">zeta</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-            <span class="n">gam_dot</span><span class="p">,</span> <span class="n">omega_dot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">(</span><span class="n">state</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">time</span><span class="p">)</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">zeta</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">new_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">time</span><span class="p">)</span>
+            <span class="n">gam_dot</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+            <span class="n">omega_dot</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
             <span class="n">zeta_dot</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">connection_at_identity</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">zeta</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gam_dot</span><span class="p">,</span> <span class="n">omega_dot</span><span class="p">,</span> <span class="n">zeta_dot</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gam_dot</span><span class="p">,</span> <span class="n">omega_dot</span><span class="p">,</span> <span class="n">zeta_dot</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel_a</span><span class="p">,</span> <span class="n">left_angular_vel_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel_a</span><span class="p">,</span> <span class="n">left_angular_vel_b</span>
         <span class="p">)</span>
-        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel_b</span><span class="p">,</span> <span class="n">left_angular_vel_a</span><span class="p">])</span>
+        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">base_point</span><span class="p">,</span> <span class="n">left_angular_vel_b</span><span class="p">,</span> <span class="n">left_angular_vel_a</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span>
+        <span class="p">)</span>
 
         <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">acceleration</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
-        <span class="n">gamma</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">zeta_t</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">zeta_t</span> <span class="o">=</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
         <span class="n">transported</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span>
             <span class="n">gamma</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)(</span><span class="n">zeta_t</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="p">(</span><span class="n">transported</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span> <span class="k">if</span> <span class="n">return_endpoint</span> <span class="k">else</span> <span class="n">transported</span>
 
     <span class="k">def</span> <span class="nf">geodesic_equation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">_time</span><span class="p">):</span>
@@ -1257,16 +1246,19 @@ document.write(`
         <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
         <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
 
-        <span class="n">point</span><span class="p">,</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">vector</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+
         <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">tangent_translation_map</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)(</span><span class="n">vector</span><span class="p">)</span>
-        <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="n">coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">structure_constant</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">basis_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">basis_vector</span> <span class="ow">in</span> <span class="n">basis</span>
-            <span class="p">]</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">acceleration</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i...,ijk-&gt;...jk&quot;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span><span class="p">])</span>
+        <span class="n">acceleration</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,ijk-&gt;...jk&quot;</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">acceleration</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_InvariantMetricVector</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>

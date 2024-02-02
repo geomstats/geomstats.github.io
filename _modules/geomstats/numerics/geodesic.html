@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 30, 2024, 12:27:23 PM"/>
+    <meta name="docbuild:last-update" content="Feb 2, 2024, 9:05:09 AM"/>
   </head>
   
   
@@ -443,7 +443,16 @@ document.write(`
 <div class="viewcode-block" id="ExpSolver">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.ExpSolver">[docs]</a>
 <span class="k">class</span> <span class="nc">ExpSolver</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for geodesic initial value problem solvers.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for geodesic initial value problem solvers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    solves_ivp : bool</span>
+<span class="sd">        Informs if solver is able to solve for geodesic at different t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solves_ivp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solves_ivp</span> <span class="o">=</span> <span class="n">solves_ivp</span>
 
 <div class="viewcode-block" id="ExpSolver.exp">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.ExpSolver.exp">[docs]</a>
@@ -469,7 +478,6 @@ document.write(`
 
 <div class="viewcode-block" id="ExpSolver.geodesic_ivp">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.ExpSolver.geodesic_ivp">[docs]</a>
-    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">geodesic_ivp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for initial value problem.</span>
 
@@ -486,7 +494,8 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        path : callable</span>
 <span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t solve for geodesic at different t.&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -503,26 +512,33 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integrator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_ivp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">integrator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">integrator</span> <span class="o">=</span> <span class="n">GSIVPIntegrator</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_integrator</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">integrator</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">integrator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;An instance of ODEIVPSolver.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_integrator</span>
+
+    <span class="nd">@integrator</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">integrator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integrator</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set integrator.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solves_ivp</span> <span class="o">=</span> <span class="n">integrator</span><span class="o">.</span><span class="n">tchosen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_integrator</span> <span class="o">=</span> <span class="n">integrator</span>
 
     <span class="k">def</span> <span class="nf">_solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
+        <span class="n">state_axis</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">state_axis</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">state_is_raveled</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">dim_vec</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-                <span class="n">batch_shape_</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="k">if</span> <span class="n">batch_shape</span> <span class="k">else</span> <span class="p">()</span>
-
-                <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">batch_shape_</span> <span class="o">+</span> <span class="p">(</span><span class="n">dim_vec</span><span class="p">,))</span>
-                <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">batch_shape_</span> <span class="o">+</span> <span class="p">(</span><span class="n">dim_vec</span><span class="p">,))</span>
-
-            <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">])</span>
+            <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">initial_state</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
 
         <span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_force</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">t_eval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -576,6 +592,11 @@ document.write(`
 <span class="sd">        path : callable</span>
 <span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">solves_ivp</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Can&#39;t solve for geodesic at different t with this integrator.&quot;</span>
+            <span class="p">)</span>
+
         <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
@@ -628,16 +649,14 @@ document.write(`
 
     <span class="k">def</span> <span class="nf">_simplify_exp_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get_last_y</span><span class="p">()</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">state_is_raveled</span><span class="p">:</span>
             <span class="n">dim_vec</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="n">exp</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">dim_vec</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">exp</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">exp</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">slc</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">slc</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_simplify_result_t</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="c1"># assumes several t</span>
@@ -646,25 +665,26 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">state_is_raveled</span><span class="p">:</span>
             <span class="n">dim_vec</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">dim_vec</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">batch_shape</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">y</span>
-
-        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="o">...</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">batch_shape</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">y</span></div>
+        <span class="n">slc</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">slc</span><span class="p">]</span></div>
 
 
 
 <div class="viewcode-block" id="LogSolver">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.LogSolver">[docs]</a>
 <span class="k">class</span> <span class="nc">LogSolver</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for geodesic boundary value problem solvers.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for geodesic boundary value problem solvers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    solves_bvp : bool</span>
+<span class="sd">        Informs if solver is able to solve for geodesic at different t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solves_bvp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solves_bvp</span> <span class="o">=</span> <span class="n">solves_bvp</span>
 
 <div class="viewcode-block" id="LogSolver.log">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.LogSolver.log">[docs]</a>
@@ -690,36 +710,6 @@ document.write(`
 
 <div class="viewcode-block" id="LogSolver.geodesic_bvp">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.LogSolver.geodesic_bvp">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for boundary value problem.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        space : Manifold</span>
-<span class="sd">            Equipped manifold.</span>
-<span class="sd">        end_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-</div>
-
-
-
-<span class="k">class</span> <span class="nc">_GeodesicBVPFromExpMixins</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides method to get geodesic given exp.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">_geodesic_bvp_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
-        <span class="n">tangent_vec_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...,...</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">-&gt;...</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec_</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for boundary value problem.</span>
 
@@ -737,40 +727,9 @@ document.write(`
 <span class="sd">        path : callable</span>
 <span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span>
-        <span class="k">if</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t solve for geodesic at different t.&quot;</span><span class="p">)</span></div>
+</div>
 
-        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Time parametrized geodesic curve.</span>
-
-<span class="sd">            Parameters</span>
-<span class="sd">            ----------</span>
-<span class="sd">            t : float or array-like, shape=[n_times,]</span>
-
-<span class="sd">            Returns</span>
-<span class="sd">            -------</span>
-<span class="sd">            geodesic_points : array-like, shape=[..., n_times, dim]</span>
-<span class="sd">                Geodesic points evaluated at t.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geodesic_bvp_single</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_geodesic_bvp_single</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">tangent_vec_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">tangent_vec_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">path</span>
 
 
 <span class="k">class</span> <span class="nc">_LogBatchMixins</span><span class="p">:</span>
@@ -859,8 +818,10 @@ document.write(`
 
 
 
-<span class="k">class</span> <span class="nc">_LogShootingSolverFlatten</span><span class="p">(</span><span class="n">_GeodesicBVPFromExpMixins</span><span class="p">,</span> <span class="n">LogSolver</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_LogShootingSolverFlatten</span><span class="p">(</span><span class="n">LogSolver</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialization</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span><span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">)</span>
 
@@ -903,15 +864,12 @@ document.write(`
 
         <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">init_tangent_vec</span><span class="p">)</span>
 
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tangent_vec</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_LogShootingSolverUnflatten</span><span class="p">(</span>
-    <span class="n">_LogBatchMixins</span><span class="p">,</span> <span class="n">_GeodesicBVPFromExpMixins</span><span class="p">,</span> <span class="n">LogSolver</span>
-<span class="p">):</span>
+<span class="k">class</span> <span class="nc">_LogShootingSolverUnflatten</span><span class="p">(</span><span class="n">_LogBatchMixins</span><span class="p">,</span> <span class="n">LogSolver</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialization</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span><span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">)</span>
 
@@ -975,6 +933,8 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">integrator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialization</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_jac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">integrator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">integrator</span> <span class="o">=</span> <span class="n">ScipySolveBVP</span><span class="p">()</span>
 
@@ -992,7 +952,11 @@ document.write(`
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_default_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-        <span class="n">point_0</span><span class="p">,</span> <span class="n">point_1</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">point_0</span><span class="p">,</span> <span class="n">point_1</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">point_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">point_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="n">pos_init</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">point_0</span><span class="p">,</span> <span class="n">point_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">))</span>
 
@@ -1002,8 +966,8 @@ document.write(`
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">pos_init</span><span class="p">,</span> <span class="n">vel_init</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">_boundary_condition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_0</span><span class="p">,</span> <span class="n">state_1</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point_0</span><span class="p">,</span> <span class="n">point_1</span><span class="p">):</span>
-        <span class="n">pos_0</span> <span class="o">=</span> <span class="n">state_0</span><span class="p">[:</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">]</span>
-        <span class="n">pos_1</span> <span class="o">=</span> <span class="n">state_1</span><span class="p">[:</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">]</span>
+        <span class="n">pos_0</span> <span class="o">=</span> <span class="n">state_0</span><span class="p">[:</span> <span class="n">point_0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">pos_1</span> <span class="o">=</span> <span class="n">state_1</span><span class="p">[:</span> <span class="n">point_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pos_0</span> <span class="o">-</span> <span class="n">point_0</span><span class="p">,</span> <span class="n">pos_1</span> <span class="o">-</span> <span class="n">point_1</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">raveled_state</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
@@ -1020,11 +984,11 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        sol : array-like, shape=[2*dim, n_nodes]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">raveled_state</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">eq</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">eq</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">raveled_state</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic_equation</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">raveled_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">raveled_state</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Jacobian of boundary value problem.</span>
@@ -1070,7 +1034,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">_solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
         <span class="n">bvp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bvp</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">space</span><span class="p">)</span>
         <span class="n">bc</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">state_0</span><span class="p">,</span> <span class="n">state_1</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boundary_condition</span><span class="p">(</span>
-            <span class="n">state_0</span><span class="p">,</span> <span class="n">state_1</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span>
+            <span class="n">state_0</span><span class="p">,</span> <span class="n">state_1</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">jacobian</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1145,11 +1109,12 @@ document.write(`
 
 
     <span class="k">def</span> <span class="nf">_simplify_log_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_simplify_result_t</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">result</span><span class="p">[:</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="p">:])</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="p">[:</span> <span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:],</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="p">)</span></div>
 
 </pre></div>
 

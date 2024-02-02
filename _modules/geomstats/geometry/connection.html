@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 30, 2024, 12:27:23 PM"/>
+    <meta name="docbuild:last-update" content="Feb 2, 2024, 9:05:09 AM"/>
   </head>
   
   
@@ -503,22 +503,28 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        state : array-like, shape=[..., dim]</span>
+<span class="sd">        state : array-like, shape=[..., 2, dim]</span>
 <span class="sd">            Tangent vector at the position.</span>
-<span class="sd">        _time : array-like, shape=[..., dim]</span>
+<span class="sd">        _time : array-like, shape=[..., 2, dim]</span>
 <span class="sd">            Point on the manifold, the position at which to compute the</span>
 <span class="sd">            geodesic ODE.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        geodesic_ode : array-like, shape=[..., dim]</span>
+<span class="sd">        geodesic_ode : array-like, shape=[..., 2, dim]</span>
 <span class="sd">            Value of the vector field to be integrated at position.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">position</span><span class="p">,</span> <span class="n">velocity</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The geodesic equation is only implemented for points &quot;</span>
+                <span class="s2">&quot;represented by a vector.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
         <span class="n">equation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...kij,...i-&gt;...kj&quot;</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
         <span class="n">equation</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...kj,...j-&gt;...k&quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">equation</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">equation</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Connection.exp">
@@ -1114,9 +1120,7 @@ document.write(`
 <span class="sd">            Parameterized function for the geodesic curve starting at</span>
 <span class="sd">            initial_point with velocity initial_tangent_vec.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">_check_exp_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="p">,</span> <span class="s2">&quot;geodesic_ivp&quot;</span>
-        <span class="p">):</span>
+        <span class="k">if</span> <span class="n">_check_exp_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">solves_ivp</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span><span class="o">.</span><span class="n">geodesic_ivp</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
             <span class="p">)</span>
@@ -1142,9 +1146,7 @@ document.write(`
 <span class="sd">            Parameterized function for the geodesic curve starting at</span>
 <span class="sd">            initial_point and ending at end_point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">_check_log_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="p">,</span> <span class="s2">&quot;geodesic_bvp&quot;</span>
-        <span class="p">):</span>
+        <span class="k">if</span> <span class="n">_check_log_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">solves_bvp</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span><span class="o">.</span><span class="n">geodesic_bvp</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span>
                 <span class="n">end_point</span><span class="p">,</span>
