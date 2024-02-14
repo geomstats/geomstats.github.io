@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 5, 2024, 10:46:26 PM"/>
+    <meta name="docbuild:last-update" content="Feb 14, 2024, 10:38:33 AM"/>
   </head>
   
   
@@ -481,38 +481,28 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="ODEIVPSolver">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPSolver">[docs]</a>
-<span class="k">class</span> <span class="nc">ODEIVPSolver</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="ODEIVPIntegrator">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPIntegrator">[docs]</a>
+<span class="k">class</span> <span class="nc">ODEIVPIntegrator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for ode ivp solvers.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    save_result : bool</span>
 <span class="sd">        If True, result is stored after calling `integrate` or `integrate_t`.</span>
-<span class="sd">    state_is_raveled : bool</span>
-<span class="sd">        If True, state is represented by a 1d array.</span>
-<span class="sd">        Else, it is represented by `(n_vars, dim)`.</span>
-<span class="sd">    tfirst : bool</span>
-<span class="sd">        Declares function signature.</span>
-<span class="sd">        If True `f(t, y)`, else `f(y, t)`.</span>
 <span class="sd">    tchosen : bool</span>
 <span class="sd">        Informs about ability to solve at chosen times.</span>
 <span class="sd">        If False, then does not implement `integrate_t`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">state_is_raveled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tfirst</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">False</span>
-    <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state_is_raveled</span> <span class="o">=</span> <span class="n">state_is_raveled</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tfirst</span> <span class="o">=</span> <span class="n">tfirst</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">save_result</span> <span class="o">=</span> <span class="n">save_result</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tchosen</span> <span class="o">=</span> <span class="n">tchosen</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">result_</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="ODEIVPSolver.integrate">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPSolver.integrate">[docs]</a>
+<div class="viewcode-block" id="ODEIVPIntegrator.integrate">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPIntegrator.integrate">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Integrate force.</span>
@@ -520,8 +510,8 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        force : callable</span>
-<span class="sd">            Function to integrate.</span>
-<span class="sd">        initial_state : array-like</span>
+<span class="sd">            Function to integrate: `f(state, t)`.</span>
+<span class="sd">        initial_state : array-like, shape=[..., n_vars, *point_shape]</span>
 <span class="sd">            Initial state.</span>
 <span class="sd">        end_time : float or None</span>
 <span class="sd">            Integration end time.</span>
@@ -532,16 +522,16 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ODEIVPSolver.integrate_t">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPSolver.integrate_t">[docs]</a>
+<div class="viewcode-block" id="ODEIVPIntegrator.integrate_t">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ODEIVPIntegrator.integrate_t">[docs]</a>
     <span class="k">def</span> <span class="nf">integrate_t</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">t_eval</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Integrate force while choosing evaluating points.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        force : callable</span>
-<span class="sd">            Function to integrate.</span>
-<span class="sd">        initial_state : array-like</span>
+<span class="sd">            Function to integrate: `f(state, t)`.</span>
+<span class="sd">        initial_state : array-like, shape=[..., n_vars, *point_shape]</span>
 <span class="sd">            Initial state.</span>
 <span class="sd">        t_eval : array-like</span>
 <span class="sd">            Times at which to store the computed solution.</span>
@@ -557,7 +547,7 @@ document.write(`
 
 <div class="viewcode-block" id="GSIVPIntegrator">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.GSIVPIntegrator">[docs]</a>
-<span class="k">class</span> <span class="nc">GSIVPIntegrator</span><span class="p">(</span><span class="n">ODEIVPSolver</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">GSIVPIntegrator</span><span class="p">(</span><span class="n">ODEIVPIntegrator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;In-house ODE integrator.</span>
 
 <span class="sd">    Parameters</span>
@@ -572,9 +562,7 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step_type</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span> <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">save_result</span><span class="o">=</span><span class="n">save_result</span><span class="p">,</span> <span class="n">state_is_raveled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tfirst</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">save_result</span><span class="o">=</span><span class="n">save_result</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">step_type</span> <span class="o">=</span> <span class="n">step_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">=</span> <span class="n">n_steps</span>
 
@@ -625,8 +613,8 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        force : callable</span>
-<span class="sd">            Function to integrate.</span>
-<span class="sd">        initial_state : array-like</span>
+<span class="sd">            Function to integrate: `f(state, t)`.</span>
+<span class="sd">        initial_state : array-like, shape=[..., n_vars, *point_shape]</span>
 <span class="sd">            Initial state.</span>
 <span class="sd">        end_time : float or None</span>
 <span class="sd">            Integration end time.</span>
@@ -652,8 +640,12 @@ document.write(`
 
 <div class="viewcode-block" id="ScipySolveIVP">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.ivp.ScipySolveIVP">[docs]</a>
-<span class="k">class</span> <span class="nc">ScipySolveIVP</span><span class="p">(</span><span class="n">ODEIVPSolver</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ScipySolveIVP</span><span class="p">(</span><span class="n">ODEIVPIntegrator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for scipy.integrate.solve_ivp.</span>
+
+<span class="sd">    Check</span>
+<span class="sd">    https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html</span>
+<span class="sd">    for additional options.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -661,17 +653,18 @@ document.write(`
 <span class="sd">        Integration method.</span>
 <span class="sd">    save_result : bool</span>
 <span class="sd">        If True, result is stored after calling `integrate` or `integrate_t`.</span>
+<span class="sd">    point_ndim = int</span>
+<span class="sd">        Dimension of array representing a point in the space.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;RK45&quot;</span><span class="p">,</span> <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">save_result</span><span class="o">=</span><span class="n">save_result</span><span class="p">,</span> <span class="n">state_is_raveled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;RK45&quot;</span><span class="p">,</span> <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">save_result</span><span class="o">=</span><span class="n">save_result</span><span class="p">,</span> <span class="n">tchosen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">=</span> <span class="n">point_ndim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
 
     <span class="k">def</span> <span class="nf">_integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">initial_state_</span> <span class="ow">in</span> <span class="n">initial_state</span><span class="p">:</span>
                 <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -699,8 +692,8 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        force : callable</span>
-<span class="sd">            Function to integrate.</span>
-<span class="sd">        initial_state : array-like</span>
+<span class="sd">            Function to integrate: `f(state, t)`.</span>
+<span class="sd">        initial_state : array-like, shape=[..., n_vars, *point_shape]</span>
 <span class="sd">            Initial state.</span>
 <span class="sd">        end_time : float or None</span>
 <span class="sd">            Integration end time.</span>
@@ -720,8 +713,8 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        force : callable</span>
-<span class="sd">            Function to integrate.</span>
-<span class="sd">        initial_state : array-like</span>
+<span class="sd">            Function to integrate: `f(state, t)`.</span>
+<span class="sd">        initial_state : array-like, shape=[..., n_vars, *point_shape]</span>
 <span class="sd">            Initial state.</span>
 <span class="sd">        t_eval : array-like</span>
 <span class="sd">            Times at which to store the computed solution.</span>
@@ -736,18 +729,28 @@ document.write(`
     <span class="k">def</span> <span class="nf">_integrate_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">force_</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">force</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+            <span class="n">unraveled_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="n">force</span><span class="p">(</span><span class="n">unraveled_state</span><span class="p">,</span> <span class="n">t</span><span class="p">),</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">raveled_initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">initial_state</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">solve_ivp</span><span class="p">(</span>
             <span class="n">force_</span><span class="p">,</span>
             <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">end_time</span><span class="p">),</span>
-            <span class="n">initial_state</span><span class="p">,</span>
+            <span class="n">raveled_initial_state</span><span class="p">,</span>
             <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
             <span class="n">t_eval</span><span class="o">=</span><span class="n">t_eval</span><span class="p">,</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">result_to_backend_type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="n">result</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
