@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 19, 2024, 11:07:50 AM"/>
+    <meta name="docbuild:last-update" content="Feb 19, 2024, 11:47:18 AM"/>
   </head>
   
   
@@ -440,6 +440,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.complex_manifold</span> <span class="kn">import</span> <span class="n">ComplexManifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
 
 
 <div class="viewcode-block" id="VectorSpace">
@@ -587,6 +588,37 @@ document.write(`
         <span class="k">return</span> <span class="n">bound</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span></div>
 
 
+<div class="viewcode-block" id="VectorSpace.random_tangent_vec">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.VectorSpace.random_tangent_vec">[docs]</a>
+    <span class="k">def</span> <span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate random tangent vec.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+<span class="sd">            Optional, default: 1.</span>
+<span class="sd">        base_point :  array-like, shape={[n_samples, *point_shape], [*point_shape,]}</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vec at base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The number of base points must be the same as the &quot;</span>
+                <span class="s2">&quot;number of samples, when the number of base points is different from 1.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">basis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Basis of the vector space.&quot;&quot;&quot;</span>
@@ -602,7 +634,7 @@ document.write(`
 
 <div class="viewcode-block" id="MatrixVectorSpace">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.MatrixVectorSpace">[docs]</a>
-<span class="k">class</span> <span class="nc">MatrixVectorSpace</span><span class="p">(</span><span class="n">VectorSpace</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">MatrixVectorSpace</span><span class="p">(</span><span class="n">VectorSpace</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A matrix vector space.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="MatrixVectorSpace.basis_representation">
@@ -961,7 +993,7 @@ document.write(`
 
         <span class="n">submersed_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_submersion</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
-        <span class="n">n_batch</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">vector</span><span class="p">))</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">n_batch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">vector</span><span class="p">))</span>
         <span class="n">axis</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">submersed_vector</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="n">n_batch</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="n">constraint</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">submersed_vector</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
@@ -1023,26 +1055,6 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        projected : array-like, shape=[..., *point_shape]</span>
 <span class="sd">            Projected point.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="LevelSet.to_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.LevelSet.to_tangent">[docs]</a>
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a vector to a tangent space of the manifold.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Tangent vector at base point.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 </div>
 
