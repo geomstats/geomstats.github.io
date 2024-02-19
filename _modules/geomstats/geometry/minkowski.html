@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 15, 2024, 9:13:08 AM"/>
+    <meta name="docbuild:last-update" content="Feb 19, 2024, 10:54:36 AM"/>
   </head>
   
   
@@ -433,13 +433,10 @@ document.write(`
 <span class="sd">Lead author: Nina Miolane.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
-
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.algebra_utils</span> <span class="kn">import</span> <span class="n">from_vector_to_diagonal_matrix</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.flat_riemannian_metric</span> <span class="kn">import</span> <span class="n">FlatRiemannianMetric</span>
 
 
 <div class="viewcode-block" id="Minkowski">
@@ -471,131 +468,17 @@ document.write(`
 
 <div class="viewcode-block" id="MinkowskiMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">MinkowskiMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the pseudo-Riemannian Minkowski metric.</span>
-
-<span class="sd">    The metric is flat: the inner product is independent of the base point.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">MinkowskiMetric</span><span class="p">(</span><span class="n">FlatRiemannianMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the pseudo-Riemannian Minkowski metric.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MinkowskiMetric.metric_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric.metric_matrix">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inner product matrix, independent of the base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_prod_mat : array-like, shape=[..., dim, dim]</span>
-<span class="sd">            Inner-product matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">q</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature</span>
+        <span class="n">q</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">signature</span>
         <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span> <span class="o">+</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">)</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diagonal</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span><span class="p">,))</span>
-        <span class="k">return</span> <span class="n">mat</span></div>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">diagonal</span><span class="p">)</span>
 
-
-<div class="viewcode-block" id="MinkowskiMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric.inner_product">[docs]</a>
-    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a: array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        tangent_vec_b: array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point: array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-<span class="sd">            Optional, default: None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_product : array-like, shape=[...,]</span>
-<span class="sd">            Inner-product.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">q</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature</span>
-        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span> <span class="o">+</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">diagonal</span> <span class="o">*</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MinkowskiMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of `tangent_vec` at `base_point`.</span>
-
-<span class="sd">        The Riemannian exponential is the addition in the Minkowski space.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., dim]</span>
-<span class="sd">            Riemannian exponential.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span></div>
-
-
-<div class="viewcode-block" id="MinkowskiMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of `point` at `base_point`.</span>
-
-<span class="sd">        The Riemannian logarithm is the subtraction in the Minkowski space.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., dim]</span>
-<span class="sd">            Riemannian logarithm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span></div>
-
-
-<div class="viewcode-block" id="MinkowskiMetric.injectivity_radius">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.minkowski.MinkowskiMetric.injectivity_radius">[docs]</a>
-    <span class="k">def</span> <span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the radius of the injectivity domain.</span>
-
-<span class="sd">        This is is the supremum of radii r for which the exponential map is a</span>
-<span class="sd">        diffeomorphism from the open ball of radius r centered at the base</span>
-<span class="sd">        point onto its image.</span>
-<span class="sd">        In the case of the Minkowski space, it does not depend on the base</span>
-<span class="sd">        point and is infinite everywhere, because of the flat curvature.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        radius : array-like, shape=[...,]</span>
-<span class="sd">            Injectivity radius.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
-</div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">metric_matrix</span><span class="o">=</span><span class="n">metric_mat</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">)</span></div>
 
 </pre></div>
 
