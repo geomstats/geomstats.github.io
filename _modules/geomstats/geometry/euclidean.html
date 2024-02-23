@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 23, 2024, 10:11:27 AM"/>
+    <meta name="docbuild:last-update" content="Feb 23, 2024, 10:33:58 AM"/>
   </head>
   
   
@@ -430,10 +430,12 @@ document.write(`
   <h1>Source code for geomstats.geometry.euclidean</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Euclidean space.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span> <span class="nn">math</span>
+
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">VectorSpace</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.flat_riemannian_metric</span> <span class="kn">import</span> <span class="n">FlatRiemannianMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">check_is_batch</span><span class="p">,</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="Euclidean">
@@ -462,7 +464,7 @@ document.write(`
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">default_metric</span><span class="p">():</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Metric to equip the space with if equip is True.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">EuclideanMetric</span></div>
+        <span class="k">return</span> <span class="n">CanonicalEuclideanMetric</span></div>
 
 
     <span class="nd">@property</span>
@@ -503,20 +505,365 @@ document.write(`
 
 <div class="viewcode-block" id="EuclideanMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">EuclideanMetric</span><span class="p">(</span><span class="n">FlatRiemannianMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the Euclidean metric.</span>
+<span class="k">class</span> <span class="nc">EuclideanMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for a Euclidean metric.</span>
+
+<span class="sd">    This metric is:</span>
+<span class="sd">    - flat: the inner-product is independent of the base point;</span>
+<span class="sd">    - positive definite</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">metric_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_metric_matrix_dim</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">metric_matrix</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric_matrix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">metric_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span> <span class="o">=</span> <span class="n">metric_matrix</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_check_metric_matrix_dim</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">metric_matrix</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check metric matrix dimension.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">metric_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">expected_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric_matrix</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;metric_matrix shape is </span><span class="si">{</span><span class="n">metric_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">;&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;expected: </span><span class="si">{</span><span class="n">expected_shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="EuclideanMetric.metric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inner-product matrix, independent of the base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod_mat : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            Inner-product matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;`metric_matrix` is not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span><span class="p">),</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        Writing :math:`g_{ij}` the inner-product matrix at base point,</span>
+<span class="sd">        this computes :math:`mat_{ijk} = \partial_k g_{ij}`, where the</span>
+<span class="sd">        index k of the derivation is put last.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;`inner_product_derivative_matrix` is not implemented.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.christoffels">[docs]</a>
+    <span class="k">def</span> <span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Christoffel symbols associated with the connection.</span>
+
+<span class="sd">        The contravariant index is on the first dimension.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        gamma : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;The Christoffel symbols are not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.inner_product">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.inner_product">[docs]</a>
+    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a: array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        tangent_vec_b: array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point: array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_product : array-like, shape=[...,]</span>
+<span class="sd">            Inner-product.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.inner_coproduct">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.inner_coproduct">[docs]</a>
+    <span class="k">def</span> <span class="nf">inner_coproduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cotangent_vec_a</span><span class="p">,</span> <span class="n">cotangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute inner coproduct between two cotangent vectors at base point.</span>
+
+<span class="sd">        This is the inner product associated to the cometric matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cotangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">            Cotangent vector at `base_point`.</span>
+<span class="sd">        cotangent_vet_b : array-like, shape=[..., dim]</span>
+<span class="sd">            Cotangent vector at `base_point`.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_coproduct : float</span>
+<span class="sd">            Inner coproduct between the two cotangent vectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inner_coproduct</span><span class="p">(</span><span class="n">cotangent_vec_a</span><span class="p">,</span> <span class="n">cotangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.exp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.exp">[docs]</a>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute exp map of a base point in tangent vector direction.</span>
+
+<span class="sd">        The Riemannian exponential is vector addition in the Euclidean space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., dim]</span>
+<span class="sd">            Riemannian exponential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.log">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute log map using a base point and other point.</span>
+
+<span class="sd">        The Riemannian logarithm is the subtraction in the Euclidean space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point: array-like, shape=[..., dim]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        base_point: array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log: array-like, shape=[..., dim]</span>
+<span class="sd">            Riemannian logarithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.parallel_transport">[docs]</a>
+    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        On a Euclidean space, the parallel transport of a (tangent) vector</span>
+<span class="sd">        returns the vector itself.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold. Point to transport from.</span>
+<span class="sd">            Optional, default: None</span>
+<span class="sd">        direction : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold. Point to transport to.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec: array-like, shape=[..., dim]</span>
+<span class="sd">            Transported tangent vector at `exp_(base_point)(tangent_vec_b)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">transported_tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">transported_tangent_vec</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">direction</span><span class="p">,</span>
+            <span class="n">end_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.geodesic">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.geodesic">[docs]</a>
+    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
+
+<span class="sd">        Geodesic curve defined by either:</span>
+
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        - an initial point and an end point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
+<span class="sd">            an initial tangent vector must be given.</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim],</span>
+<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
+<span class="sd">            represents the different initial conditions, and the second</span>
+<span class="sd">            corresponds to time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Specify an end point or an initial tangent &quot;</span>
+                <span class="s2">&quot;vector to define the geodesic.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot specify both an end point and an initial tangent vector.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
+
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">ijk</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for geodesic curve.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            t : array-like, shape=[n_points,]</span>
+<span class="sd">                Times at which to compute points of the geodesics.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n,...</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;...n</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">initial_point</span> <span class="o">+</span> <span class="n">tangent_vecs</span>
+
+        <span class="k">return</span> <span class="n">path</span></div>
+
+
+<div class="viewcode-block" id="EuclideanMetric.injectivity_radius">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.injectivity_radius">[docs]</a>
+    <span class="k">def</span> <span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the radius of the injectivity domain.</span>
+
+<span class="sd">        This is is the supremum of radii r for which the exponential map is a</span>
+<span class="sd">        diffeomorphism from the open ball of radius r centered at the base</span>
+<span class="sd">        point onto its image.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., {dim, [n, m]}]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        radius : array-like, shape=[...,]</span>
+<span class="sd">            Injectivity radius.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CanonicalEuclideanMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.CanonicalEuclideanMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">CanonicalEuclideanMetric</span><span class="p">(</span><span class="n">EuclideanMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the canonical Euclidean metric.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    Metric matrix is identity (NB: `FlatRiemannianMetric` allows</span>
+<span class="sd">    Metric matrix is identity (NB: `EuclideanMetric` allows</span>
 <span class="sd">    to use a different metric matrix).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
 
-<div class="viewcode-block" id="EuclideanMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.inner_product">[docs]</a>
+<div class="viewcode-block" id="CanonicalEuclideanMetric.inner_product">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.CanonicalEuclideanMetric.inner_product">[docs]</a>
     <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
 
@@ -545,8 +892,8 @@ document.write(`
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="EuclideanMetric.squared_norm">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.squared_norm">[docs]</a>
+<div class="viewcode-block" id="CanonicalEuclideanMetric.squared_norm">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.CanonicalEuclideanMetric.squared_norm">[docs]</a>
     <span class="k">def</span> <span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the square of the norm of a vector.</span>
 
@@ -570,8 +917,8 @@ document.write(`
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">sq_norm</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="EuclideanMetric.norm">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.EuclideanMetric.norm">[docs]</a>
+<div class="viewcode-block" id="CanonicalEuclideanMetric.norm">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.euclidean.CanonicalEuclideanMetric.norm">[docs]</a>
     <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute norm of a vector.</span>
 
