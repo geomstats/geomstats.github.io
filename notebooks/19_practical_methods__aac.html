@@ -51,7 +51,7 @@
     <link rel="prev" title="Shape analysis of curves with the Square Root Velocity metric" href="10_practical_methods__shape_analysis.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 23, 2024, 10:38:23 AM"/>
+    <meta name="docbuild:last-update" content="Feb 26, 2024, 2:15:49 PM"/>
   </head>
   
   
@@ -505,9 +505,6 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 
-<span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">MatricesMetric</span> <span class="k">as</span> <span class="n">SymmetricMatricesMetric</span><span class="p">,</span>
-<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.stratified.graph_space</span> <span class="kn">import</span> <span class="n">GraphSpace</span>
 <span class="kn">from</span> <span class="nn">geomstats.learning.aac</span> <span class="kn">import</span> <span class="n">AAC</span>
 
@@ -560,51 +557,36 @@ INFO: Using numpy backend
 </div>
 <section id="A-primer-in-space,-metric-and-aligners">
 <h2>A primer in space, metric and aligners<a class="headerlink" href="#A-primer-in-space,-metric-and-aligners" title="Link to this heading">#</a></h2>
-<p>The first step is to create the embedding space. By default, it comes equipped with a metric.</p>
-<div class="nbinput docutils container">
+<p>The first step is to create the total space and then add quotient structure to it.</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">()</span>  <span class="c1"># permutations by default</span>
 
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span>
+<span class="n">graph_space</span> <span class="o">=</span> <span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [3]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.GraphSpaceMetric at 0x7fbb7bec6210&gt;
-</pre></div></div>
-</div>
-<p>By default, the space also comes with a total space (<code class="docutils literal notranslate"><span class="pre">Matrices</span></code>), which in turn comes equipped with a matrix (<code class="docutils literal notranslate"><span class="pre">MatricesMetric</span></code>).</p>
-<div class="nbinput docutils container">
+<p>By default, the total space comes equipped with the Frobenius metric (<code class="docutils literal notranslate"><span class="pre">MatricesMetric</span></code>) and graph space with a quotient metric.</p>
+<p>With the FAQ alignment and the default Frobenius norm on the total space, we match two graphs and a set of graphs to a base graph:</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">metric</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">permutated_graph</span> <span class="o">=</span> <span class="n">total_space</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">permuted_graphs</span> <span class="o">=</span> <span class="n">total_space</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [4]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.matrices.MatricesMetric at 0x7fbb7bb393d0&gt;
-</pre></div></div>
-</div>
-<p>(<code class="docutils literal notranslate"><span class="pre">total_metric</span></code> can also be accessed from metric: <code class="docutils literal notranslate"><span class="pre">graph_space.metric.total_space_metric</span></code>.)</p>
-<p>The default aligner is ‘ID’ (identity), which means the graphs are not permuted. To set ‘FAQ’, do:</p>
+<p>To compute the distance we can either call the distance function:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_aligner</span><span class="p">(</span><span class="s2">&quot;FAQ&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -614,21 +596,15 @@ INFO: Using numpy backend
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.FAQAligner at 0x7fbb7bb65510&gt;
+2.6457513110645907
 </pre></div></div>
 </div>
-<p>With the FAQ alignment and the default Frobenious norm, we match two graphs and a set of graphs to a base graph:</p>
+<p>Or, if matching has been already done, we can use the total space distance, to avoid computing the matching twice:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_permuted</span> <span class="o">=</span> <span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">align_point_to_point</span><span class="p">(</span>
-    <span class="n">base_graph</span><span class="o">=</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graph_to_permute</span><span class="o">=</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="p">)</span>
-
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">align_point_to_point</span><span class="p">(</span>
-    <span class="n">base_graph</span><span class="o">=</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graph_to_permute</span><span class="o">=</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">permutated_graph</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -638,131 +614,28 @@ INFO: Using numpy backend
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[[0., 1., 1., 1., 1.],
-        [0., 0., 1., 0., 1.],
-        [0., 1., 0., 0., 0.],
-        [0., 0., 1., 0., 0.],
-        [0., 1., 0., 0., 0.]],
-
-       [[0., 1., 0., 0., 1.],
-        [0., 0., 0., 1., 1.],
-        [0., 0., 0., 0., 1.],
-        [0., 1., 1., 0., 0.],
-        [1., 1., 1., 1., 0.]]])
+2.6457513110645907
 </pre></div></div>
 </div>
-<p>To compute the distance we can either call the distance function:</p>
+<p>We can also align points to geodesics:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [7]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graphset_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [7]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-2.6457513110645907
-</pre></div></div>
-</div>
-<p>Or, if the matching has been already run, we can use the identity matcher in the distance, to avoid computing the matching twice:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_aligner</span><span class="p">(</span><span class="s2">&quot;ID&quot;</span><span class="p">)</span>
-
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graph_permuted</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [8]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-2.6457513110645907
-</pre></div></div>
-</div>
-<p>Alternatively, use can use the total space metric instead.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">total_space_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">graphset_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">graph_permuted</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [9]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-2.6457513110645907
-</pre></div></div>
-</div>
-<p>We can change the total space metric by doing:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">SymmetricMatricesMetric</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [10]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.matrices.Matrices at 0x7fbb7bcb2350&gt;
-</pre></div></div>
-</div>
-<p>For the point to geodesic aligner, there’s no default set. In fact, if you try something like <code class="docutils literal notranslate"><span class="pre">graph_space.metric.align_point_to_geodesic(geodesic,</span> <span class="pre">point)</span></code>, a (hopefully) meaningful error will be raised, explaining how to set the point to geodesic aligner.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_point_to_geodesic_aligner</span><span class="p">(</span>
-    <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">s_min</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">10</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [11]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.PointToGeodesicAligner at 0x7fbb7bd33ed0&gt;
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_point</span><span class="p">,</span> <span class="n">end_point</span> <span class="o">=</span> <span class="n">graph_space</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="n">geodesic_func</span> <span class="o">=</span> <span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span><span class="n">init_point</span><span class="p">,</span> <span class="n">end_point</span><span class="p">)</span>
 
-<span class="n">aligned_init_point</span> <span class="o">=</span> <span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">align_point_to_geodesic</span><span class="p">(</span>
+<span class="n">aligned_init_point</span> <span class="o">=</span> <span class="n">total_space</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align_point_to_geodesic</span><span class="p">(</span>
     <span class="n">geodesic_func</span><span class="p">,</span> <span class="n">init_point</span>
 <span class="p">)</span>
 
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">total_space_metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">init_point</span><span class="p">,</span> <span class="n">aligned_init_point</span><span class="p">)</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">init_point</span><span class="p">,</span> <span class="n">aligned_init_point</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -776,32 +649,23 @@ array([[[0., 1., 1., 1., 1.],
 <h2>Frechet Mean<a class="headerlink" href="#Frechet-Mean" title="Link to this heading">#</a></h2>
 <p>Reference: Calissano, A., Feragen, A., &amp; Vantini, S. (2020). Populations of unlabeled networks: Graph space geometry and geodesic principal components. MOX Report.</p>
 <p>Given <span class="math notranslate nohighlight">\(\{[X_1], \dots, [X_k]\}, [x_i] \in X/T\)</span>, we estimate the Frechet Mean using AAC consisting on two steps: 1. Compute <span class="math notranslate nohighlight">\(\hat{X}\)</span> as arithmetic mean of <span class="math notranslate nohighlight">\(\{X_1, \dots, X_k\}, X_i \in X\)</span> 2. Using graph to graph alignment to find <span class="math notranslate nohighlight">\(\{X_1, \dots, X_k\}, X_i \in X\)</span> optimally aligned with <span class="math notranslate nohighlight">\(\hat{X}\)</span></p>
-<p>Let’s instantiate the graph space and set the aligner.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+<p>Let’s instantiate the graph space.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_aligner</span><span class="p">(</span><span class="s2">&quot;FAQ&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">()</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">();</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [13]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.FAQAligner at 0x7fbb7bb857d0&gt;
-</pre></div></div>
 </div>
 <p>And now create the estimator, and fit the data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_fm</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;frechet_mean&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_fm</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span> <span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;frechet_mean&quot;</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 
 <span class="n">fm</span> <span class="o">=</span> <span class="n">aac_fm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">graphset_2</span><span class="p">)</span>
 
@@ -818,74 +682,45 @@ WARNING: Maximum number of iterations 20 reached. The estimate may be inaccurate
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[0.  , 0.82, 0.81, 0.4 , 0.34],
-       [0.95, 0.  , 0.87, 0.59, 0.79],
-       [0.51, 0.4 , 0.  , 0.28, 0.16],
-       [0.88, 0.81, 0.73, 0.  , 0.6 ],
-       [0.61, 0.46, 0.7 , 0.07, 0.  ]])
+array([[0.  , 0.9 , 0.37, 0.9 , 0.59],
+       [0.61, 0.  , 0.25, 0.83, 0.66],
+       [0.29, 0.79, 0.  , 0.44, 0.49],
+       [0.19, 0.61, 0.23, 0.  , 0.29],
+       [0.87, 0.92, 0.73, 0.86, 0.  ]])
 </pre></div></div>
 </div>
 </section>
 <section id="Principal-Components">
 <h2>Principal Components<a class="headerlink" href="#Principal-Components" title="Link to this heading">#</a></h2>
 <p>Reference: Calissano, A., Feragen, A., &amp; Vantini, S. (2020). Populations of unlabeled networks: Graph space geometry and geodesic principal components. MOX Report.</p>
-<p>We estimate the Generalized Geodesics Principal Components Analysis (GGPCA) using AAC. Given ${[X_1], <span class="math">\dots</span>, [X_k]}, (s_i,[X_i]) :nbsphinx-math:<a href="#id1"><span class="problematic" id="id2">`</span></a>in <a href="#id3"><span class="problematic" id="id4">`</span></a>X/T $ we are searching for:</p>
-<div class="math notranslate nohighlight">
-\[\gamma: \mathbb{R}\rightarrow X/T\]</div>
-<p>generalized geodesic principal component capturing the majority of the variability of the dataset. The AAC for ggpca works in two steps:</p>
+<p>We estimate the Generalized Geodesics Principal Components Analysis (GGPCA) using AAC. Given ${[X_1], <span class="math">\dots</span>, [X_k]}, (s_i,[X_i]) <span class="math">\in `X/T $ we are searching for: :math:</span>gamma: mathbb{R}rightarrow X/T` generalized geodesic principal component capturing the majority of the variability of the dataset. The AAC for ggpca works in two steps:</p>
 <ol class="arabic simple">
 <li><p>finding <span class="math notranslate nohighlight">\(\delta: \mathbb{R}\rightarrow X\)</span> principal component in the set of adjecency matrices <span class="math notranslate nohighlight">\(\{X_1, \dots, X_k\}, X_i \in X\)</span></p></li>
 <li><p>finding <span class="math notranslate nohighlight">\(\{X_1, \dots, X_k\}, X_i \in X\)</span> as optimally aligned with respect to <span class="math notranslate nohighlight">\(\gamma\)</span>. The estimation required a point to geodesic aligment defined in the metric.</p></li>
 </ol>
 <p>As before:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_aligner</span><span class="p">(</span><span class="s2">&quot;FAQ&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [15]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.FAQAligner at 0x7fbb7bb67990&gt;
-</pre></div></div>
-</div>
-<p>For GGPCA, we also need to set the pont to geodesic aligner.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_point_to_geodesic_aligner</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">s_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">()</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [16]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.PointToGeodesicAligner at 0x7fbb7bb94410&gt;
-</pre></div></div>
-</div>
+<p>For GGPCA, we also need the point to geodesic aligner.</p>
 <p>Again, create the estimator and fit the data.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_ggpca</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;ggpca&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_ggpca</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span> <span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;ggpca&quot;</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="n">aac_ggpca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">graphset_3</span><span class="p">);</span>
 </pre></div>
@@ -894,7 +729,7 @@ array([[0.  , 0.82, 0.81, 0.4 , 0.34],
 <section id="Regression">
 <h3>Regression<a class="headerlink" href="#Regression" title="Link to this heading">#</a></h3>
 <p>Reference: Calissano, A., Feragen, A., &amp; Vantini, S. (2022). Graph-valued regression: Prediction of unlabelled networks in a non-Euclidean graph space. Journal of Multivariate Analysis, 190, 104950.</p>
-<p>We estimate a graph-to-value regression model to predict graph from scalar or vectors. Given ${(s_1,[X_1]), <span class="math">\dots</span>, (s_k, [X_k])}, (s_i,[X_i]) <span class="math">\in `:nbsphinx-math:</span>mathbb{R}`^p:nbsphinx-math:<a href="#id5"><span class="problematic" id="id6">`</span></a>times <a href="#id7"><span class="problematic" id="id8">`</span></a>X/T $ we are searching for:</p>
+<p>We estimate a graph-to-value regression model to predict graph from scalar or vectors. Given ${(s_1,[X_1]), <span class="math">\dots</span>, (s_k, [X_k])}, (s_i,[X_i]) <span class="math">\in `:nbsphinx-math:</span>mathbb{R}`^p:nbsphinx-math:<a href="#id1"><span class="problematic" id="id2">`</span></a>times <a href="#id3"><span class="problematic" id="id4">`</span></a>X/T $ we are searching for:</p>
 <div class="math notranslate nohighlight">
 \[f: \mathbb{R}^p\rightarrow X/T\]</div>
 <p>where <span class="math notranslate nohighlight">\(f\in \mathcal{F}(X/T)\)</span> is a generalized geodesic regression model, i.e., the canonical projection onto Graph Space of a regression line <span class="math notranslate nohighlight">\(h_\beta : \mathbb{R}^p\rightarrow X\)</span> of the form</p>
@@ -906,27 +741,18 @@ array([[0.  , 0.82, 0.81, 0.4 , 0.34],
 <p>and the searching for <span class="math notranslate nohighlight">\(\{X_1, \dots, X_k\}, X_i \in X\)</span> optimally aligned with respect to the prediction along the current regression model:</p>
 <div class="math notranslate nohighlight">
 \[\min_{t\in T}d_X(h_\beta(s_i),t^TX_it)\]</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [18]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-
-<span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">set_aligner</span><span class="p">(</span><span class="s2">&quot;FAQ&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_space</span> <span class="o">=</span> <span class="n">GraphSpace</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">()</span>
+<span class="n">total_space</span><span class="o">.</span><span class="n">equip_with_quotient_structure</span><span class="p">();</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [18]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;geomstats.geometry.stratified.graph_space.FAQAligner at 0x7fbb7bea1ed0&gt;
-</pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)])</span>
@@ -934,24 +760,32 @@ array([[0.  , 0.82, 0.81, 0.4 , 0.34],
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_reg</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;regression&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">graph_space</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_reg</span> <span class="o">=</span> <span class="n">AAC</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span> <span class="n">estimate</span><span class="o">=</span><span class="s2">&quot;regression&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [21]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_reg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">graphset_1</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING: Maximum number of iterations 20 reached. The estimate may be inaccurate
+</pre></div></div>
+</div>
 <p>The coefficients are saved in the following attributes and they can be changed into a graph shape.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aac_reg</span><span class="o">.</span><span class="n">total_space_estimator</span><span class="o">.</span><span class="n">coef_</span>
@@ -959,41 +793,41 @@ array([[0.  , 0.82, 0.81, 0.4 , 0.34],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 array([[-0.        ],
-       [-0.09958506],
-       [-0.05394191],
-       [ 0.02904564],
-       [-0.06639004],
-       [-0.02904564],
+       [ 0.02115813],
+       [ 0.00890869],
+       [-0.0233853 ],
+       [-0.00668151],
+       [-0.02561247],
        [-0.        ],
-       [ 0.05394191],
-       [ 0.01659751],
-       [-0.04564315],
+       [ 0.04899777],
+       [-0.04120267],
+       [ 0.02004454],
+       [ 0.0233853 ],
+       [ 0.06458797],
        [-0.        ],
-       [ 0.0373444 ],
+       [-0.06904232],
+       [-0.02115813],
+       [-0.02115813],
+       [ 0.07238307],
+       [ 0.04008909],
        [-0.        ],
-       [-0.03319502],
-       [ 0.0746888 ],
-       [ 0.09543568],
-       [ 0.02489627],
-       [ 0.00829876],
+       [ 0.07572383],
        [-0.        ],
-       [-0.11618257],
-       [-0.0746888 ],
-       [ 0.09128631],
-       [ 0.10373444],
-       [ 0.04979253],
+       [-0.04788419],
+       [ 0.0701559 ],
+       [ 0.00445434],
        [-0.        ]])
 </pre></div></div>
 </div>
 <p>A graph can be predicted using the fit model and the corresponding prediction error can be computed:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph_pred</span> <span class="o">=</span> <span class="n">aac_reg</span><span class="o">.</span><span class="n">total_space_estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
@@ -1003,12 +837,12 @@ array([[-0.        ],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-16.511901318893987
+16.93063035236635
 </pre></div></div>
 </div>
 </section>
