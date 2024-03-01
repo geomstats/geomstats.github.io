@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 1, 2024, 9:11:27 AM"/>
+    <meta name="docbuild:last-update" content="Mar 1, 2024, 4:42:46 PM"/>
   </head>
   
   
@@ -432,6 +432,12 @@ document.write(`
 
 <span class="sd">Define the product of a Riemannian metric with a scalar number.</span>
 
+<span class="sd">Public Methods:</span>
+<span class="sd">    register_scaled_method(func_name, scaling_type)</span>
+
+<span class="sd">Public classes</span>
+<span class="sd">    ScalarProductMetric</span>
+
 <span class="sd">Lead author: John Harvey.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -440,24 +446,36 @@ document.write(`
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">import</span> <span class="nn">geomstats.errors</span>
 
-<span class="n">SQRT_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;norm&quot;</span><span class="p">,</span> <span class="s2">&quot;dist&quot;</span><span class="p">,</span> <span class="s2">&quot;dist_broadcast&quot;</span><span class="p">,</span> <span class="s2">&quot;dist_pairwise&quot;</span><span class="p">,</span> <span class="s2">&quot;diameter&quot;</span><span class="p">]</span>
-<span class="n">LINEAR_LIST</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;metric_matrix&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inner_product&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inner_product_derivative_matrix&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;squared_norm&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;squared_dist&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;covariant_riemann_tensor&quot;</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">QUADRATIC_LIST</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">INVERSE_LIST</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;cometric_matrix&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inner_coproduct&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;hamiltonian&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;sectional_curvature&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;scalar_curvature&quot;</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">INVERSE_SQRT_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;normalize&quot;</span><span class="p">,</span> <span class="s2">&quot;random_unit_tangent_vec&quot;</span><span class="p">,</span> <span class="s2">&quot;normal_basis&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="register_scaled_method">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.scalar_product_metric.register_scaled_method">[docs]</a>
+<span class="k">def</span> <span class="nf">register_scaled_method</span><span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">scaling_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register the scaling factor of a method of a RiemannianMetric.</span>
+
+<span class="sd">    The ScalarProductMetric class rescales various methods of a</span>
+<span class="sd">    RiemannianMetric by the correct factor. The default behaviour is to</span>
+<span class="sd">    rescale linearly. This method allows the user to add a new method to be</span>
+<span class="sd">    rescaled according to a different rule.</span>
+
+<span class="sd">    Note that this method must be called before the ScalarProductMetric is</span>
+<span class="sd">    instantiated. It does not affect objects which already exist.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func_name : str</span>
+<span class="sd">        The name of a method from a RiemannianMetric object which must be</span>
+<span class="sd">        rescaled.</span>
+<span class="sd">    scaling_type : str, {&#39;sqrt&#39;,</span>
+<span class="sd">                         &#39;linear&#39;,</span>
+<span class="sd">                         &#39;quadratic&#39;,</span>
+<span class="sd">                         &#39;inverse&#39;,</span>
+<span class="sd">                         &#39;inverse_sqrt&#39;}</span>
+<span class="sd">        How the method should be rescaled as a function of</span>
+<span class="sd">        ScalarProductMetric.scale.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_ScaledMethodsRegistry</span><span class="o">.</span><span class="n">_add_scaled_method</span><span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">scaling_type</span><span class="p">)</span></div>
+
 
 
 <span class="k">def</span> <span class="nf">_wrap_attr</span><span class="p">(</span><span class="n">scaling_factor</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
@@ -469,22 +487,84 @@ document.write(`
     <span class="k">return</span> <span class="n">response</span>
 
 
-<span class="k">def</span> <span class="nf">_get_scaling_factor</span><span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">SQRT_LIST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">_ScaledMethodsRegistry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to hold lists of methods and their scaling functions.&quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">LINEAR_LIST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">scale</span>
+    <span class="n">_SQRT_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;norm&quot;</span><span class="p">,</span> <span class="s2">&quot;dist&quot;</span><span class="p">,</span> <span class="s2">&quot;dist_broadcast&quot;</span><span class="p">,</span> <span class="s2">&quot;dist_pairwise&quot;</span><span class="p">,</span> <span class="s2">&quot;diameter&quot;</span><span class="p">]</span>
+    <span class="n">_LINEAR_LIST</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;metric_matrix&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inner_product&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inner_product_derivative_matrix&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;squared_norm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;squared_dist&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;covariant_riemann_tensor&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">_QUADRATIC_LIST</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_INVERSE_LIST</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;cometric_matrix&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inner_coproduct&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hamiltonian&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sectional_curvature&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_curvature&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">_INVERSE_SQRT_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;normalize&quot;</span><span class="p">,</span> <span class="s2">&quot;random_unit_tangent_vec&quot;</span><span class="p">,</span> <span class="s2">&quot;normal_basis&quot;</span><span class="p">]</span>
+    <span class="n">_RESERVED_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;underlying_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">QUADRATIC_LIST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">_SCALING_LISTS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_SQRT_LIST</span><span class="p">,</span>
+        <span class="n">_LINEAR_LIST</span><span class="p">,</span>
+        <span class="n">_QUADRATIC_LIST</span><span class="p">,</span>
+        <span class="n">_INVERSE_LIST</span><span class="p">,</span>
+        <span class="n">_INVERSE_SQRT_LIST</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">_SCALING_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;quadratic&quot;</span><span class="p">,</span> <span class="s2">&quot;inverse&quot;</span><span class="p">,</span> <span class="s2">&quot;inverse_sqrt&quot;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">INVERSE_LIST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">scale</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_add_scaled_method</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">scaling_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure ScalarProductMetric to scale an attribute.</span>
 
-    <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">INVERSE_SQRT_LIST</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
+<span class="sd">        This method should be accessed via</span>
+<span class="sd">        geomstats.geometry.scalar_product_metric.register_scaled_method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scaling_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SCALING_NAMES</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SCALING_LISTS</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">list_of_methods</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SCALING_LISTS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">list_of_methods</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2">&#39; already has an assigned scaling rule &quot;</span>
+                    <span class="s2">&quot;which cannot be changed.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_RESERVED_NAMES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2">&#39; is reserved for internal use.&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scaling_dict</span><span class="p">[</span><span class="n">scaling_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">scaling_type</span><span class="si">}</span><span class="s2">&#39; is not an admissible value. Please &quot;</span>
+                <span class="s2">&quot;provide one of &#39;sqrt&#39;, &#39;linear&#39;, &#39;quadratic&#39;, &quot;</span>
+                <span class="s2">&quot;&#39;inverse&#39;, &#39;inverse_sqrt&#39;.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_get_scaling_factor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SQRT_LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_LINEAR_LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">scale</span>
+
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_QUADRATIC_LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_INVERSE_LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">scale</span>
+
+        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_INVERSE_SQRT_LIST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
 
 <div class="viewcode-block" id="ScalarProductMetric">
@@ -492,30 +572,33 @@ document.write(`
 <span class="k">class</span> <span class="nc">ScalarProductMetric</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for scalar products of Riemannian and pseudo-Riemannian metrics.</span>
 
-<span class="sd">    This class multiplies the (0,2) metric tensor &#39;underlying_metric&#39; by a scalar</span>
-<span class="sd">    &#39;scaling_factor&#39;. Note that this does not scale distances by &#39;scaling_factor&#39;. That</span>
-<span class="sd">    would require multiplication by the square of the scalar.</span>
+<span class="sd">    This class multiplies the (0,2) metric tensor &#39;underlying_metric&#39; by a</span>
+<span class="sd">    scalar &#39;scaling_factor&#39;. Note that this does not scale distances by</span>
+<span class="sd">    &#39;scaling_factor&#39;. That would require multiplication by the square of the</span>
+<span class="sd">    scalar.</span>
 
 <span class="sd">    An object of this type can also be instantiated by the expression</span>
 <span class="sd">    scaling_factor * underlying_metric.</span>
 
-<span class="sd">    This class acts as a wrapper for the underlying Riemannian metric. All public</span>
-<span class="sd">    attributes apart from &#39;underlying_metric&#39; and &#39;scaling_factor&#39; are loaded from the</span>
-<span class="sd">    underlying metric at initialization and rescaled by the appropriate factor. Changes</span>
-<span class="sd">    to the underlying metric at runtime will not affect the attributes of this object.</span>
+<span class="sd">    This class acts as a wrapper for the underlying Riemannian metric. All</span>
+<span class="sd">    public attributes apart from &#39;underlying_metric&#39; and &#39;scaling_factor&#39; are</span>
+<span class="sd">    loaded from the underlying metric at initialization and rescaled by the</span>
+<span class="sd">    appropriate factor. Changes to the underlying metric at runtime will not</span>
+<span class="sd">    affect the attributes of this object.</span>
 
 <span class="sd">    One exception to this is when the &#39;underlying_metric&#39; is itself of type</span>
 <span class="sd">    ScalarProductMetric. In this case, rather than wrapping the wrapper, the</span>
-<span class="sd">    &#39;underlying_metric&#39; of the first ScalarProductMetric object is wrapped a second</span>
-<span class="sd">    time with a new &#39;scaling_factor&#39;.</span>
+<span class="sd">    &#39;underlying_metric&#39; of the first ScalarProductMetric object is wrapped a</span>
+<span class="sd">    second time with a new &#39;scaling_factor&#39;.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    underlying_metric : RiemannianMetric</span>
 <span class="sd">        The original metric of the manifold which is being scaled.</span>
 <span class="sd">    scale : float</span>
-<span class="sd">        The value by which to scale the metric. Note that this rescales the (0,2)</span>
-<span class="sd">        metric tensor, so distances are rescaled by the square root of this.</span>
+<span class="sd">        The value by which to scale the metric. Note that this rescales the</span>
+<span class="sd">        (0,2) metric tensor, so distances are rescaled by the square root of</span>
+<span class="sd">        this.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">underlying_metric</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
@@ -529,9 +612,11 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span> <span class="o">=</span> <span class="n">underlying_metric</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
 
-        <span class="n">reserved_names</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;underlying_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="n">reserved_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="n">_ScaledMethodsRegistry</span><span class="o">.</span><span class="n">_RESERVED_NAMES</span>
+            <span class="p">):</span>
                 <span class="k">continue</span>
 
             <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
@@ -545,16 +630,18 @@ document.write(`
                     <span class="p">):</span>
                         <span class="k">raise</span> <span class="n">ex</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">scale</span> <span class="o">=</span> <span class="n">_get_scaling_factor</span><span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="n">_ScaledMethodsRegistry</span><span class="o">.</span><span class="n">_get_scaling_factor</span><span class="p">(</span>
+                    <span class="n">attr_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+                <span class="p">)</span>
                 <span class="n">method</span> <span class="o">=</span> <span class="n">attr</span> <span class="k">if</span> <span class="n">scale</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_wrap_attr</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiply the metric by a scalar.</span>
 
-<span class="sd">        This method multiplies the (0,2) metric tensor by a scalar. Note that this does</span>
-<span class="sd">        not scale distances by the scalar. That would require multiplication by the</span>
-<span class="sd">        square of the scalar.</span>
+<span class="sd">        This method multiplies the (0,2) metric tensor by a scalar. Note that</span>
+<span class="sd">        this does not scale distances by the scalar. That would require</span>
+<span class="sd">        multiplication by the square of the scalar.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -573,9 +660,9 @@ document.write(`
     <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiply the metric by a scalar.</span>
 
-<span class="sd">        This method multiplies the (0,2) metric tensor by a scalar. Note that this does</span>
-<span class="sd">        not scale distances by the scalar. That would require multiplication by the</span>
-<span class="sd">        square of the scalar.</span>
+<span class="sd">        This method multiplies the (0,2) metric tensor by a scalar. Note that</span>
+<span class="sd">        this does not scale distances by the scalar. That would require</span>
+<span class="sd">        multiplication by the square of the scalar.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
