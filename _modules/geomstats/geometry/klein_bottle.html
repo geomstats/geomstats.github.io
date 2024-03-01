@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 26, 2024, 2:15:49 PM"/>
+    <meta name="docbuild:last-update" content="Mar 1, 2024, 9:11:27 AM"/>
   </head>
   
   
@@ -637,6 +637,191 @@ document.write(`
         <span class="n">point_even</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x_canonical</span><span class="p">,</span> <span class="n">y_canonical_even</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">point_odd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x_canonical</span><span class="p">,</span> <span class="n">y_canonical_odd</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">num_steps</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">point_even</span><span class="p">,</span> <span class="n">point_odd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KleinBottle.to_coords">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.klein_bottle.KleinBottle.to_coords">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">coords_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from intrinsic to coordinates type.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the Klein bottle, in intrinsic coordinates.</span>
+<span class="sd">        coords_type : str</span>
+<span class="sd">            One of the following: &quot;extrinsic&quot;, &quot;bottle&quot;, &quot;bagel&quot;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transformed_point : array-like, shape=[..., repr_dim]</span>
+<span class="sd">            Point in new representation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coords_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;to_</span><span class="si">{</span><span class="n">coords_type</span><span class="si">}</span><span class="s2">_coords&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">coords_func</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KleinBottle.to_extrinsic_coords">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.klein_bottle.KleinBottle.to_extrinsic_coords">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">to_extrinsic_coords</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert point to extrinsic coordinates.</span>
+
+<span class="sd">        Convert from the intrinsic coordinates in the Klein bottle (2 parameters),</span>
+<span class="sd">        to the extrinsic coordinates in Euclidean space (4 parameters).</span>
+<span class="sd">        For intrinsic parameters (\theta,v) the extrinsic Euclidean parametrization is</span>
+<span class="sd">        [https://en.wikipedia.org/wiki/Klein_bottle#4-D_non-intersecting]:</span>
+
+<span class="sd">        x = R \left(cos(\theta/2)cos(v) - sin(\theta/2)sin(2v)\right)</span>
+<span class="sd">        y = R \left(sin(\theta/2)cos(v) + cos(\theta/2)sin(2v)\right)</span>
+<span class="sd">        z = P cos(\theta)(1+\epsilon sin(v))</span>
+<span class="sd">        w = P sin(\theta)(1+\epsilon sin(v))</span>
+
+<span class="sd">        for 0\leq\theta&lt;2\pi and 0\leq v&lt;2\pi. P and R are constants to determine</span>
+<span class="sd">        the aspect ratio.</span>
+<span class="sd">        ε is any small constant .</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the Klein bottle, in intrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., 4]</span>
+<span class="sd">            Point on the Klein bottle, in extrinsic coordinates in</span>
+<span class="sd">            Euclidean space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">R</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">R</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span><span class="p">))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">P</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">P</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">w</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KleinBottle.to_bottle_coords">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.klein_bottle.KleinBottle.to_bottle_coords">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">to_bottle_coords</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert point to coordinates in R^3 parametrizing the Klein bottle.</span>
+
+<span class="sd">        Convert from the intrinsic coordinates in the Klein bottle (2 parameters),</span>
+<span class="sd">        to the coordinates of the Klein bottle parametrization in 3d Euclidean space</span>
+<span class="sd">        (3 parameters).</span>
+<span class="sd">        For intrinsic parameters (\theta,v) the Klein bottle parametrization is</span>
+<span class="sd">        [https://en.wikipedia.org/wiki/Klein_bottle#Bottle_shape]</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the Klein bottle, in intrinsic coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., 4]</span>
+<span class="sd">            Point on the Klein bottle, in the Klein bagel parametrization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">fx1</span><span class="p">,</span> <span class="n">fx2</span><span class="p">,</span> <span class="n">fx3</span><span class="p">,</span> <span class="n">fx4</span><span class="p">,</span> <span class="n">fx5</span><span class="p">,</span> <span class="n">fx6</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">fx1</span>
+            <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="n">fx2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fx3</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">fx4</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fx5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">fx6</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">fy1</span><span class="p">,</span> <span class="n">fy2</span><span class="p">,</span> <span class="n">fy3</span><span class="p">,</span> <span class="n">fy4</span><span class="p">,</span> <span class="n">fy5</span><span class="p">,</span> <span class="n">fy6</span><span class="p">,</span> <span class="n">fy7</span><span class="p">,</span> <span class="n">fy8</span><span class="p">,</span> <span class="n">fy9</span><span class="p">,</span> <span class="n">fy10</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="mi">1</span> <span class="o">/</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">,</span>
+            <span class="mi">48</span><span class="p">,</span>
+            <span class="mi">48</span><span class="p">,</span>
+            <span class="mi">60</span><span class="p">,</span>
+            <span class="mi">5</span><span class="p">,</span>
+            <span class="mi">5</span><span class="p">,</span>
+            <span class="mi">80</span><span class="p">,</span>
+            <span class="mi">80</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">fy1</span>
+            <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="n">fy2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fy3</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fy4</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">fy5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fy6</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">fy7</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fy8</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">fy9</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">fy10</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">fz1</span><span class="p">,</span> <span class="n">fz2</span><span class="p">,</span> <span class="n">fz3</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">fz1</span> <span class="o">*</span> <span class="p">(</span><span class="n">fz2</span> <span class="o">+</span> <span class="n">fz3</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KleinBottle.to_bagel_coords">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.klein_bottle.KleinBottle.to_bagel_coords">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">to_bagel_coords</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert point to coordinates in R^3 parametrizing the Klein bagel.</span>
+
+<span class="sd">        Convert from the intrinsic coordinates in the Klein bottle (2 parameters),</span>
+<span class="sd">        to the coordinates of the Klein bagel parametrization in 3d Euclidean space</span>
+<span class="sd">        (3 parameters).</span>
+<span class="sd">        For intrinsic parameters (\theta,v) the Klein bagel parametrization is</span>
+<span class="sd">        [https://en.wikipedia.org/wiki/Klein_bottle#The_figure_8_immersion]:</span>
+
+<span class="sd">        x = \left(r + cos(\theta/2)sin(v) - sin(\theta/2)sin(2v)\right)cos(theta)</span>
+<span class="sd">        y = \left(r + cos(\theta/2)sin(v) - sin(\theta/2)sin(2v)\right)sin(theta)</span>
+<span class="sd">        z = sin(\theta/2)sin(v) + cos(\theta/2)sin(2v)</span>
+
+<span class="sd">        for 0\leq\theta&lt;2\pi and 0\leq v&lt;2\pi. r is a constant to determine</span>
+<span class="sd">        the aspect ratio.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the Klein bottle, in intrinsic coordinates.</span>
+<span class="sd">        radius : float</span>
+<span class="sd">            Radius of the circle.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point_extrinsic : array-like, shape=[..., 4]</span>
+<span class="sd">            Point on the Klein bottle, in the Klein bagel parametrization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">radius</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">radius</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 </div>
 
 
