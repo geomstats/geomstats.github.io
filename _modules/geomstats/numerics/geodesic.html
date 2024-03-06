@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 1, 2024, 4:42:46 PM"/>
+    <meta name="docbuild:last-update" content="Mar 6, 2024, 1:54:13 PM"/>
   </head>
   
   
@@ -436,6 +436,10 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.numerics.bvp</span> <span class="kn">import</span> <span class="n">ScipySolveBVP</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.ivp</span> <span class="kn">import</span> <span class="n">GSIVPIntegrator</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.optimizers</span> <span class="kn">import</span> <span class="n">ScipyMinimize</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.path</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">UniformlySampledDiscretePath</span><span class="p">,</span>
+    <span class="n">UniformlySampledPathEnergy</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="ExpSolver">
@@ -1071,6 +1075,214 @@ document.write(`
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
             <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="p">[:</span> <span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:],</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
         <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PathStraightening">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening">[docs]</a>
+<span class="k">class</span> <span class="nc">PathStraightening</span><span class="p">(</span><span class="n">LogSolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to solve the geodesic boundary value problem with path-straightening.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path_energy : callable</span>
+<span class="sd">        Method to compute Riemannian path energy.</span>
+<span class="sd">    n_nodes : int</span>
+<span class="sd">        Number of midpoints.</span>
+<span class="sd">    optimizer : ScipyMinimize</span>
+<span class="sd">        An optimizer to solve path energy minimization problem.</span>
+<span class="sd">    initialization : callable</span>
+<span class="sd">        A method to get initial guess for optimization.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
+<span class="sd">        Sobolev metrics: a comprehensive numerical framework&quot;.</span>
+<span class="sd">        arXiv:2204.04238 [cs.CV], 25 Sep 2022</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">path_energy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialization</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
+                <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path_energy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path_energy</span> <span class="o">=</span> <span class="n">UniformlySampledPathEnergy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">initialization</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">initialization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_initialization</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_energy</span> <span class="o">=</span> <span class="n">path_energy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">=</span> <span class="n">initialization</span>
+
+    <span class="k">def</span> <span class="nf">_default_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Linear initialization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">)</span>
+        <span class="n">linear_deformation</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span>
+        <span class="k">return</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;t,...-&gt;t...&quot;</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">linear_deformation</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_discrete_geodesic_bvp_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve boundary value problem (BVP).</span>
+
+<span class="sd">        Given an initial point and an end point, solve the geodesic equation</span>
+<span class="sd">        via minimizing the Riemannian path energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        point : array-like, shape=[*point_shape]</span>
+<span class="sd">        base_point : array-like, shape=[*point_shape]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        discr_geod_path : array-like, shape=[n_times, *point_shape]</span>
+<span class="sd">            Discrete geodesic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">init_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">init_midpoints</span> <span class="o">=</span> <span class="n">init_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">midpoints</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Compute path energy of paths going through a midpoint.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            midpoint : array-like, shape=[(self.n_steps-2) * math.prod(*point_shape)]</span>
+<span class="sd">                Midpoints of the path.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            _ : array-like, shape=[...,]</span>
+<span class="sd">                Energy of the path going through this midpoint.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">midpoints</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">midpoints</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,)</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">base_point</span><span class="p">,</span>
+                    <span class="n">midpoints</span><span class="p">,</span>
+                    <span class="n">point</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_energy</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+        <span class="n">init_midpoints</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">init_midpoints</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">sol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">init_midpoints</span><span class="p">)</span>
+
+        <span class="n">solution_midpoints</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,)</span> <span class="o">+</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">base_point</span><span class="p">,</span>
+                <span class="n">solution_midpoints</span><span class="p">,</span>
+                <span class="n">point</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="PathStraightening.discrete_geodesic_bvp">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening.discrete_geodesic_bvp">[docs]</a>
+    <span class="k">def</span> <span class="nf">discrete_geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve boundary value problem (BVP).</span>
+
+<span class="sd">        Given an initial point and an end point, solve the geodesic equation</span>
+<span class="sd">        via minimizing the Riemannian path energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        discr_geod_path : array-like, shape=[..., n_times, *point_shape]</span>
+<span class="sd">            Discrete geodesic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_geodesic_bvp_single</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_geodesic_bvp_single</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PathStraightening.log">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Logarithm map.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">            Equipped manifold.</span>
+<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PathStraightening.geodesic_bvp">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening.geodesic_bvp">[docs]</a>
+    <span class="k">def</span> <span class="nf">geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for boundary value problem.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">            Equipped manifold.</span>
+<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UniformlySampledDiscretePath</span><span class="p">(</span>
+            <span class="n">discr_geod_path</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="p">)</span></div>
+</div>
 
 </pre></div>
 

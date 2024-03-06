@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>geomstats.learning.kernel_density_estimation_classifier &#8212; Geomstats latest documentation</title>
+    <title>geomstats.numerics.path &#8212; Geomstats latest documentation</title>
   
   
   
@@ -39,8 +39,8 @@
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/learning/kernel_density_estimation_classifier';</script>
-    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/learning/kernel_density_estimation_classifier.html" />
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/numerics/path';</script>
+    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/numerics/path.html" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -410,7 +410,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">geomstats.le...</li>
+    <li class="breadcrumb-item active" aria-current="page">geomstats.nu...</li>
   </ul>
 </nav>
 </div>
@@ -427,156 +427,119 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for geomstats.learning.kernel_density_estimation_classifier</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;The kernel density estimation classifier on manifolds.</span>
-
-<span class="sd">Lead author: Yann Cabanes.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">import</span> <span class="nn">math</span>
-
-<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">RadiusNeighborsClassifier</span>
+  <h1>Source code for geomstats.numerics.path</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Discrete-path related machinery.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.finite_differences</span> <span class="kn">import</span> <span class="n">forward_difference</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.interpolation</span> <span class="kn">import</span> <span class="n">UniformUnitIntervalLinearInterpolator</span>
 
 
-<div class="viewcode-block" id="wrap">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.kernel_density_estimation_classifier.wrap">[docs]</a>
-<span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a function to first convert args to arrays.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="UniformlySampledPathEnergy">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.path.UniformlySampledPathEnergy">[docs]</a>
+<span class="k">class</span> <span class="nc">UniformlySampledPathEnergy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Riemannian path energy of a uniformly-sampled path.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">wrapped_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">new_args</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">new_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian path energy.</span>
 
-    <span class="k">return</span> <span class="n">wrapped_function</span></div>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        path : array-like, shape=[..., n_times, *point_shape]</span>
+<span class="sd">            Piecewise linear path.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        energy : array-like, shape=[...,]</span>
+<span class="sd">            Path energy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UniformlySampledPathEnergy.energy_per_time">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.path.UniformlySampledPathEnergy.energy_per_time">[docs]</a>
+    <span class="k">def</span> <span class="nf">energy_per_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian path enery per time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        path : array-like, shape=[..., n_times, *point_shape]</span>
+<span class="sd">            Piecewise linear path.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        energy : array-like, shape=[..., n_times - 1,]</span>
+<span class="sd">            Stepwise path energy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time_axis</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">)</span>
+
+        <span class="n">n_time</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">time_axis</span><span class="p">]</span>
+        <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">forward_difference</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">time_axis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span>
+            <span class="n">tangent_vecs</span><span class="p">,</span>
+            <span class="n">path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_time</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="UniformlySampledPathEnergy.energy">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.path.UniformlySampledPathEnergy.energy">[docs]</a>
+    <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Riemannian path energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : Manifold</span>
+<span class="sd">        path : array-like, shape=[..., n_times, *point_shape]</span>
+<span class="sd">            Piecewise linear path.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        energy : array-like, shape=[...,]</span>
+<span class="sd">            Path energy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_per_time</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">path</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
 
 
 
-<div class="viewcode-block" id="KernelDensityEstimationClassifier">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.kernel_density_estimation_classifier.KernelDensityEstimationClassifier">[docs]</a>
-<span class="k">class</span> <span class="nc">KernelDensityEstimationClassifier</span><span class="p">(</span><span class="n">RadiusNeighborsClassifier</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Classifier implementing the kernel density estimation on manifolds.</span>
-
-<span class="sd">    The kernel density estimation classifier classifies the data according to</span>
-<span class="sd">    a kernel density estimation of each dataset on the manifold. The density</span>
-<span class="sd">    estimation is performed using radial kernel functions: the distance</span>
-<span class="sd">    is the only geometrical tool used to estimate the density on the manifold.</span>
-<span class="sd">    This classifier inherits from the radius neighbors classifier of the</span>
-<span class="sd">    scikit-learn library, we expect the classifier presented here to be easier</span>
-<span class="sd">    to use on manifolds.</span>
-<span class="sd">    Compared with the radius neighbors classifier, we force the</span>
-<span class="sd">    parameter &#39;algorithm&#39; to be equal to &#39;brute&#39; in order to</span>
-<span class="sd">    be compatible with any metric.</span>
-<span class="sd">    We also changed some default values of the scikit-learn algorithm in order</span>
-<span class="sd">    to take into account every point of the dataset during the kernel density</span>
-<span class="sd">    estimation, i.e. the default value of the parameter &#39;radius&#39; is set to</span>
-<span class="sd">    infinity instead of 1 and the default value of the parameter &#39;weight&#39; is</span>
-<span class="sd">    set to &#39;distance&#39; instead of &#39;uniform&#39;.</span>
-<span class="sd">    Our main contribution is a greater choice of kernel functions,</span>
-<span class="sd">    see the radial_kernel_functions.py file in the learning directory.</span>
-<span class="sd">    The radial kernel functions are now easier to define by a user:</span>
-<span class="sd">    the input data should be an array of distances instead of an array of</span>
-<span class="sd">    arrays. Moreover the new parameter &#39;bandwidth&#39; of our classifier can be</span>
-<span class="sd">    used to adapt the kernel function to the size of the dataset.</span>
-<span class="sd">    The scikit-learn library also provides a kernel density estimation tool</span>
-<span class="sd">    (see sklearn.neighbors.KernelDensity), however this algorithm is not built</span>
-<span class="sd">    as a classifier and is not available with all metrics.</span>
+<div class="viewcode-block" id="UniformlySampledDiscretePath">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.path.UniformlySampledDiscretePath">[docs]</a>
+<span class="k">class</span> <span class="nc">UniformlySampledDiscretePath</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A uniformly-sampled discrete path.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    space : Manifold</span>
-<span class="sd">        Equipped manifold.</span>
-<span class="sd">    radius : float, optional (default = inf)</span>
-<span class="sd">        Range of parameter space to use by default.</span>
-<span class="sd">    kernel : string or callable, optional (default = &#39;distance&#39;)</span>
-<span class="sd">        Kernel function used in prediction. Possible values:</span>
-
-<span class="sd">        - &#39;distance&#39; : weight points by the inverse of their distance.</span>
-<span class="sd">          In this case, closer neighbors of a query point will have a</span>
-<span class="sd">          greater influence than neighbors which are further away.</span>
-<span class="sd">        - &#39;uniform&#39; : uniform weights.  All points in each neighborhood</span>
-<span class="sd">          are weighted equally.</span>
-<span class="sd">        - [callable] : a user-defined function which accepts an</span>
-<span class="sd">          array of distances, and returns an array of the same shape</span>
-<span class="sd">          containing the weights.</span>
-<span class="sd">    bandwidth : float, optional (default = 1.0)</span>
-<span class="sd">        Bandwidth parameter used for the kernel. The kernel parameter is</span>
-<span class="sd">        used if and only if the kernel is a callable function.</span>
-<span class="sd">    outlier_label : {manual label, &#39;most_frequent&#39;}, optional (default = None)</span>
-<span class="sd">        Label for outlier samples (samples with no neighbors in given radius).</span>
-
-<span class="sd">        - manual label: str or int label (should be the same type as y)</span>
-<span class="sd">          or list of manual labels if multi-output is used.</span>
-<span class="sd">        - &#39;most_frequent&#39; : assign the most frequent label of y to outliers.</span>
-<span class="sd">        - None : when any outlier is detected, ValueError will be raised.</span>
-<span class="sd">    n_jobs : int or None, optional (default = None)</span>
-<span class="sd">        The number of parallel jobs to run for neighbors search.</span>
-<span class="sd">        ``None`` means 1; ``-1`` means using all processors.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    classes_ : array-like, shape=[n_classes,]</span>
-<span class="sd">        Class labels known to the classifier.</span>
-<span class="sd">    effective_metric_ : string or callable</span>
-<span class="sd">        The distance metric used. It will be same as the `distance` parameter</span>
-<span class="sd">        or a synonym of it, e.g. &#39;euclidean&#39; if the `distance` parameter set to</span>
-<span class="sd">        &#39;minkowski&#39; and `p` parameter set to 2.</span>
-<span class="sd">    effective_metric_params_ : dict</span>
-<span class="sd">        Additional keyword arguments for the distance function.</span>
-<span class="sd">        For most distances will be same with `distance_params` parameter,</span>
-<span class="sd">        but may also contain the `p` parameter value if the</span>
-<span class="sd">        `effective_metric_` attribute is set to &#39;minkowski&#39;.</span>
-<span class="sd">    outputs_2d_ : bool</span>
-<span class="sd">        False when `y`&#39;s shape is [...,] or [..., 1] during fit,</span>
-<span class="sd">        otherwise True.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    This algorithm uses the scikit-learn library:</span>
-<span class="sd">    https://scikit-learn.org/stable/modules/generated/</span>
-<span class="sd">    sklearn.neighbors.RadiusNeighborsClassifier.html</span>
+<span class="sd">    path : array-like, [..., *point_shape]</span>
+<span class="sd">    interpolator : Interpolator1D</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">space</span><span class="p">,</span>
-        <span class="n">radius</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
-        <span class="n">kernel</span><span class="o">=</span><span class="s2">&quot;distance&quot;</span><span class="p">,</span>
-        <span class="n">bandwidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">leaf_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-        <span class="n">outlier_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">interpolator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">interpolator_kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">interpolator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interpolator</span> <span class="o">=</span> <span class="n">UniformUnitIntervalLinearInterpolator</span><span class="p">(</span>
+                <span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">interpolator_kwargs</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolator</span> <span class="o">=</span> <span class="n">interpolator</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span> <span class="o">=</span> <span class="n">bandwidth</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate path.</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">kernel</span>
-        <span class="k">else</span><span class="p">:</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
 
-            <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="n">distance_matrix</span><span class="p">):</span>
-                <span class="n">weights_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                    <span class="p">[</span>
-                        <span class="n">kernel</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="n">dist</span><span class="p">,</span> <span class="n">bandwidth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">distance_matrix</span>
-                    <span class="p">]</span>
-                <span class="p">)</span>
-                <span class="k">return</span> <span class="n">weights_matrix</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., n_time, *point_shape]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
-
-        <span class="n">distance</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">,</span>
-            <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
-            <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;brute&quot;</span><span class="p">,</span>
-            <span class="n">leaf_size</span><span class="o">=</span><span class="n">leaf_size</span><span class="p">,</span>
-            <span class="n">metric</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span>
-            <span class="n">outlier_label</span><span class="o">=</span><span class="n">outlier_label</span><span class="p">,</span>
-            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolator</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
 
 </pre></div>
 
