@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>geomstats.test.data &#8212; Geomstats latest documentation</title>
+    <title>geomstats.distributions.brownian_motion &#8212; Geomstats latest documentation</title>
   
   
   
@@ -39,8 +39,8 @@
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/test/data';</script>
-    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/test/data.html" />
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/distributions/brownian_motion';</script>
+    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/distributions/brownian_motion.html" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -410,7 +410,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">geomstats.test.data</li>
+    <li class="breadcrumb-item active" aria-current="page">geomstats.di...</li>
   </ul>
 </nav>
 </div>
@@ -427,109 +427,122 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for geomstats.test.data</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">random</span>
+  <h1>Source code for geomstats.distributions.brownian_motion</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Brownian motion defined on a manifold.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 
 
-<div class="viewcode-block" id="TestData">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData">[docs]</a>
-<span class="k">class</span> <span class="nc">TestData</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for TestData objects.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BrownianMotion">
+<a class="viewcode-back" href="../../../api/geomstats.distributions.html#geomstats.distributions.brownian_motion.BrownianMotion">[docs]</a>
+<span class="k">class</span> <span class="nc">BrownianMotion</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to generate a realization of Brownian motion on a manifold.</span>
 
-    <span class="n">fail_for_autodiff_exceptions</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">fail_for_not_implemented_errors</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">trials</span> <span class="o">=</span> <span class="mi">3</span>
-    <span class="n">skip_vec</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="c1"># TODO: remove after refactoring stratified</span>
-    <span class="n">skip_all</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Manifold to generate Brownian motion on.</span>
 
-    <span class="n">xfails</span> <span class="o">=</span> <span class="p">()</span>
-    <span class="n">skips</span> <span class="o">=</span> <span class="p">()</span>
-    <span class="n">tolerances</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">    Example</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import os</span>
+<span class="sd">    &gt;&gt;&gt; os.environ[&quot;GEOMSTATS_BACKEND&quot;] = &quot;pytorch&quot;</span>
+<span class="sd">    &gt;&gt;&gt; import geomstats.backend as gs</span>
+<span class="sd">    &gt;&gt;&gt; from geomstats.geometry.euclidean import Euclidean</span>
+<span class="sd">    &gt;&gt;&gt; from geomstats.distributions.brownian_motion import BrownianMotion</span>
+<span class="sd">    &gt;&gt;&gt; manifold = Euclidean(dim=3)</span>
+<span class="sd">    &gt;&gt;&gt; euclidean_brownian_motion = BrownianMotion(manifold)</span>
+<span class="sd">    &gt;&gt;&gt; sample_path = euclidean_brownian_motion.sample_path(</span>
+<span class="sd">            end_time=1,</span>
+<span class="sd">            n_steps=50,</span>
+<span class="sd">            initial_point=gs.array([0.0, 0.0, 0.0])</span>
+<span class="sd">        )</span>
 
-    <span class="n">N_VEC_REPS</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">N_SHAPE_POINTS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">N_RANDOM_POINTS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">N_TIME_POINTS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [H2022] Elton P. Hsu,</span>
+<span class="sd">        &quot;Stochastic Analysis On Manifolds&quot;,</span>
+<span class="sd">        American Mathematical Soc. (2002): 71-99.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="TestData.generate_tests">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_tests">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_tests</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap test data with corresponding marks.</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_coordinates</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check the manifold is defined in intrinsic coordinates.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">space</span><span class="o">.</span><span class="n">intrinsic</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Space should be equipped with intrinsic coordinates to create Brownian&quot;</span>
+                <span class="s2">&quot;motion over the local parametrization.&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="BrownianMotion.sample_path">
+<a class="viewcode-back" href="../../../api/geomstats.distributions.html#geomstats.distributions.brownian_motion.BrownianMotion.sample_path">[docs]</a>
+    <span class="k">def</span> <span class="nf">sample_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a sample path of Brownian motion.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        test_data : list or dict</span>
-<span class="sd">        marks : list</span>
-<span class="sd">            pytest marks,</span>
+<span class="sd">        end_time : float</span>
+<span class="sd">            Final time of the path.</span>
+<span class="sd">        n_steps : int</span>
+<span class="sd">            Number of steps in the path.</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Initial point of the path at time 0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        data: list or dict</span>
-<span class="sd">            Tests.</span>
+<span class="sd">        path : array-like, shape=[..., n_steps, dim]</span>
+<span class="sd">            Sample path of Brownian motion.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tests</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">marks</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-            <span class="n">marks</span> <span class="o">=</span> <span class="p">[</span><span class="n">marks</span><span class="p">]</span>
+        <span class="n">step_size</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">/</span> <span class="n">n_steps</span>
 
-        <span class="k">for</span> <span class="n">test_datum</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_datum</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s2">&quot;marks&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">test_datum</span><span class="p">:</span>
-                    <span class="n">test_datum</span><span class="p">[</span><span class="s2">&quot;marks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">marks</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">test_datum</span><span class="p">[</span><span class="s2">&quot;marks&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">marks</span><span class="p">)</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">test_datum</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">test_datum</span><span class="p">)</span>
-                <span class="n">test_datum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">marks</span><span class="p">)</span>
-
-            <span class="n">tests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_datum</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tests</span></div>
+        <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial_point</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+            <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">(</span><span class="n">step_size</span><span class="p">,</span> <span class="n">paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="TestData.generate_random_data">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_random_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_random_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">n_points</span><span class="o">=</span><span class="n">n_points</span><span class="p">)</span> <span class="k">for</span> <span class="n">n_points</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_RANDOM_POINTS</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tests</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="n">marks</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="nf">_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step_size</span><span class="p">,</span> <span class="n">current_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calulate one increment of a Brownian motion path.</span>
 
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        step_size : float</span>
+<span class="sd">            Size of the step to be taken in the Brownian motion.</span>
+<span class="sd">        current_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Current point in the Brownian motion path.</span>
 
-<div class="viewcode-block" id="TestData.generate_vec_data">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_vec_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_vec_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">n_reps</span><span class="o">=</span><span class="n">n_reps</span><span class="p">)</span> <span class="k">for</span> <span class="n">n_reps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_VEC_REPS</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tests</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="n">marks</span><span class="p">)</span></div>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        next_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Next point in the Brownian motion path after taking the step.</span>
 
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Method uses the Euler-Maruyama integration scheme.</span>
+<span class="sd">        Brownian motion is described in the Ito form in intrinsic coordinates as a</span>
+<span class="sd">        stochastic differential equation, [H2022] (example 3.3.5).</span>
 
-<div class="viewcode-block" id="TestData.generate_shape_data">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_shape_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_shape_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">n_points</span><span class="o">=</span><span class="n">n_points</span><span class="p">)</span> <span class="k">for</span> <span class="n">n_points</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_SHAPE_POINTS</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tests</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="n">marks</span><span class="p">)</span></div>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">current_point</span><span class="p">))</span>
+        <span class="n">christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">current_point</span><span class="p">)</span>
+        <span class="n">cometric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">current_point</span><span class="p">)</span>
+        <span class="n">drift</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="mf">0.5</span>
+            <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...klm,...lm-&gt;...k&quot;</span><span class="p">,</span> <span class="n">christoffels</span><span class="p">,</span> <span class="n">cometric_matrix</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">step_size</span>
+        <span class="p">)</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">current_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+        <span class="n">diffusion</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">&quot;...ij,...j-&gt;...i&quot;</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,))</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">step_size</span><span class="p">),</span>
+        <span class="p">)</span>
 
-
-<div class="viewcode-block" id="TestData.generate_vec_data_with_time">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_vec_data_with_time">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_vec_data_with_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">n_reps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_VEC_REPS</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">n_times</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_TIME_POINTS</span><span class="p">:</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">n_reps</span><span class="o">=</span><span class="n">n_reps</span><span class="p">,</span> <span class="n">n_times</span><span class="o">=</span><span class="n">n_times</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tests</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="n">marks</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="TestData.generate_random_data_with_time">
-<a class="viewcode-back" href="../../../api/geomstats.test.html#geomstats.test.data.TestData.generate_random_data_with_time">[docs]</a>
-    <span class="k">def</span> <span class="nf">generate_random_data_with_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">n_points</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_RANDOM_POINTS</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">n_times</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_TIME_POINTS</span><span class="p">:</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">n_points</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="n">n_times</span><span class="o">=</span><span class="n">n_times</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tests</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">marks</span><span class="o">=</span><span class="n">marks</span><span class="p">)</span></div>
-</div>
+        <span class="k">return</span> <span class="n">current_point</span> <span class="o">+</span> <span class="n">drift</span> <span class="o">+</span> <span class="n">diffusion</span></div>
 
 </pre></div>
 
