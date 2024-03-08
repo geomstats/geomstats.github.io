@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 6, 2024, 1:54:13 PM"/>
+    <meta name="docbuild:last-update" content="Mar 8, 2024, 8:46:27 AM"/>
   </head>
   
   
@@ -984,14 +984,14 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">d1</span> <span class="o">=</span> <span class="n">d1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a2</span> <span class="o">=</span> <span class="n">a2</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">_ExpSolver</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">_ExpSolver</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
             <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">,</span>
             <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;ftol&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">PathStraightening</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">PathStraightening</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_inner_product_a0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">vertex_areas_bp</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute term of order 0 within the inner-product.</span>
@@ -1398,7 +1398,8 @@ document.write(`
 <span class="k">class</span> <span class="nc">_ExpSolver</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to solve the initial value problem (IVP) for exp.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
                 <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
@@ -1409,7 +1410,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span> <span class="o">=</span> <span class="n">n_steps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
 
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute exponential map associated to the Riemmannian metric.</span>
 
 <span class="sd">        Exponential map at base_point of tangent_vec computed</span>
@@ -1448,7 +1449,7 @@ document.write(`
         <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="p">(</span><span class="n">n_exps</span><span class="p">,)</span> <span class="o">+</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
         <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">(</span><span class="n">n_exps</span><span class="p">,)</span> <span class="o">+</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
         <span class="k">for</span> <span class="n">one_tangent_vec</span><span class="p">,</span> <span class="n">one_base_point</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-            <span class="n">geod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ivp</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">one_base_point</span><span class="p">,</span> <span class="n">one_tangent_vec</span><span class="p">)</span>
+            <span class="n">geod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ivp</span><span class="p">(</span><span class="n">one_base_point</span><span class="p">,</span> <span class="n">one_tangent_vec</span><span class="p">)</span>
             <span class="n">exps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geod</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="n">exps</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
@@ -1456,7 +1457,7 @@ document.write(`
             <span class="n">exps</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exps</span>
 
-    <span class="k">def</span> <span class="nf">_ivp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_ivp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve initial value problem (IVP).</span>
 
 <span class="sd">        Given an initial point and an initial vector, solve the geodesic equation.</span>
@@ -1478,12 +1479,12 @@ document.write(`
         <span class="n">next_point</span> <span class="o">=</span> <span class="n">initial_point</span> <span class="o">+</span> <span class="n">initial_tangent_vec</span>
         <span class="n">geod</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_steps</span><span class="p">):</span>
-            <span class="n">next_next_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stepforward</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">)</span>
+            <span class="n">next_next_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stepforward</span><span class="p">(</span><span class="n">initial_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">)</span>
             <span class="n">geod</span> <span class="o">+=</span> <span class="p">[</span><span class="n">next_next_point</span><span class="p">]</span>
             <span class="n">initial_point</span><span class="p">,</span> <span class="n">next_point</span> <span class="o">=</span> <span class="n">next_point</span><span class="p">,</span> <span class="n">next_next_point</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">geod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_stepforward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">current_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_stepforward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_point</span><span class="p">,</span> <span class="n">next_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the next point on the geodesic.</span>
 
 <span class="sd">        Parameters</span>
@@ -1529,7 +1530,7 @@ document.write(`
 <span class="sd">                current point, i.e. discrete surface, to the next point on the</span>
 <span class="sd">                geodesic that is being computed.</span>
 <span class="sd">                &quot;&quot;&quot;</span>
-                <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
                     <span class="n">current_to_next</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">current_point</span>
                 <span class="p">)</span>
 
@@ -1540,7 +1541,7 @@ document.write(`
 <span class="sd">                next point, i.e. discrete surface, to the next next point on the</span>
 <span class="sd">                geodesic that is being computed.</span>
 <span class="sd">                &quot;&quot;&quot;</span>
-                <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
                     <span class="n">next_to_next_next</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">next_point</span>
                 <span class="p">)</span>
 
@@ -1551,7 +1552,7 @@ document.write(`
 <span class="sd">                next point, i.e. discrete surface, to the next next point on the</span>
 <span class="sd">                geodesic that is being computed.</span>
 <span class="sd">                &quot;&quot;&quot;</span>
-                <span class="k">return</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">next_to_next_next</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">next_to_next_next</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
             <span class="n">_</span><span class="p">,</span> <span class="n">energy_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">value_and_grad</span><span class="p">(</span>
                 <span class="n">_inner_product_with_current_to_next</span><span class="p">,</span>

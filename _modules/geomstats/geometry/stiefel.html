@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 6, 2024, 1:54:13 PM"/>
+    <meta name="docbuild:last-update" content="Mar 8, 2024, 8:46:27 AM"/>
   </head>
   
   
@@ -444,6 +444,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hermitian_matrices</span> <span class="kn">import</span> <span class="n">powermh</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.geodesic</span> <span class="kn">import</span> <span class="n">LogSolver</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
 
 
@@ -664,7 +665,7 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_log_solver</span> <span class="o">=</span> <span class="n">_StiefelLogSolver</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">_StiefelLogSolver</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
 
 <div class="viewcode-block" id="StiefelCanonicalMetric.inner_product">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.stiefel.StiefelCanonicalMetric.inner_product">[docs]</a>
@@ -681,13 +682,6 @@ document.write(`
 <span class="sd">            \left(\Delta^{T}\left(I-\frac{1}{2} U U^{T}\right)</span>
 <span class="sd">            \tilde{\Delta}\right)</span>
 
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [RLSMRZ2017] R Zimmermann. A matrix-algebraic algorithm for the</span>
-<span class="sd">            Riemannian logarithm on the Stiefel manifold under the canonical</span>
-<span class="sd">            metric. SIAM Journal on Matrix Analysis and Applications 38 (2),</span>
-<span class="sd">            322-342, 2017. https://epubs.siam.org/doi/pdf/10.1137/16M1074485</span>
-
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec_a : array-like, shape=[..., n, p]</span>
@@ -701,6 +695,14 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        inner_prod : array-like, shape=[..., 1]</span>
 <span class="sd">            Inner-product of the two tangent vectors.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [RLSMRZ2017] R Zimmermann. A matrix-algebraic algorithm for the</span>
+<span class="sd">            Riemannian logarithm on the Stiefel manifold under the canonical</span>
+<span class="sd">            metric. SIAM Journal on Matrix Analysis and Applications 38 (2),</span>
+<span class="sd">            322-342, 2017. https://epubs.siam.org/doi/pdf/10.1137/16M1074485</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">base_point_transpose</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
@@ -746,27 +748,6 @@ document.write(`
             <span class="n">matrix_q</span><span class="p">,</span> <span class="n">matrix_mn_e</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">p</span><span class="p">:,</span> <span class="p">:</span><span class="n">p</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">exp</span></div>
-
-
-<div class="viewcode-block" id="StiefelCanonicalMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.stiefel.StiefelCanonicalMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., n, p]</span>
-<span class="sd">            Point in the Stiefel manifold.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
-<span class="sd">            Point in the Stiefel manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., n, p]</span>
-<span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
-<span class="sd">            of point at the base point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_solver</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StiefelCanonicalMetric.retraction">
@@ -908,8 +889,25 @@ document.write(`
 
 
 
-<span class="k">class</span> <span class="nc">_StiefelLogSolver</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">imag_tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_StiefelLogSolver</span><span class="p">(</span><span class="n">LogSolver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stiefel log solver.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Stiefel.</span>
+<span class="sd">        Stiefel manifold.</span>
+<span class="sd">    max_iter : int</span>
+<span class="sd">        Maximum iterations.</span>
+<span class="sd">    tol : float</span>
+<span class="sd">        Tolerance.</span>
+<span class="sd">    imag_tol : float</span>
+<span class="sd">        Tolerance for image sum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span> <span class="n">imag_tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">imag_tol</span> <span class="o">=</span> <span class="n">imag_tol</span>
@@ -987,20 +985,13 @@ document.write(`
 
         <span class="k">return</span> <span class="n">matrix_v_final</span>
 
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
 
 <span class="sd">        When p=n, the space St(n,n)~O(n) has two non connected sheets: the</span>
 <span class="sd">        log is only defined for data from the same sheet.</span>
 <span class="sd">        For p&lt;n, the space St(n,p)~O(n)/O(n-p)~SO(n)/SO(n-p) is connected.</span>
 <span class="sd">        Based on [ZR2017]_.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [ZR2017] Zimmermann, Ralf. &quot;A Matrix-Algebraic Algorithm for the</span>
-<span class="sd">            Riemannian Logarithm on the Stiefel Manifold under the Canonical</span>
-<span class="sd">            Metric&quot; SIAM J. Matrix Anal. &amp; Appl., 38(2), 322–342, 2017.</span>
-<span class="sd">            https://arxiv.org/pdf/1604.05054.pdf</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1021,8 +1012,15 @@ document.write(`
 <span class="sd">        log : array-like, shape=[..., n, p]</span>
 <span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
 <span class="sd">            of point at the base point.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [ZR2017] Zimmermann, Ralf. &quot;A Matrix-Algebraic Algorithm for the</span>
+<span class="sd">            Riemannian Logarithm on the Stiefel Manifold under the Canonical</span>
+<span class="sd">            Metric&quot; SIAM J. Matrix Anal. &amp; Appl., 38(2), 322–342, 2017.</span>
+<span class="sd">            https://arxiv.org/pdf/1604.05054.pdf</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">p</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">p</span>
         <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span>
             <span class="n">det_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
             <span class="n">det_base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
