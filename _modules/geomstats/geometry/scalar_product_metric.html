@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 14, 2024, 8:02:39 AM"/>
+    <meta name="docbuild:last-update" content="Mar 18, 2024, 8:35:05 AM"/>
   </head>
   
   
@@ -537,6 +537,8 @@ document.write(`
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_RESERVED_NAMES</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2">&#39; is reserved for internal use.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">func_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Private methods cannot be rescaled&quot;</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">scaling_dict</span><span class="p">[</span><span class="n">scaling_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func_name</span><span class="p">)</span>
@@ -572,13 +574,15 @@ document.write(`
 <span class="k">class</span> <span class="nc">ScalarProductMetric</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for scalar products of Riemannian and pseudo-Riemannian metrics.</span>
 
-<span class="sd">    This class multiplies the (0,2) metric tensor &#39;underlying_metric&#39; by a</span>
+<span class="sd">    This class multiplies the (0,2) metric tensor &#39;space.metric&#39; by a</span>
 <span class="sd">    scalar &#39;scaling_factor&#39;. Note that this does not scale distances by</span>
 <span class="sd">    &#39;scaling_factor&#39;. That would require multiplication by the square of the</span>
 <span class="sd">    scalar.</span>
 
+<span class="sd">    The `space` is not automatically equipped with the `ScalarProductMetric`.</span>
+
 <span class="sd">    An object of this type can also be instantiated by the expression</span>
-<span class="sd">    scaling_factor * underlying_metric.</span>
+<span class="sd">    scaling_factor * space.metric.</span>
 
 <span class="sd">    This class acts as a wrapper for the underlying Riemannian metric. All</span>
 <span class="sd">    public attributes apart from &#39;underlying_metric&#39; and &#39;scaling_factor&#39; are</span>
@@ -593,23 +597,27 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    underlying_metric : RiemannianMetric</span>
-<span class="sd">        The original metric of the manifold which is being scaled.</span>
+<span class="sd">    space : Manifold or ComplexManifold</span>
+<span class="sd">        A manifold equipped with a metric which is being scaled.</span>
 <span class="sd">    scale : float</span>
 <span class="sd">        The value by which to scale the metric. Note that this rescales the</span>
 <span class="sd">        (0,2) metric tensor, so distances are rescaled by the square root of</span>
 <span class="sd">        this.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">underlying_metric</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load all attributes from the underlying metric.&quot;&quot;&quot;</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_positive</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="s2">&quot;metric&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The variable &#39;space&#39; must be equipped with a metric.&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">underlying_metric</span><span class="p">,</span> <span class="s2">&quot;underlying_metric&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span> <span class="o">=</span> <span class="n">underlying_metric</span><span class="o">.</span><span class="n">underlying_metric</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">underlying_metric</span><span class="o">.</span><span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">ScalarProductMetric</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">underlying_metric</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">scale</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span> <span class="o">=</span> <span class="n">underlying_metric</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
 
         <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">underlying_metric</span><span class="p">):</span>
@@ -655,7 +663,11 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">NotImplemented</span>
-        <span class="k">return</span> <span class="n">ScalarProductMetric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalar</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;A space must be equipped with this metric before it is scaled.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ScalarProductMetric</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="p">,</span> <span class="n">scalar</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiply the metric by a scalar.</span>
