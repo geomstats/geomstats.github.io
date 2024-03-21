@@ -51,7 +51,7 @@
     <link rel="prev" title="K-Means clustering on a Riemannian Manifold" href="07_practical_methods__riemannian_kmeans.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 19, 2024, 9:24:53 AM"/>
+    <meta name="docbuild:last-update" content="Mar 21, 2024, 1:41:29 PM"/>
   </head>
   
   
@@ -494,11 +494,26 @@ document.write(`
 <h1>Information geometry<a class="headerlink" href="#Information-geometry" title="Link to this heading">#</a></h1>
 <p>Lead author: Alice Le Brigant.</p>
 <p>Disclaimer: this notebook requires the use of the <code class="docutils literal notranslate"><span class="pre">numpy</span></code> backend.</p>
+<section id="Table-of-contents:">
+<h2>Table of contents:<a class="headerlink" href="#Table-of-contents:" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Introduction</p></li>
+<li><p>Geometry of normal distributions</p></li>
+<li><p>Geometry of beta distributions</p></li>
+<li><p>Learning on spaces of distributions</p>
+<ul>
+<li><p>Fréchet mean of beta distributions</p></li>
+<li><p>K-Means clustering of normal distributions</p></li>
+<li><p>Principal Geodesic Analysis of normal distributions</p></li>
+</ul>
+</li>
+</ul>
+</section>
 <section id="Introduction">
 <h2>Introduction<a class="headerlink" href="#Introduction" title="Link to this heading">#</a></h2>
-<p>Information geometry is a branch of mathematics at the crossroads of statistics and differential geometry, focused on the study of probability distributions from a geometric point of view. One of the tools of information geometry is the Fisher information distance, which allows to compare probability distributions inside a given parametric family. In that sense, information geometry is an alternative approach to optimal transport.</p>
-<p>The Fisher information metric or Fisher-Rao metric - although the latter usually denotes its non parametric counterpart - is a Riemannian metric defined on the space of parameters of a family of distributions using the Fisher information matrix. This metric is invariant under change of parameterization. Moreover it is the only Riemannian metric compatible with the notion of information contained by the model on the parameter, in the sense that it is the only metric that preserves the geometry of
-a parametric model after transformation by a sufficient statistic (Cencov’s theorem). For an overview, see <a class="reference internal" href="#References"><span class="std std-ref">[A2016]</span></a>.</p>
+<p>Information geometry is a branch of mathematics at the crossroads of statistics and differential geometry, focused on the study of probability distributions from a geometric point of view. One of the tools of information geometry is the Fisher-Rao information distance, which allows to compare probability distributions inside a given parametric family. In that sense, information geometry is an alternative approach to optimal transport.</p>
+<p>The Fisher-Rao metric is a Riemannian metric defined on the space of parameters of a family of distributions using the Fisher information matrix. This metric is invariant under change of parameterization. Moreover it is the only Riemannian metric compatible with the notion of information contained by the model on the parameter, in the sense that it is the only metric that preserves the geometry of a parametric model after transformation by a sufficient statistic (Cencov’s theorem). For an
+overview, see <a class="reference internal" href="#References"><span class="std std-ref">[A2016]</span></a>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
 </pre></div>
@@ -522,8 +537,8 @@ INFO: Using numpy backend
 </pre></div></div>
 </div>
 </section>
-<section id="Normal-distributions">
-<h2>Normal distributions<a class="headerlink" href="#Normal-distributions" title="Link to this heading">#</a></h2>
+<section id="Geometry-of-normal-distributions">
+<h2>Geometry of normal distributions<a class="headerlink" href="#Geometry-of-normal-distributions" title="Link to this heading">#</a></h2>
 <p>The Fisher information geometry of the family of normal distributions is arguably the most well-known. The space of parameters is the upper half-plane where the x-coordinate encodes the mean and the y-coordinate the standard deviation. Quite remarkably, the Fisher information metric induces the hyperbolic geometry of the Poincare half plane <a class="reference internal" href="#References"><span class="std std-ref">[AM1981]</span></a>. To start, we need an instance of the class <code class="docutils literal notranslate"><span class="pre">NormalDistributions</span></code> and its Fisher information metric.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [2]:
@@ -603,8 +618,8 @@ INFO: Using numpy backend
 <img alt="../_images/notebooks_08_practical_methods__information_geometry_11_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_11_0.png" />
 </div>
 </div>
-<p>Another possibility to compare probability distributions is given by the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric, central in optimal transport. In the case of normal distributions, the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric induces the Euclidean geometry on the upper half plane <a class="reference internal" href="#References"><span class="std std-ref">[BGKL2017]</span></a>. Therefore, the Wasserstein distance between two normal distributions with different means and same variance (<code class="docutils literal notranslate"><span class="pre">point_a</span></code> and <code class="docutils literal notranslate"><span class="pre">point_b</span></code>) will not change when this common variance is increased (<code class="docutils literal notranslate"><span class="pre">point_c</span></code>
-and <code class="docutils literal notranslate"><span class="pre">point_d</span></code>), while the corresponding Fisher information distance will decrease, as can be deduced from the shape of the geodesic. This can be interpreted as a consequence of the increasing overlap of the corresponding probability densities.</p>
+<p>Another possibility to compare probability distributions is given by the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric, central in optimal transport. In the case of normal distributions, the <span class="math notranslate nohighlight">\(L^2\)</span>-Wasserstein metric induces the Euclidean geometry on the parameter space <a class="reference internal" href="#References"><span class="std std-ref">[BGKL2017]</span></a>. Therefore, the Wasserstein distance between two normal distributions with different means and same variance (<code class="docutils literal notranslate"><span class="pre">point_a</span></code> and <code class="docutils literal notranslate"><span class="pre">point_b</span></code>) will not change when this common variance is increased (<code class="docutils literal notranslate"><span class="pre">point_c</span></code> and
+<code class="docutils literal notranslate"><span class="pre">point_d</span></code>), while the corresponding Fisher information distance will decrease, as can be deduced from the shape of the geodesic. This can be interpreted as a consequence of the increasing overlap of the corresponding probability densities, as noticed in <a class="reference internal" href="#References"><span class="std std-ref">[CSS2015]</span></a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [6]:
 </pre></div>
@@ -685,8 +700,8 @@ and <code class="docutils literal notranslate"><span class="pre">point_d</span><
 </div>
 </div>
 </section>
-<section id="Beta-distributions">
-<h2>Beta distributions<a class="headerlink" href="#Beta-distributions" title="Link to this heading">#</a></h2>
+<section id="Geometry-of-beta-distributions">
+<h2>Geometry of beta distributions<a class="headerlink" href="#Geometry-of-beta-distributions" title="Link to this heading">#</a></h2>
 <p>Let us now consider the example of beta distributions, where the space of parameters is the first quadrant. In this case, the geodesics for the Fisher-Rao metric do not have a closed form, but can be found numerically <a class="reference internal" href="#References"><span class="std std-ref">[LGRP2020]</span></a>. Here we plot an example of geodesic ball.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [8]:
@@ -702,45 +717,16 @@ and <code class="docutils literal notranslate"><span class="pre">point_d</span><
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">beta</span><span class="o">.</span><span class="n">shape</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> Out [9]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-(2,)
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_rays</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="n">center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
-<span class="n">theta</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n_rays</span><span class="p">)</span>
-<span class="n">directions</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">))))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">point_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">])</span>
+<span class="n">point_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+<span class="n">point_c</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">])</span>
 
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
-<span class="n">ray_length</span> <span class="o">=</span> <span class="mf">0.25</span>
-<span class="n">direction_norms</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">directions</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">unit_vectors</span> <span class="o">=</span> <span class="n">directions</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">direction_norms</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">initial_vectors</span> <span class="o">=</span> <span class="n">ray_length</span> <span class="o">*</span> <span class="n">unit_vectors</span>
-
-<span class="n">n_points</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_points</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rays</span><span class="p">):</span>
-    <span class="n">geod</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-        <span class="n">initial_point</span><span class="o">=</span><span class="n">center</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="n">initial_vectors</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">geod</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Geodesic ball of the space of beta distributions&quot;</span><span class="p">);</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">point_c</span><span class="p">])</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">points</span><span class="p">)(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">pdfs</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;(1, 10)&quot;</span><span class="p">,</span> <span class="s2">&quot;(10, 1)&quot;</span><span class="p">,</span> <span class="s2">&quot;(10, 100)&quot;</span><span class="p">],</span> <span class="n">prop</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">})</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -748,13 +734,91 @@ and <code class="docutils literal notranslate"><span class="pre">point_d</span><
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_08_practical_methods__information_geometry_19_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_19_0.png" />
+<img alt="../_images/notebooks_08_practical_methods__information_geometry_18_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_18_0.png" />
 </div>
 </div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
+    <span class="s2">&quot;Fisher-Rao distance between blue and yellow: &quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="s2">&quot;Fisher-Rao distance between blue and green: &quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_c</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fisher-Rao distance between blue and yellow:  4.230720208803747
+Fisher-Rao distance between blue and green:  1.7253568493169043
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">r2</span> <span class="o">=</span> <span class="n">Euclidean</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Euclidean distance between blue and yellow: &quot;</span><span class="p">,</span> <span class="n">r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Euclidean distance between blue and green: &quot;</span><span class="p">,</span> <span class="n">r2</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_c</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Euclidean distance between blue and yellow:  12.727922061357855
+Euclidean distance between blue and green:  90.44888059008801
+</pre></div></div>
+</div>
+<p>We can see that for the Euclidean distance on the parameter space, the blue pdf is closer to the yellow pdf than to the green one, while the converse is true for the Fisher-Rao metric. The Fisher-Rao values seem more natural considering the mass overlap between these pdfs. More generally, the Fisher-Rao metric gives smallest cost to the displacements in the directions that preserve the mean, as we can see on the plot bellow, representing a geodesic ball centered at the red point, i.e. all points
+that are at same distance from that point. We can see that this ball is “stretched” in the direction of the line of equation “x=y”, which corresponds to all the distributions with same mean as the one defined by the center of the ball.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_rays</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">center</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+
+<span class="n">theta</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n_rays</span><span class="p">)</span>
+<span class="n">directions</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">))))</span>
+<span class="n">ray_length</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">direction_norms</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">directions</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+<span class="n">unit_vectors</span> <span class="o">=</span> <span class="n">directions</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">direction_norms</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">initial_vectors</span> <span class="o">=</span> <span class="n">ray_length</span> <span class="o">*</span> <span class="n">unit_vectors</span>
+
+<span class="n">ball</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">initial_vectors</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ball</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ball</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">center</span><span class="p">,</span> <span class="s2">&quot;or&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Geodesic ball of the space of beta distributions&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_08_practical_methods__information_geometry_22_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_22_0.png" />
+</div>
+</div>
+</section>
+<section id="Learning-on-spaces-of-distributions">
+<h2>Learning on spaces of distributions<a class="headerlink" href="#Learning-on-spaces-of-distributions" title="Link to this heading">#</a></h2>
+<section id="Fréchet-mean-of-beta-distributions">
+<h3>Fréchet mean of beta distributions<a class="headerlink" href="#Fréchet-mean-of-beta-distributions" title="Link to this heading">#</a></h3>
 <p>Now we consider an application to the study of the leaf inclination angle distribution of plants. The leaf angle distribution among a common plant species can be appropriately represented by a beta distribution (<a class="reference internal" href="#References"><span class="std std-ref">CPR2018</span></a>). The dataset <code class="docutils literal notranslate"><span class="pre">leaves</span></code> (<a class="reference internal" href="#References"><span class="std std-ref">CPR2018</span></a>) contains pairs of beta distribution parameters, each describing the distribution of the inclination angles of leaves inside a given plant species. These species are divided into 5 categories according to
 inclination angle distribution type: spherical, erectophile, uniform, planophile and plagiophile.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geomstats.datasets.utils</span> <span class="k">as</span> <span class="nn">data_utils</span>
@@ -764,7 +828,7 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
@@ -782,12 +846,12 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_08_practical_methods__information_geometry_22_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_22_0.png" />
+<img alt="../_images/notebooks_08_practical_methods__information_geometry_26_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_26_0.png" />
 </div>
 </div>
 <p>Using the <code class="docutils literal notranslate"><span class="pre">FrechetMean</span></code> learning class, we can compute the leaf inclination angle mean distribution among the species of type ‘planophile’.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.frechet_mean</span> <span class="kn">import</span> <span class="n">FrechetMean</span>
@@ -801,28 +865,156 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
 </pre></div>
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [14]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points_plan</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points_plan</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;planophile&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">mean_estimate</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;mean planophile&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span>
-    <span class="s2">&quot;Beta parameters of the leaf inclination angle mean distribution &quot;</span>
-    <span class="s2">&quot;of species of planophile type&quot;</span>
-<span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
+</section>
+<section id="K-Means-clustering-of-normal-distributions">
+<h3>K-Means clustering of normal distributions<a class="headerlink" href="#K-Means-clustering-of-normal-distributions" title="Link to this heading">#</a></h3>
+<p>We now show how this geometry can be used to perform K-means clustering of probability distributions. We consider a toy dataset of normal distributions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
 </div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_08_practical_methods__information_geometry_25_0.png" src="../_images/notebooks_08_practical_methods__information_geometry_25_0.png" />
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">x_a</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">x_b</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">y_a</span> <span class="o">=</span> <span class="n">y_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mi">5</span><span class="p">)))</span>
+<span class="n">points_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x_a</span><span class="p">,</span> <span class="n">y_a</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">points_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x_b</span><span class="p">,</span> <span class="n">y_b</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">points_a</span><span class="p">,</span> <span class="n">points_b</span><span class="p">))</span>
+
+<span class="n">n_samples</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">points</span><span class="p">)(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;standard deviation&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">pdfs</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
 </div>
 </div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_clusters</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">]):</span>
+    <span class="n">cluster</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">n_clusters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">):</span>
+        <span class="n">cluster</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="n">i</span><span class="p">])</span>
+        <span class="n">pdf_fun</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">cluster</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pdf_fun</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">cluster</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cluster</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;standard deviation&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Parameters of clusters&quot;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_clusters</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Pdfs of clusters&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>We perform K-means clustering using the Fisher-Rao metric, and then the Euclidean metric in the parameter space, looking for 3 different clusters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.kmeans</span> <span class="kn">import</span> <span class="n">RiemannianKMeans</span>
+
+<span class="n">clustering</span> <span class="o">=</span> <span class="n">RiemannianKMeans</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">normal</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s2">&quot;kmeans++&quot;</span><span class="p">)</span>
+<span class="n">clustering</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+<span class="n">plot_clusters</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">clustering</span><span class="o">.</span><span class="n">labels_</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">clustering</span> <span class="o">=</span> <span class="n">RiemannianKMeans</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">r2</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="s2">&quot;kmeans++&quot;</span><span class="p">)</span>
+<span class="n">clustering</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+<span class="n">plot_clusters</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">clustering</span><span class="o">.</span><span class="n">labels_</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We see that the Fisher-Rao metric will group the distributions with high variance together, because they have high mass overlap, while the Euclidean metric (which corresponds to the Wasserstein metric in the Gaussian case) does not take this difference into account.</p>
+</section>
+<section id="Principal-geodesic-analysis-of-normal-distributions">
+<h3>Principal geodesic analysis of normal distributions<a class="headerlink" href="#Principal-geodesic-analysis-of-normal-distributions" title="Link to this heading">#</a></h3>
+<p>Principal Component Analysis is a procedure that allows to find directions of maximal variance inside a dataset in a Euclidean space. It can be extended to Riemannian manifolds, in which case it is called Principal Geodesic Analysis (PGA). In Riemannian manifolds, we look for geodesics along which the projected data have maximal variance. In general, performing exact PGA in a curved space is difficult, and a linearized version (tangent PCA) is often used. However, in the Fisher-Rao geometry of
+univariate normal distributions things are particularly simple due to the constant curvature. Here we use the formulas of <a class="reference internal" href="#References"><span class="std std-ref">[CSV2016]</span></a>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">geomstats.learning.pca</span> <span class="kn">import</span> <span class="n">HyperbolicPlaneExactPGA</span>
+
+<span class="n">n_points</span> <span class="o">=</span> <span class="mi">200</span>
+
+<span class="n">means</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span>
+<span class="n">stds</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span>
+<span class="n">points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">)))</span>
+
+<span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">points</span><span class="p">)(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">221</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">pdfs</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Pdfs&quot;</span><span class="p">)</span>
+
+<span class="n">pca</span> <span class="o">=</span> <span class="n">HyperbolicPlaneExactPGA</span><span class="p">(</span><span class="n">normal</span><span class="p">)</span>
+<span class="n">proj_points</span> <span class="o">=</span> <span class="n">pca</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">222</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">proj_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">proj_points</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;or&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">proj_points</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">proj_points</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;og&quot;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Principal geodesics (PG)&quot;</span><span class="p">)</span>
+
+<span class="n">proj_pdfs_1</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">proj_points</span><span class="p">[</span><span class="mi">0</span><span class="p">])(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">proj_pdfs_2</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">point_to_pdf</span><span class="p">(</span><span class="n">proj_points</span><span class="p">[</span><span class="mi">1</span><span class="p">])(</span><span class="n">samples</span><span class="p">)</span>
+
+<span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">223</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">proj_pdfs_1</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Projections on the 1st PG&quot;</span><span class="p">)</span>
+
+<span class="n">ax4</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">224</span><span class="p">)</span>
+<span class="n">ax4</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">proj_pdfs_2</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Projections on the 2nd PG&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>We see that the first principal component has captured the variation in mean while the second component the variation in variance.</p>
+</section>
 </section>
 <section id="References">
 <h2>References<a class="headerlink" href="#References" title="Link to this heading">#</a></h2>
@@ -845,10 +1037,22 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
 <li><p>Bigot, R. Gouet, T. Klein and A. López. Geodesic PCA in the Wasserstein space by convex PCA. In Annales de l’Institut Henri Poincaré, Probabilités et Statistiques. Vol. 53. No. 1. Institut Henri Poincaré, 2017.</p></li>
 </ol>
 </div>
+<div class="citation" id="csv2016" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>CSV2016<span class="fn-bracket">]</span></span>
+<ol class="upperalpha simple" start="18">
+<li><p>Chakraborty, D. Seo and B. Vemuri. An efficient exact-pga algorithm for constant curvature manifolds. Proceedings of the IEEE conference on computer vision and pattern recognition. 2016.</p></li>
+</ol>
+</div>
 <div class="citation" id="cpr2018" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span>CPR2018<span class="fn-bracket">]</span></span>
 <ol class="upperalpha simple" start="6">
 <li><p>Chianucci, J. Pisek, K. Raabe et al. A dataset of leaf inclination angles for temperate and boreal broadleaf woody species. Annals of Forest Science Vol. 75, No. 50, 2018. <a class="reference external" href="https://doi.org/10.17632/4rmc7r8zvy.2">https://doi.org/10.17632/4rmc7r8zvy.2</a>.</p></li>
+</ol>
+</div>
+<div class="citation" id="css2015" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>CSS2015<span class="fn-bracket">]</span></span>
+<ol class="upperalpha simple" start="19">
+<li><p>Costa, S. Santos and J. Strapasson. Fisher information distance: a geometrical reading. Discrete Applied Mathematics. Vol. 197, 59-69, 2015.</p></li>
 </ol>
 </div>
 <div class="citation" id="lgrp2020" role="doc-biblioentry">
@@ -856,6 +1060,14 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
 <ol class="upperalpha simple">
 <li><p>Le Brigant, N. Guigui, S. Rebbah and S. Puechmorel, Classifying histograms of medical data using information geometry of beta distributions. IFAC-PapersOnLine, Vol. 54, No. 9, 514-520, 2021.</p></li>
 </ol>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
 </div>
 </div>
 </section>
@@ -907,9 +1119,16 @@ inclination angle distribution type: spherical, erectophile, uniform, planophile
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Table-of-contents:">Table of contents:</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Introduction">Introduction</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Normal-distributions">Normal distributions</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Beta-distributions">Beta distributions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Geometry-of-normal-distributions">Geometry of normal distributions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Geometry-of-beta-distributions">Geometry of beta distributions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Learning-on-spaces-of-distributions">Learning on spaces of distributions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Fréchet-mean-of-beta-distributions">Fréchet mean of beta distributions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#K-Means-clustering-of-normal-distributions">K-Means clustering of normal distributions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Principal-geodesic-analysis-of-normal-distributions">Principal geodesic analysis of normal distributions</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#References">References</a></li>
 </ul>
   </nav></div>

@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 19, 2024, 9:24:53 AM"/>
+    <meta name="docbuild:last-update" content="Mar 21, 2024, 1:41:29 PM"/>
   </head>
   
   
@@ -441,6 +441,8 @@ document.write(`
 <span class="kn">from</span> <span class="nn">sklearn.utils.extmath</span> <span class="kn">import</span> <span class="n">stable_cumsum</span><span class="p">,</span> <span class="n">svd_flip</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry._hyperbolic</span> <span class="kn">import</span> <span class="n">_Hyperbolic</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.hyperbolic</span> <span class="kn">import</span> <span class="n">Hyperbolic</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.learning.exponential_barycenter</span> <span class="kn">import</span> <span class="n">ExponentialBarycenter</span>
@@ -797,6 +799,175 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">singular_values_</span> <span class="o">=</span> <span class="n">singular_values_</span><span class="p">[:</span><span class="n">n_components</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span></div>
+
+
+
+<div class="viewcode-block" id="HyperbolicPlaneExactPGA">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.pca.HyperbolicPlaneExactPGA">[docs]</a>
+<span class="k">class</span> <span class="nc">HyperbolicPlaneExactPGA</span><span class="p">(</span><span class="n">_BasePCA</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exact Principal Geodesic Analysis in the hyperbolic plane.</span>
+
+<span class="sd">    The first principal component is computed by finding the direction</span>
+<span class="sd">    in a unit ball around the mean that maximizes the variance of the</span>
+<span class="sd">    projections on the induced geodesic. The projections are given by</span>
+<span class="sd">    closed form expressions in extrinsic coordinates. The second principal</span>
+<span class="sd">    component is the direction at the mean that is orthogonal to the first</span>
+<span class="sd">    principal component.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Hyperbolic</span>
+<span class="sd">        Two-dimensional hyperbolic space.</span>
+<span class="sd">    n_vec : int</span>
+<span class="sd">        Number of vectors used to discretize the unit ball when finding</span>
+<span class="sd">        the direction of maximal variance.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    components_ : array-like, shape=[n_components, 2]</span>
+<span class="sd">        Principal axes, representing the directions of maximal variance in the</span>
+<span class="sd">        data. They are the initial velocities of the principal geodesics.</span>
+<span class="sd">    mean_ : array-like, shape=[2,]</span>
+<span class="sd">        Intrinsic mean of the data points.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [CSV2016] R. Chakraborty, D. Seo, and B. C. Vemuri,</span>
+<span class="sd">        &quot;An efficient exact-pga algorithm for constant curvature manifolds.&quot;</span>
+<span class="sd">        Proceedings of the IEEE conference on computer vision and pattern</span>
+<span class="sd">        recognition. 2016.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Exact PGA is only implemented for the 2-dimensional hyperbolic space.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_grid</span> <span class="o">=</span> <span class="n">n_grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_half_space</span> <span class="o">=</span> <span class="n">Hyperbolic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">coords_type</span><span class="o">=</span><span class="s2">&quot;half-space&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span> <span class="o">=</span> <span class="n">Hyperbolic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">coords_type</span><span class="o">=</span><span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_variance_of_projections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt_ext</span><span class="p">,</span> <span class="n">mn_ext</span><span class="p">,</span> <span class="n">vec_ext</span><span class="p">):</span>
+        <span class="n">projections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">project_on_geodesic</span><span class="p">(</span><span class="n">pt_ext</span><span class="p">,</span> <span class="n">mn_ext</span><span class="p">,</span> <span class="n">vec_ext</span><span class="p">)</span>
+        <span class="n">costs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mn_ext</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">costs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HyperbolicPlaneExactPGA.fit">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.pca.HyperbolicPlaneExactPGA.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model with X.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like, shape=[..., n_features]</span>
+<span class="sd">            Training data in the hyperbolic plane. If the space is</span>
+<span class="sd">            the Poincare half-space or Poincare ball, n_features is</span>
+<span class="sd">            2. If it is the hyperboloid, n_features is 3.</span>
+<span class="sd">        y : Ignored (Compliance with scikit-learn interface)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns the instance itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span>
+
+        <span class="n">mean_half_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_</span><span class="p">,</span> <span class="s2">&quot;half-space&quot;</span><span class="p">)</span>
+        <span class="n">mean_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+        <span class="n">X_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_coordinates</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+
+        <span class="n">angles_half_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_grid</span><span class="p">)</span>
+        <span class="n">angles_half_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">angles_half_space</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vectors_half_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles_half_space</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angles_half_space</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">norms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_half_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vectors_half_space</span><span class="p">,</span> <span class="n">mean_half_space</span><span class="p">)</span>
+        <span class="n">vectors_half_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ij,i-&gt;ij&quot;</span><span class="p">,</span> <span class="n">vectors_half_space</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">norms</span><span class="p">)</span>
+        <span class="n">vectors_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">half_space_to_extrinsic_tangent</span><span class="p">(</span>
+            <span class="n">vectors_half_space</span><span class="p">,</span> <span class="n">mean_half_space</span>
+        <span class="p">)</span>
+
+        <span class="n">costs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_variance_of_projections</span><span class="p">(</span><span class="n">X_ext</span><span class="p">,</span> <span class="n">mean_ext</span><span class="p">,</span> <span class="n">vec_ext</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">vec_ext</span> <span class="ow">in</span> <span class="n">vectors_ext</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">axis_1</span> <span class="o">=</span> <span class="n">vectors_half_space</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">costs</span><span class="p">)]</span>
+        <span class="n">axis_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">axis_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="n">components_half_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">axis_1</span><span class="p">,</span> <span class="n">axis_2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">from_tangent_coordinates</span><span class="p">(</span>
+            <span class="n">components_half_space</span><span class="p">,</span> <span class="n">mean_half_space</span><span class="p">,</span> <span class="s2">&quot;half-space&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicPlaneExactPGA.fit_transform">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.pca.HyperbolicPlaneExactPGA.fit_transform">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project X on the principal components.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">         X : array-like, shape=[n_points, 2]</span>
+<span class="sd">             Training data in the hyperbolic plane. If the space is</span>
+<span class="sd">             the Poincare half-space or Poincare ball, n_features is</span>
+<span class="sd">             2. If it is the hyperboloid, n_features is 3.</span>
+<span class="sd">         y : Ignored (Compliance with scikit-learn interface)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X_new : array-like, shape=[n_components, n_points, 2]</span>
+<span class="sd">            Projections of the data on the first principal geodesic (first line</span>
+<span class="sd">            of the array) and on the second principal geodesic (second line).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">axis_1</span><span class="p">,</span> <span class="n">axis_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_</span>
+        <span class="n">axis_1_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_tangent_coordinates</span><span class="p">(</span><span class="n">axis_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+        <span class="n">axis_2_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_tangent_coordinates</span><span class="p">(</span><span class="n">axis_2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+        <span class="n">X_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_coordinates</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+        <span class="n">mean_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">to_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">)</span>
+
+        <span class="n">proj1_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">project_on_geodesic</span><span class="p">(</span><span class="n">X_ext</span><span class="p">,</span> <span class="n">mean_ext</span><span class="p">,</span> <span class="n">axis_1_ext</span><span class="p">)</span>
+        <span class="n">proj2_ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">project_on_geodesic</span><span class="p">(</span><span class="n">X_ext</span><span class="p">,</span> <span class="n">mean_ext</span><span class="p">,</span> <span class="n">axis_2_ext</span><span class="p">)</span>
+
+        <span class="n">var_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mean_ext</span><span class="p">,</span> <span class="n">proj1_ext</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">var_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space_ext</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mean_ext</span><span class="p">,</span> <span class="n">proj2_ext</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">explained_variance_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">from_coordinates</span><span class="p">(</span><span class="n">proj1_ext</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">from_coordinates</span><span class="p">(</span><span class="n">proj2_ext</span><span class="p">,</span> <span class="s2">&quot;extrinsic&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ExactPGA">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.pca.ExactPGA">[docs]</a>
+<span class="k">class</span> <span class="nc">ExactPGA</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Exact Principal Geodesic Analysis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface for instantiating proper algorithm.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">_Hyperbolic</span><span class="p">)</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">HyperbolicPlaneExactPGA</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Exact PGA is only implemented for the two-dimensional &quot;</span>
+                <span class="s2">&quot;hyperbolic space.&quot;</span>
+            <span class="p">)</span></div>
 
 </pre></div>
 
