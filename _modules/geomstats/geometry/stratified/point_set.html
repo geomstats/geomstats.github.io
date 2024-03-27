@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 21, 2024, 1:41:29 PM"/>
+    <meta name="docbuild:last-update" content="Mar 27, 2024, 6:07:13 PM"/>
   </head>
   
   
@@ -430,99 +430,72 @@ document.write(`
   <h1>Source code for geomstats.geometry.stratified.point_set</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Class for Stratified Spaces.</span>
 
-<span class="sd">Lead authors: Anna Calissano &amp; Jonas Lueg</span>
+<span class="sd">Lead authors: Anna Calissano and Jonas Lueg</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">functools</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
-
-<div class="viewcode-block" id="broadcast_lists">
-<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.broadcast_lists">[docs]</a>
-<span class="k">def</span> <span class="nf">broadcast_lists</span><span class="p">(</span><span class="n">list_a</span><span class="p">,</span> <span class="n">list_b</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Broadcast two lists.</span>
-
-<span class="sd">    Similar behavior as ``gs.broadcast_arrays``, but for lists.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">n_a</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_a</span><span class="p">)</span>
-    <span class="n">n_b</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_b</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">n_a</span> <span class="o">==</span> <span class="n">n_b</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">list_a</span><span class="p">,</span> <span class="n">list_b</span>
-
-    <span class="k">if</span> <span class="n">n_a</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span><span class="n">list_a</span><span class="p">,</span> <span class="n">list_b</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">list_a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-    <span class="k">if</span> <span class="n">n_b</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span><span class="n">list_a</span><span class="p">,</span> <span class="n">list_b</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot broadcast lens </span><span class="si">{</span><span class="n">n_a</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">n_b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
-
-<span class="k">def</span> <span class="nf">_manipulate_input</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">arg</span><span class="p">]</span>
-
-    <span class="k">return</span> <span class="n">arg</span>
-
-
-<span class="k">def</span> <span class="nf">_vectorize_point</span><span class="p">(</span><span class="o">*</span><span class="n">args_positions</span><span class="p">,</span> <span class="n">manipulate_input</span><span class="o">=</span><span class="n">_manipulate_input</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check point type and transform in iterable if not the case.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    args_positions : tuple</span>
-<span class="sd">        Position and corresponding argument name. A tuple for each position.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    Explicitly defining args_positions and args names ensures it works for all</span>
-<span class="sd">    combinations of input calling.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">_dec</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">_wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">args_positions</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-                    <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">manipulate_input</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">args</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">manipulate_input</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">pos</span><span class="p">])</span>
-
-            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">_wrapped</span>
-
-    <span class="k">return</span> <span class="n">_dec</span>
+<span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 
 
 <div class="viewcode-block" id="Point">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.Point">[docs]</a>
 <span class="k">class</span> <span class="nc">Point</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for points of a set.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for points of a set.&quot;&quot;&quot;</span>
 
+<div class="viewcode-block" id="Point.equal">
+<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.Point.equal">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produce a string with a verbal description of the point.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">equal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check equality against another point.</span>
 
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a hash for the point.&quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="Point.to_array">
-<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.Point.to_array">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn the point into a numpy array.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : Point or PointBatch</span>
+<span class="sd">            Point to compare against point.</span>
+<span class="sd">        atol : float</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        array_point : array-like, shape=[...]</span>
-<span class="sd">            An array representation of the Point type.</span>
+<span class="sd">        is_equal : array-like, shape=[...]</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PointBatch">
+<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.PointBatch">[docs]</a>
+<span class="k">class</span> <span class="nc">PointBatch</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for point batch.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get item.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="nb">list</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+
+<div class="viewcode-block" id="PointBatch.equal">
+<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.PointBatch.equal">[docs]</a>
+    <span class="k">def</span> <span class="nf">equal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check equality against another point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : Point or PointBatch</span>
+<span class="sd">            Point to compare against point.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">collection_point</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">collection_point</span><span class="p">,</span> <span class="n">point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">collection_point</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span> <span class="k">for</span> <span class="n">collection_point</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="p">)</span></div>
 </div>
 
 
@@ -561,12 +534,12 @@ document.write(`
 <div class="viewcode-block" id="PointSet.belongs">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.PointSet.belongs">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluate if a point belongs to the set.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point : Point-like, shape=[...]</span>
+<span class="sd">        point : Point or PointBatch</span>
 <span class="sd">            Point to evaluate.</span>
 <span class="sd">        atol : float</span>
 <span class="sd">            Absolute tolerance.</span>
@@ -593,26 +566,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        samples : List of Point</span>
-<span class="sd">            Points sampled on the PointSet.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="PointSet.set_to_array">
-<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.point_set.PointSet.set_to_array">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">set_to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a set of points into an array.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        points : list of Point, shape=[...]</span>
-<span class="sd">            Number of samples of point type to turn</span>
-<span class="sd">            into an array.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        points_array : array-like, shape=[...]</span>
+<span class="sd">        samples : Point or PointBatch</span>
 <span class="sd">            Points sampled on the PointSet.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 </div>
@@ -641,9 +595,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        point_a: Point or List of Point, shape=[...]</span>
+<span class="sd">        point_a: Point or PointBatch</span>
 <span class="sd">            Point in the PointSet.</span>
-<span class="sd">        point_b: Point or List of Point, shape=[...]</span>
+<span class="sd">        point_b: Point or PointBatch</span>
 <span class="sd">            Point in the PointSet.</span>
 
 <span class="sd">        Returns</span>
@@ -661,9 +615,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        initial_point: Point or List of Points, shape=[...]</span>
+<span class="sd">        initial_point: Point or PointBatch</span>
 <span class="sd">            Point in the PointSet.</span>
-<span class="sd">        end_point: Point or List of Points, shape=[...]</span>
+<span class="sd">        end_point: Point or PointBatch</span>
 <span class="sd">            Point in the PointSet.</span>
 
 <span class="sd">        Returns</span>

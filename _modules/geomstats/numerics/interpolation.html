@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 21, 2024, 1:41:29 PM"/>
+    <meta name="docbuild:last-update" content="Mar 27, 2024, 6:07:13 PM"/>
   </head>
   
   
@@ -430,30 +430,15 @@ document.write(`
   <h1>Source code for geomstats.numerics.interpolation</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Interpolation machinery.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 
 
-<div class="viewcode-block" id="UniformUnitIntervalLinearInterpolator">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.UniformUnitIntervalLinearInterpolator">[docs]</a>
-<span class="k">class</span> <span class="nc">UniformUnitIntervalLinearInterpolator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D linear interpolator.</span>
-
-<span class="sd">    Assumes interpolation occurs in the unit interval and</span>
-<span class="sd">    data is uniformly sampled.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    data : array-like, [..., *point_shape]</span>
-<span class="sd">    point_ndim : int</span>
-<span class="sd">        Dimension of point.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">=</span> <span class="n">point_ndim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_time_axis</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_axis</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="Interpolator">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.Interpolator">[docs]</a>
+<span class="k">class</span> <span class="nc">Interpolator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract class for interpolator.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate data.</span>
@@ -468,6 +453,117 @@ document.write(`
 <span class="sd">        point : array-like, shape=[..., n_time, *point_shape]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Interpolator.interpolate">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.Interpolator.interpolate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., n_time, *point_shape]</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">_LinearInterpolator1D</span><span class="p">(</span><span class="n">Interpolator</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">=</span> <span class="n">point_ndim</span>
+
+        <span class="n">time_axis</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">time_axis</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_from_t_to_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get interval index from time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        interval_index : array-like, shape=[n_times]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ratio within interval.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+<span class="sd">        interval_index : array-like, shape=[n_times]</span>
+<span class="sd">        end_index : array-like, shape=[n_times]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ratio : array-like, shape=[n_time]</span>
+<span class="sd">            Ratio of t within interval.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., n_time, *point_shape]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">interval_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_t_to_interval</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="n">max_bound_reached</span> <span class="o">=</span> <span class="n">interval_index</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="n">end_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">max_bound_reached</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">interval_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="n">initial_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+        <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+
+        <span class="n">ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_ratio</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">end_point</span> <span class="o">-</span> <span class="n">initial_point</span>
+        <span class="n">ijk</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">initial_point</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t,...t</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;...t</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UniformUnitIntervalLinearInterpolator">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.UniformUnitIntervalLinearInterpolator">[docs]</a>
+<span class="k">class</span> <span class="nc">UniformUnitIntervalLinearInterpolator</span><span class="p">(</span><span class="n">_LinearInterpolator1D</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D linear interpolator.</span>
+
+<span class="sd">    Assumes interpolation occurs in the unit interval and</span>
+<span class="sd">    data is uniformly sampled.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array-like, [..., *point_shape]</span>
+<span class="sd">    point_ndim : int</span>
+<span class="sd">        Dimension of point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_from_t_to_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get interval index from time.</span>
@@ -486,10 +582,50 @@ document.write(`
             <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="UniformUnitIntervalLinearInterpolator.interpolate">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.UniformUnitIntervalLinearInterpolator.interpolate">[docs]</a>
-    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate data.</span>
+    <span class="k">def</span> <span class="nf">_get_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ratio within interval.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+<span class="sd">        interval_index : array-like, shape=[n_times]</span>
+<span class="sd">            Ignored.</span>
+<span class="sd">        end_index : array-like, shape=[n_times]</span>
+<span class="sd">            Ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ratio : array-like, shape=[n_time]</span>
+<span class="sd">            Ratio of t within interval.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span></div>
+
+
+
+<div class="viewcode-block" id="LinearInterpolator1D">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.interpolation.LinearInterpolator1D">[docs]</a>
+<span class="k">class</span> <span class="nc">LinearInterpolator1D</span><span class="p">(</span><span class="n">_LinearInterpolator1D</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D linear interpolator.</span>
+
+<span class="sd">    Assumes interpolation occurs in the unit interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    times : array-like, [n_times]</span>
+<span class="sd">        Times. Must be sorted.</span>
+<span class="sd">    data : array-like, [..., *point_shape]</span>
+<span class="sd">    point_ndim : int</span>
+<span class="sd">        Dimension of point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="n">point_ndim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_from_t_to_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get interval index from time.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -498,25 +634,28 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., n_time, *point_shape]</span>
+<span class="sd">        interval_index : array-like, shape=[n_times]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">interval_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_t_to_interval</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">indices</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
 
-        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span>
+    <span class="k">def</span> <span class="nf">_get_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ratio within interval.</span>
 
-        <span class="n">max_bound_reached</span> <span class="o">=</span> <span class="n">interval_index</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_times</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : array-like, shape=[n_time]</span>
+<span class="sd">            Interpolation time.</span>
+<span class="sd">        interval_index : array-like, shape=[n_times]</span>
+<span class="sd">        end_index : array-like, shape=[n_times]</span>
 
-        <span class="n">end_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">max_bound_reached</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="n">interval_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">initial_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">interval_index</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
-        <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
-
-        <span class="n">diff</span> <span class="o">=</span> <span class="n">end_point</span> <span class="o">-</span> <span class="n">initial_point</span>
-        <span class="n">ratio</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span>
-
-        <span class="n">ijk</span> <span class="o">=</span> <span class="s2">&quot;ijk&quot;</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">initial_point</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t,...t</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;...t</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span></div>
-</div>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ratio : array-like, shape=[n_time]</span>
+<span class="sd">            Ratio of t within interval.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta</span><span class="p">[</span><span class="n">interval_index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">delta</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="n">end_index</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span> <span class="o">/</span> <span class="n">delta</span></div>
 
 </pre></div>
 
