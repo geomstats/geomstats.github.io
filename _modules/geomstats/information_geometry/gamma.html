@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Mar 27, 2024, 6:07:13 PM"/>
+    <meta name="docbuild:last-update" content="Mar 29, 2024, 5:15:11 PM"/>
   </head>
   
   
@@ -451,6 +451,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.algebra_utils</span> <span class="kn">import</span> <span class="n">from_vector_to_diagonal_matrix</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.diffeo</span> <span class="kn">import</span> <span class="n">InvolutionDiffeomorphism</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.information_geometry.base</span> <span class="kn">import</span> <span class="p">(</span>
@@ -460,7 +461,72 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.numerics.bvp</span> <span class="kn">import</span> <span class="n">ScipySolveBVP</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.geodesic</span> <span class="kn">import</span> <span class="n">ExpODESolver</span><span class="p">,</span> <span class="n">LogODESolver</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.ivp</span> <span class="kn">import</span> <span class="n">ScipySolveIVP</span>
-<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">check_is_batch</span>
+<span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
+
+
+<div class="viewcode-block" id="NaturalToStandardDiffeo">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.NaturalToStandardDiffeo">[docs]</a>
+<span class="k">class</span> <span class="nc">NaturalToStandardDiffeo</span><span class="p">(</span><span class="n">InvolutionDiffeomorphism</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Diffeomorphism between natural and standard coordinates.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NaturalToStandardDiffeo.diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.NaturalToStandardDiffeo.diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from natural coordinates to standard coordinates.</span>
+
+<span class="sd">        The change of variable is symmetric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point of the Gamma manifold, given in natural coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point of the Gamma manifold, given in standard coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NaturalToStandardDiffeo.tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.NaturalToStandardDiffeo.tangent_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">tangent_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert tangent vector from natural coordinates to standard coordinates.</span>
+
+<span class="sd">        The change of variable is symmetric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at base_point, given in natural coordinates.</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point of the Gamma manifold, given in natural coordinates.</span>
+<span class="sd">        image_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point of the Gamma manifold, given in standard coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at base_point, given in standard coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+
+        <span class="n">kappa</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">jac_row_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+        <span class="n">jac_row_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span> <span class="o">-</span><span class="n">kappa</span> <span class="o">/</span> <span class="n">scale</span><span class="o">**</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">point_batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">point_batch_shape</span><span class="p">:</span>
+            <span class="n">jac_row_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">jac_row_1</span><span class="p">,</span> <span class="n">point_batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="p">,))</span>
+
+        <span class="n">jac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">jac_row_1</span><span class="p">,</span> <span class="n">jac_row_2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...jk,...k-&gt;...j&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="GammaDistributions">
@@ -680,104 +746,6 @@ document.write(`
             <span class="n">nu</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">scale</span>
             <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">kappa</span><span class="p">,</span> <span class="n">kappa</span> <span class="o">/</span> <span class="n">nu</span><span class="p">]))</span>
         <span class="k">return</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="GammaDistributions.natural_to_standard">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.GammaDistributions.natural_to_standard">[docs]</a>
-    <span class="k">def</span> <span class="nf">natural_to_standard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from natural coordinates to standard coordinates.</span>
-
-<span class="sd">        The change of variable is symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in natural coordinates.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in standard coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="GammaDistributions.standard_to_natural">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.GammaDistributions.standard_to_natural">[docs]</a>
-    <span class="k">def</span> <span class="nf">standard_to_natural</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert point from standard coordinates to natural coordinates.</span>
-
-<span class="sd">        The change of variable is symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in standard coordinates.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in natural coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">natural_to_standard</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="GammaDistributions.tangent_natural_to_standard">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.GammaDistributions.tangent_natural_to_standard">[docs]</a>
-    <span class="k">def</span> <span class="nf">tangent_natural_to_standard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert tangent vector from natural coordinates to standard coordinates.</span>
-
-<span class="sd">        The change of variable is symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in natural coordinates.</span>
-<span class="sd">        vec : array-like, shape=[..., 2]</span>
-<span class="sd">            Tangent vector at base_point, given in natural coordinates.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        vec : array-like, shape=[..., 2]</span>
-<span class="sd">            Tangent vector at base_point, given in standard coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-        <span class="n">kappa</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-
-        <span class="n">jac_row_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-        <span class="n">jac_row_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span> <span class="o">-</span><span class="n">kappa</span> <span class="o">/</span> <span class="n">scale</span><span class="o">**</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-            <span class="n">jac_row_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">jac_row_1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
-            <span class="p">)</span>
-
-        <span class="n">jac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">jac_row_1</span><span class="p">,</span> <span class="n">jac_row_2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...jk,...k-&gt;...j&quot;</span><span class="p">,</span> <span class="n">jac</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="GammaDistributions.tangent_standard_to_natural">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.gamma.GammaDistributions.tangent_standard_to_natural">[docs]</a>
-    <span class="k">def</span> <span class="nf">tangent_standard_to_natural</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert tangent vector from standard coordinates to natural coordinates.</span>
-
-<span class="sd">        The change of variable is symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., 2]</span>
-<span class="sd">            Point of the Gamma manifold, given in standard coordinates.</span>
-<span class="sd">        vec : array-like, shape=[..., 2]</span>
-<span class="sd">            Tangent vector at base_point, given in standard coordinates.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        vec : array-like, shape=[..., 2]</span>
-<span class="sd">            Tangent vector at base_point, given in natural coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_natural_to_standard</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 </div>
 
 
