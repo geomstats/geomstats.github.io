@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 2, 2024, 10:33:55 AM"/>
+    <meta name="docbuild:last-update" content="Apr 2, 2024, 5:23:27 PM"/>
   </head>
   
   
@@ -437,9 +437,9 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">LevelSet</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.fiber_bundle</span> <span class="kn">import</span> <span class="n">FiberBundle</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">FlattenDiffeo</span><span class="p">,</span> <span class="n">Matrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.quotient_metric</span> <span class="kn">import</span> <span class="n">QuotientMetric</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.integrator</span> <span class="kn">import</span> <span class="n">integrate</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span><span class="p">,</span> <span class="n">repeat_out</span>
 
@@ -475,13 +475,12 @@ document.write(`
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k_landmarks</span><span class="p">,</span> <span class="n">m_ambient</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_landmarks</span> <span class="o">=</span> <span class="n">k_landmarks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m_ambient</span> <span class="o">=</span> <span class="n">m_ambient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">m_ambient</span> <span class="o">*</span> <span class="n">k_landmarks</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">dim</span><span class="o">=</span><span class="n">m_ambient</span> <span class="o">*</span> <span class="p">(</span><span class="n">k_landmarks</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">m_ambient</span> <span class="o">*</span> <span class="n">k_landmarks</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="p">(</span><span class="n">PreShapeMetric</span><span class="p">,</span> <span class="s2">&quot;rotations&quot;</span><span class="p">):</span> <span class="p">(</span><span class="n">PreShapeSpaceBundle</span><span class="p">,</span> <span class="n">KendallShapeMetric</span><span class="p">),</span>
@@ -1180,135 +1179,16 @@ document.write(`
 
 <div class="viewcode-block" id="PreShapeMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">PreShapeMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">PreShapeMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Procrustes metric on the pre-shape space.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_flatten_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="n">sphere_embedding_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">dim</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">sphere_embedding_dim</span><span class="p">,))</span>
-
-<div class="viewcode-block" id="PreShapeMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.inner_product">[docs]</a>
-    <span class="k">def</span> <span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inner-product of two tangent vectors at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            First tangent vector at base point.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Second tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dk_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_prod : array-like, shape=[...,]</span>
-<span class="sd">            Inner-product of the two tangent vectors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span>
-            <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PreShapeMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian exponential of a tangent vector.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at a base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space equal to the Riemannian exponential</span>
-<span class="sd">            of tangent_vec at the base point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">flat_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">flat_tan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="n">flat_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">flat_tan</span><span class="p">,</span> <span class="n">flat_bp</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_exp</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PreShapeMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian logarithm of a point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space.</span>
-<span class="sd">        base_point : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        log : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at the base point equal to the Riemannian logarithm</span>
-<span class="sd">            of point at the base point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">flat_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">flat_pt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-
-        <span class="n">flat_log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">flat_pt</span><span class="p">,</span> <span class="n">flat_bp</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_log</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PreShapeMetric.curvature">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.curvature">[docs]</a>
-    <span class="k">def</span> <span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the curvature.</span>
-
-<span class="sd">        For three tangent vectors at a base point :math:`x,y,z`,</span>
-<span class="sd">        the curvature is defined by</span>
-<span class="sd">        :math:`R(X, Y)Z = \nabla_{[X,Y]}Z</span>
-<span class="sd">        - \nabla_X\nabla_Y Z + - \nabla_Y\nabla_X Z`, where :math:`\nabla`</span>
-<span class="sd">        is the Levi-Civita connection. In the case of the hypersphere,</span>
-<span class="sd">        we have the closed formula</span>
-<span class="sd">        :math:`R(X,Y)Z = \langle X, Z \rangle Y - \langle Y,Z \rangle X`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_c : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point :  array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the group. Optional, default is the identity.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        curvature : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
-            <span class="n">base_point</span><span class="p">,</span>
-            <span class="n">tangent_vec_a</span><span class="p">,</span>
-            <span class="n">tangent_vec_b</span><span class="p">,</span>
-            <span class="n">tangent_vec_c</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">k_landmarks</span><span class="p">,</span> <span class="n">m_ambient</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">shape</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">space</span><span class="p">,</span>
+            <span class="n">diffeo</span><span class="o">=</span><span class="n">FlattenDiffeo</span><span class="p">(</span><span class="n">k_landmarks</span><span class="p">,</span> <span class="n">m_ambient</span><span class="p">),</span>
+            <span class="n">image_space</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">_sphere</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">flat_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
-        <span class="n">flat_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="n">flat_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">tangent_vec_c</span><span class="p">)</span>
-        <span class="n">flat_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">curvature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span>
-            <span class="n">flat_a</span><span class="p">,</span> <span class="n">flat_b</span><span class="p">,</span> <span class="n">flat_c</span><span class="p">,</span> <span class="n">flat_bp</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">curvature</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="PreShapeMetric.curvature_derivative">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.curvature_derivative">[docs]</a>
@@ -1361,56 +1241,6 @@ document.write(`
             <span class="n">base_point</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PreShapeMetric.parallel_transport">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.pre_shape.PreShapeMetric.parallel_transport">[docs]</a>
-    <span class="k">def</span> <span class="nf">parallel_transport</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Riemannian parallel transport of a tangent vector.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at a base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space.</span>
-<span class="sd">        direction : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Tangent vector at a base point.</span>
-<span class="sd">            Optional, default : None.</span>
-<span class="sd">        end_point : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space, to transport to. Unused if</span>
-<span class="sd">            `tangent_vec_b` is given.</span>
-<span class="sd">            Optional, default : None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        transported : array-like, shape=[..., k_landmarks, m_ambient]</span>
-<span class="sd">            Point on the pre-shape space equal to the Riemannian exponential</span>
-<span class="sd">            of tangent_vec at the base point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Either an end_point or a tangent_vec_b must be given to define the&quot;</span>
-                    <span class="s2">&quot; geodesic along which to transport.&quot;</span>
-                <span class="p">)</span>
-
-        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">end_point</span>
-        <span class="p">)</span>
-
-        <span class="n">flat_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">flat_tan_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="n">flat_tan_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten_point</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
-
-        <span class="n">flat_transport</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span><span class="p">(</span>
-            <span class="n">flat_tan_a</span><span class="p">,</span> <span class="n">flat_bp</span><span class="p">,</span> <span class="n">flat_tan_b</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_transport</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PreShapeMetric.injectivity_radius">
