@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 6, 2024, 8:53:35 PM"/>
+    <meta name="docbuild:last-update" content="Apr 8, 2024, 9:40:13 AM"/>
   </head>
   
   
@@ -1360,16 +1360,29 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        squared_dist : array-like, shape=[...]</span>
 <span class="sd">            Riemannian squared distance.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Use of `abs` in the output prevents nan when calling</span>
+<span class="sd">        `sqrt` in very small negative outputs (e.g. -1e-16).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">product</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
-        <span class="n">sqrt_product</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
-        <span class="n">trace_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span>
-        <span class="n">trace_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span>
-        <span class="n">trace_prod</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">sqrt_product</span><span class="p">)</span>
+        <span class="n">La</span><span class="p">,</span> <span class="n">Qa</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span>
+        <span class="n">point_a_sqrt</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">Qa</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">La</span> <span class="o">*</span> <span class="p">(</span><span class="n">La</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="p">),</span>
+            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">Qa</span><span class="p">),</span>
+        <span class="p">)</span>
 
-        <span class="n">squared_dist</span> <span class="o">=</span> <span class="n">trace_a</span> <span class="o">+</span> <span class="n">trace_b</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">trace_prod</span>
+        <span class="n">Lc</span><span class="p">,</span> <span class="n">Qc</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">point_a_sqrt</span> <span class="o">@</span> <span class="n">point_b</span> <span class="o">@</span> <span class="n">point_a_sqrt</span><span class="p">)</span>
+        <span class="n">cross_term</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">Qc</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Lc</span> <span class="o">*</span> <span class="p">(</span><span class="n">Lc</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))),</span>
+            <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">Qc</span><span class="p">),</span>
+        <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">squared_dist</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">squared_dist</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">point_a</span> <span class="o">+</span> <span class="n">point_b</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">cross_term</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="SPDBuresWassersteinMetric.parallel_transport">
