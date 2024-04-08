@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 8, 2024, 10:19:45 AM"/>
+    <meta name="docbuild:last-update" content="Apr 8, 2024, 10:30:35 AM"/>
   </head>
   
   
@@ -471,8 +471,72 @@ document.write(`
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.symmetric_matrices</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">HollowMatricesPermutationInvariantMetric</span><span class="p">,</span>
+    <span class="n">NullRowSumsPermutationInvariantMetric</span><span class="p">,</span>
+    <span class="n">NullRowSumsSymmetricMatrices</span><span class="p">,</span>
     <span class="n">SymmetricHollowMatrices</span><span class="p">,</span>
 <span class="p">)</span>
+
+
+<div class="viewcode-block" id="corr_map">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.corr_map">[docs]</a>
+<span class="k">def</span> <span class="nf">corr_map</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the correlation matrix associated to an SPD matrix.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \text { Cor }: \Sigma \in \operatorname{Sym}^{+}(n) \longmapsto</span>
+<span class="sd">        \operatorname{Diag}(\Sigma)^{-1 / 2} \Sigma</span>
+<span class="sd">        \operatorname{Diag}(\Sigma)^{-1 / 2} \in \operatorname{Cor}^{+}(n)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point : array-like, shape=[..., n, n]</span>
+<span class="sd">        SPD matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cor : array_like, shape=[..., n, n]</span>
+<span class="sd">        Full-rank correlation matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diagonal</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="tangent_corr_map">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.tangent_corr_map">[docs]</a>
+<span class="k">def</span> <span class="nf">tangent_corr_map</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the differential of the differential of the corr map.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        d_{\Sigma} \operatorname{Cor}(X)=\Delta_{\Sigma}\left[X-\frac{1}{2}</span>
+<span class="sd">        \left(\Delta_{\Sigma}^2 \operatorname{Diag}(X)</span>
+<span class="sd">        \Sigma+\Sigma \operatorname{Diag}(X)</span>
+<span class="sd">        \Delta_{\Sigma}^2\right)\right] \Delta_{\Sigma}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">        Tangent vector.</span>
+<span class="sd">    base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">        Base point.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : array-like, shape=[..., n, n]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diagonal_bp</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+    <span class="n">diagonal_tv</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+
+    <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal_tv</span> <span class="o">/</span> <span class="n">diagonal_bp</span>
+    <span class="n">aux</span> <span class="o">=</span> <span class="n">base_point</span> <span class="o">*</span> <span class="p">(</span><span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="n">mat</span> <span class="o">=</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">aux</span>
+
+    <span class="n">scaled_diag_vec</span> <span class="o">=</span> <span class="n">diagonal_bp</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span><span class="n">scaled_diag_vec</span><span class="p">,</span> <span class="n">mat</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="FullRankCorrelationMatrices">
@@ -699,8 +763,7 @@ document.write(`
 <span class="sd">        cor : array_like, shape=[..., n, n]</span>
 <span class="sd">            Full rank correlation matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">point</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">corr_map</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CorrelationMatricesBundle.tangent_riemannian_submersion">
@@ -719,13 +782,7 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        result : array-like, shape=[..., n, n]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">diagonal_bp</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">diagonal_tv</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
-
-        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal_tv</span> <span class="o">/</span> <span class="n">diagonal_bp</span>
-        <span class="n">aux</span> <span class="o">=</span> <span class="n">base_point</span> <span class="o">*</span> <span class="p">(</span><span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">aux</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">group_action</span><span class="p">(</span><span class="n">diagonal_bp</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">mat</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">tangent_corr_map</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CorrelationMatricesBundle.vertical_projection">
@@ -822,6 +879,12 @@ document.write(`
 <span class="sd">    the intermediate space.</span>
 
 <span class="sd">    For more details, check section 7.4.1 [T2022]_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2022] Yann Thanwerdas. Riemannian and stratified</span>
+<span class="sd">        geometries on covariance and correlation matrices. Differential</span>
+<span class="sd">        Geometry [math.DG]. Université Côte d&#39;Azur, 2022.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
@@ -851,7 +914,7 @@ document.write(`
 <div class="viewcode-block" id="UniqueDiagonalMatrixAlgorithm">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.UniqueDiagonalMatrixAlgorithm">[docs]</a>
 <span class="k">class</span> <span class="nc">UniqueDiagonalMatrixAlgorithm</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find unique diagonal matrix corresponding to a full-rank correlation matrix.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Find unique diagonal matrix corresponding to a full-rank correlation matrix.</span>
 
 <span class="sd">    That is, for all symmetric matrix :math:`S`,</span>
 <span class="sd">    there exists a unique diagonal matrix :math:`D` such that</span>
@@ -870,6 +933,9 @@ document.write(`
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
+<span class="sd">    .. [T2022] Yann Thanwerdas. Riemannian and stratified</span>
+<span class="sd">        geometries on covariance and correlation matrices. Differential</span>
+<span class="sd">        Geometry [math.DG]. Université Côte d&#39;Azur, 2022.</span>
 <span class="sd">    .. [AH2020] Ilya Archakov, and Peter Reinhard Hansen.</span>
 <span class="sd">        “A New Parametrization of Correlation Matrices.” arXiv, December 3, 2020.</span>
 <span class="sd">        https://doi.org/10.48550/arXiv.2012.02395.</span>
@@ -953,6 +1019,12 @@ document.write(`
 <span class="sd">        \operatorname{Cor}^{+}(n) \longrightarrow \operatorname{Hol}(n)</span>
 
 <span class="sd">    Check out chapter 8 of [T2022]_ for more details.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2022] Yann Thanwerdas. Riemannian and stratified</span>
+<span class="sd">        geometries on covariance and correlation matrices. Differential</span>
+<span class="sd">        Geometry [math.DG]. Université Côte d&#39;Azur, 2022.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1221,9 +1293,15 @@ document.write(`
 <span class="sd">        Scalar multiplying second term of quadratic form.</span>
 <span class="sd">    gamma : float</span>
 <span class="sd">        Scalar multiplying third term of quadratic form.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2022] Yann Thanwerdas. Riemannian and stratified</span>
+<span class="sd">        geometries on covariance and correlation matrices. Differential</span>
+<span class="sd">        Geometry [math.DG]. Université Côte d&#39;Azur, 2022.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
         <span class="n">diffeo</span> <span class="o">=</span> <span class="n">OffLogDiffeo</span><span class="p">()</span>
 
         <span class="n">image_space</span> <span class="o">=</span> <span class="n">SymmetricHollowMatrices</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
@@ -1231,6 +1309,352 @@ document.write(`
             <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
             <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
             <span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="o">=</span><span class="n">diffeo</span><span class="p">,</span> <span class="n">image_space</span><span class="o">=</span><span class="n">image_space</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="UniquePositiveDiagonalMatrixAlgorithm">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.UniquePositiveDiagonalMatrixAlgorithm">[docs]</a>
+<span class="k">class</span> <span class="nc">UniquePositiveDiagonalMatrixAlgorithm</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Find unique positive diagonal matrix corresponding to an SPD matrix.</span>
+
+<span class="sd">    That is, for every symmetric positive-definite matrix :math:`\Sigma`,</span>
+<span class="sd">    there exists a unique positive diagonal matrix :math:`\Delta` such that</span>
+<span class="sd">    :math:`\Delta \Sigma \Delta` is a symmetric positive-definite matrix</span>
+<span class="sd">    with unit row sums.</span>
+
+<span class="sd">    This result is known as the existence and uniqueness of the scaling of</span>
+<span class="sd">    SPD matrices ([T2023]_, [MO1968]_, [JR2009]_).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    atol : float</span>
+<span class="sd">        Tolerance to check algorithm convergence.</span>
+<span class="sd">    max_iter : int</span>
+<span class="sd">        Maximum iterations.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2023] Thanwerdas, Yann. “Permutation-Invariant Log-Euclidean Geometries</span>
+<span class="sd">        on Full-Rank Correlation Matrices,”</span>
+<span class="sd">        November 2023. https://hal.science/hal-03878729.</span>
+<span class="sd">    .. [MO1968] Marshall, Albert W., and Ingram Olkin.</span>
+<span class="sd">        “Scaling of Matrices to Achieve Specified Row and Column Sums.”</span>
+<span class="sd">        Numerische Mathematik 12, no. 1 (August 1, 1968): 83–90.</span>
+<span class="sd">        https://doi.org/10.1007/BF02170999.</span>
+<span class="sd">    .. [JR2009] Johnson, Charles R., and Robert Reams.</span>
+<span class="sd">        “Scaling of Symmetric Matrices by Positive Diagonal Congruence.”</span>
+<span class="sd">        Linear and Multilinear Algebra 57, no. 2 (March 1, 2009): 123–40.</span>
+<span class="sd">        https://doi.org/10.1080/03081080600872327.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="n">atol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+
+    <span class="k">def</span> <span class="nf">_jacobian_f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spd_matrix</span><span class="p">,</span> <span class="n">diag_vec</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Jacobian of objective function.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{\Sigma}(D) = \Sigma D e - D^{-1} e</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        spd_matrix : array-like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric positive-definite matrix.</span>
+<span class="sd">        diag_vec : array-like, shape=[..., n]</span>
+<span class="sd">            Vector corresponding to the diagonal of a matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jacobian : array-like, shape=[..., n]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">spd_matrix</span><span class="p">,</span> <span class="n">diag_vec</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">diag_vec</span>
+
+    <span class="k">def</span> <span class="nf">_hessian_f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spd_matrix</span><span class="p">,</span> <span class="n">diag_vec</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Hessian of objective function.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            H_{\Sigma}(D) = \Sigma + D^-2</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        spd_matrix : array-like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric positive-definite matrix.</span>
+<span class="sd">        diag_vec : array-like, shape=[..., n]</span>
+<span class="sd">            Vector corresponding to the diagonal of a matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hessian : array-like, shape=[..., n, n]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">spd_matrix</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">diag_vec</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_apply_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spd_matrix</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply Newton method to find scaling.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        spd_matrix : array-like, shape=[n, n]</span>
+<span class="sd">            Symmetric positive-definite matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        diag_vec : array-like, shape=[n]</span>
+<span class="sd">            Scaling of spd_matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xk</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">spd_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">gradient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jacobian_f</span><span class="p">(</span><span class="n">spd_matrix</span><span class="p">,</span> <span class="n">xk</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">gradient</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atol</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hessian_f</span><span class="p">(</span><span class="n">spd_matrix</span><span class="p">,</span> <span class="n">xk</span><span class="p">),</span> <span class="n">gradient</span><span class="p">)</span>
+            <span class="n">xk</span> <span class="o">=</span> <span class="n">xk</span> <span class="o">-</span> <span class="n">y</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Maximum number of iterations </span><span class="si">%d</span><span class="s2"> reached. The mean may be inaccurate&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">xk</span>
+
+<div class="viewcode-block" id="UniquePositiveDiagonalMatrixAlgorithm.apply">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.UniquePositiveDiagonalMatrixAlgorithm.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sym_mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Apply Newton method to find scaling.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sym_mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric positive-definite matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        diag_vec : array-like, shape=[..., n]</span>
+<span class="sd">            Scaling of spd_matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sym_mat</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_single</span><span class="p">(</span><span class="n">sym_mat</span><span class="p">)</span>
+
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">sym_mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_apply_single</span><span class="p">(</span><span class="n">sym_mat_</span><span class="p">)</span> <span class="k">for</span> <span class="n">sym_mat_</span> <span class="ow">in</span> <span class="n">sym_mat</span><span class="p">])</span>
+
+        <span class="n">mat_shape</span> <span class="o">=</span> <span class="n">sym_mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">flat_sym_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sym_mat</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">mat_shape</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_apply_single</span><span class="p">(</span><span class="n">sym_mat_</span><span class="p">)</span> <span class="k">for</span> <span class="n">sym_mat_</span> <span class="ow">in</span> <span class="n">flat_sym_mat</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat_shape</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LogScalingDiffeo">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScalingDiffeo">[docs]</a>
+<span class="k">class</span> <span class="nc">LogScalingDiffeo</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Off-log diffeomorphism from Cor+ to Row_1^+.</span>
+
+<span class="sd">    A diffeomorphism between full-rank correlation matrices :math:`Cor+(n)`</span>
+<span class="sd">    and the space of symmetric matrices with null row sums :math:`Row_0(n)`.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \operatorname{Log} ^{\star} =</span>
+<span class="sd">        \log \left(\mathcal{D}^{\star}(\Sigma)</span>
+<span class="sd">        \star \Sigma\right): \operatorname{Cor}^{+}(n)</span>
+<span class="sd">        \longrightarrow \operatorname{Row}_0(n)</span>
+
+<span class="sd">    Check out [T2023]_ for more details.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2023] Thanwerdas, Yann. “Permutation-Invariant Log-Euclidean Geometries</span>
+<span class="sd">        on Full-Rank Correlation Matrices,”</span>
+<span class="sd">        November 2023. https://hal.science/hal-03878729.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_diag_mat_algo</span> <span class="o">=</span> <span class="n">UniquePositiveDiagonalMatrixAlgorithm</span><span class="p">()</span>
+
+<div class="viewcode-block" id="LogScalingDiffeo.diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScalingDiffeo.diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Diffeomorphism at base point.</span>
+
+<span class="sd">        NB: congruence action is implictly performed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diag_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_diag_mat_algo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">unit_row_sum_spd</span> <span class="o">=</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span><span class="n">diag_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">logmh</span><span class="p">(</span><span class="n">unit_row_sum_spd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogScalingDiffeo.inverse_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScalingDiffeo.inverse_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">inverse_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Inverse diffeomorphism at image point.</span>
+
+<span class="sd">        :math:`f^{-1}: N \rightarrow M`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">corr_map</span><span class="p">(</span><span class="n">expmh</span><span class="p">(</span><span class="n">image_point</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LogScalingDiffeo.tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScalingDiffeo.tangent_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">tangent_diffeomorphism</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Tangent diffeomorphism at base point.</span>
+
+<span class="sd">        df_p is a linear map from T_pM to T_f(p)N.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image tangent vector at image of the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">diag_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_diag_mat_algo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">base_point_row_1</span> <span class="o">=</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span>
+                <span class="n">diag_vec</span><span class="p">,</span> <span class="n">base_point</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_point_row_1</span> <span class="o">=</span> <span class="n">expmh</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point_row_1</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">eye</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">base_point_row_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">tangent_vec_row_1_0</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">eye</span> <span class="o">+</span> <span class="n">base_point_row_1</span><span class="p">),</span>
+                    <span class="n">aux</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">tangent_vec_row_1</span> <span class="o">=</span> <span class="n">aux</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">tangent_vec_row_1_0</span><span class="p">,</span> <span class="n">base_point_row_1</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">base_point_row_1</span><span class="p">,</span> <span class="n">tangent_vec_row_1_0</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">SymMatrixLog</span><span class="o">.</span><span class="n">tangent_diffeomorphism</span><span class="p">(</span>
+            <span class="n">tangent_vec</span><span class="o">=</span><span class="n">tangent_vec_row_1</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_point_row_1</span><span class="p">,</span>
+            <span class="n">image_point</span><span class="o">=</span><span class="n">image_point</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogScalingDiffeo.inverse_tangent_diffeomorphism">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScalingDiffeo.inverse_tangent_diffeomorphism">[docs]</a>
+    <span class="k">def</span> <span class="nf">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Inverse tangent diffeomorphism at image point.</span>
+
+<span class="sd">        df^-1_p is a linear map from T_f(p)N to T_pM</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point_row_1</span> <span class="o">=</span> <span class="n">expmh</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">diag_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_diag_mat_algo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+            <span class="n">base_point_row_1</span> <span class="o">=</span> <span class="n">FullRankCorrelationMatrices</span><span class="o">.</span><span class="n">diag_action</span><span class="p">(</span>
+                <span class="n">diag_vec</span><span class="p">,</span> <span class="n">base_point</span>
+            <span class="p">)</span>
+
+        <span class="n">tangent_vec_row_1</span> <span class="o">=</span> <span class="n">SymMatrixLog</span><span class="o">.</span><span class="n">inverse_tangent_diffeomorphism</span><span class="p">(</span>
+            <span class="n">image_tangent_vec</span><span class="o">=</span><span class="n">image_tangent_vec</span><span class="p">,</span>
+            <span class="n">image_point</span><span class="o">=</span><span class="n">image_point</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_point_row_1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tangent_corr_map</span><span class="p">(</span><span class="n">tangent_vec_row_1</span><span class="p">,</span> <span class="n">base_point_row_1</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LogScaledMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.LogScaledMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">LogScaledMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pullback metric via a diffeomorphism.</span>
+
+<span class="sd">    Diffeormorphism between full-rank correlation matrices and</span>
+<span class="sd">    the space of symmetric matrices with null row sums.</span>
+
+<span class="sd">    Check out [T2023]_ for more details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : FullRankCorrelationMatrices</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Scalar multiplying first term of quadratic form.</span>
+<span class="sd">    delta : float</span>
+<span class="sd">        Scalar multiplying second term of quadratic form.</span>
+<span class="sd">    zeta : float</span>
+<span class="sd">        Scalar multiplying third term of quadratic form.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [T2023] Thanwerdas, Yann. “Permutation-Invariant Log-Euclidean Geometries</span>
+<span class="sd">        on Full-Rank Correlation Matrices,”</span>
+<span class="sd">        November 2023. https://hal.science/hal-03878729.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zeta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">LogScalingDiffeo</span><span class="p">()</span>
+
+        <span class="n">image_space</span> <span class="o">=</span> <span class="n">NullRowSumsSymmetricMatrices</span><span class="p">(</span>
+            <span class="n">n</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
+            <span class="n">NullRowSumsPermutationInvariantMetric</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span>
+            <span class="n">zeta</span><span class="o">=</span><span class="n">zeta</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="o">=</span><span class="n">diffeo</span><span class="p">,</span> <span class="n">image_space</span><span class="o">=</span><span class="n">image_space</span><span class="p">)</span></div>
