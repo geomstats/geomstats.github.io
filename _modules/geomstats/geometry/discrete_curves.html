@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 12, 2024, 9:13:28 AM"/>
+    <meta name="docbuild:last-update" content="Apr 12, 2024, 9:51:28 AM"/>
   </head>
   
   
@@ -433,7 +433,6 @@ document.write(`
 <span class="sd">Lead author: Alice Le Brigant.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">math</span>
 
@@ -454,6 +453,10 @@ document.write(`
     <span class="n">centered_difference</span><span class="p">,</span>
     <span class="n">forward_difference</span><span class="p">,</span>
     <span class="n">second_centered_difference</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">geomstats.numerics.interpolation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">LinearInterpolator1D</span><span class="p">,</span>
+    <span class="n">UniformUnitIntervalLinearInterpolator</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">check_is_batch</span><span class="p">,</span> <span class="n">get_batch_shape</span>
 
@@ -1792,25 +1795,30 @@ document.write(`
 <span class="sd">    total_space : Manifold</span>
 <span class="sd">        Total space with reparametrizations fiber bundle structure.</span>
 <span class="sd">    n_space_grid : int</span>
-<span class="sd">        Number of subintervals in which the reparametrization is linear.</span>
-<span class="sd">        Optinal, default: 100.</span>
+<span class="sd">        Number of sampling points of the unit interval.</span>
 <span class="sd">    max_slope : int</span>
 <span class="sd">        Maximum slope allowed for a reparametrization.</span>
-<span class="sd">        Optional, default: 6.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    [WAJ2007] M. Washington, S. Anuj &amp; H. Joshi,</span>
-<span class="sd">    &quot;On Shape of Plane Elastic Curves&quot;, in International Journal of Computer</span>
-<span class="sd">    Vision. 73(3):307-324, 2007.</span>
+<span class="sd">        &quot;On Shape of Plane Elastic Curves&quot;, in International Journal of Computer</span>
+<span class="sd">        Vision. 73(3):307-324, 2007.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_slope</span><span class="o">=</span><span class="mf">6.0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_slope</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">total_space</span><span class="o">.</span><span class="n">k_sampling_points</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span> <span class="o">=</span> <span class="n">n_space_grid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="n">max_slope</span>
 
-    <span class="k">def</span> <span class="nf">_resample_srv_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srv_function</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_srv_transform</span> <span class="o">=</span> <span class="n">SRVTransform</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span>
+            <span class="n">k_sampling_points</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_resample_srv_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">srv_function</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resample SRV function of a discrete curve.</span>
 
 <span class="sd">        Parameters</span>
@@ -1820,25 +1828,32 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        srv : array, shape=[..., n_space_grid, ambient_dim]</span>
+<span class="sd">        srv : array, shape=[..., n_space_grid - 1, ambient_dim]</span>
 <span class="sd">            SRV function of the curve at the right size.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        If `n_space_grid` &lt; `k_sampling_points`, it subsamples the curve.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_space_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_space_grid</span><span class="p">))</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
-        <span class="n">ratio</span> <span class="o">=</span> <span class="p">(</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_space_grid</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">index</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">srv_function</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_compute_integral_restricted</span><span class="p">(</span><span class="n">srv_1</span><span class="p">,</span> <span class="n">srv_2</span><span class="p">,</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_restricted_integral</span><span class="p">(</span>
+        <span class="n">srv_1</span><span class="p">,</span> <span class="n">srv_2</span><span class="p">,</span> <span class="n">x_min_index</span><span class="p">,</span> <span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_min_index</span><span class="p">,</span> <span class="n">y_max_index</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the value of an integral over a subinterval.</span>
 
 <span class="sd">        Compute n * the value of the integral of</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">        srv_1(t)\cdotsrv_2(\gamma(t))\cdot|\gamma(t)|^\frac{1}{2}</span>
+
+<span class="sd">            q_1(t)\cdot q_2(\gamma(t))\cdot|\gamma(t)|^\frac{1}{2}</span>
 
 <span class="sd">        over :math:`\left[\x_min,x_max\right]` where gamma restricted to</span>
 <span class="sd">        :math:`\left[\x_min,x_max\right]` is a linear.</span>
@@ -1849,13 +1864,13 @@ document.write(`
 <span class="sd">            SRV function of the initial curve.</span>
 <span class="sd">        srv_2 : array, shape=[n, ambient_dim]</span>
 <span class="sd">            SRV function of the end curve.</span>
-<span class="sd">        x_min : int</span>
+<span class="sd">        x_min_index : int</span>
 <span class="sd">            Beginning of the subinterval.</span>
-<span class="sd">        x_max : int</span>
+<span class="sd">        x_max_index : int</span>
 <span class="sd">            End of the subinterval.</span>
-<span class="sd">        y_min : int</span>
+<span class="sd">        y_min_index : int</span>
 <span class="sd">            Value of gamma at x_min.</span>
-<span class="sd">        y_max : int</span>
+<span class="sd">        y_max_index : int</span>
 <span class="sd">            Value of gamma at x_max.</span>
 
 <span class="sd">        Returns</span>
@@ -1863,102 +1878,88 @@ document.write(`
 <span class="sd">        value : float</span>
 <span class="sd">            Value of the integral described above.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">gamma_slope</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_max</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span>
+        <span class="n">delta_y_index</span> <span class="o">=</span> <span class="n">y_max_index</span> <span class="o">-</span> <span class="n">y_min_index</span>
+        <span class="n">delta_x_index</span> <span class="o">=</span> <span class="n">x_max_index</span> <span class="o">-</span> <span class="n">x_min_index</span>
 
-        <span class="n">list_l</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">list_k</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">gamma_slope</span> <span class="o">+</span> <span class="n">x_min</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">gamma_slope</span> <span class="o">=</span> <span class="n">delta_y_index</span> <span class="o">/</span> <span class="n">delta_x_index</span>
 
-        <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">x_min</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">x_bound_indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">x_min_index</span><span class="p">,</span> <span class="n">x_max_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">y_bounds_indices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">y_index</span> <span class="o">-</span> <span class="n">y_min_index</span><span class="p">)</span> <span class="o">/</span> <span class="n">gamma_slope</span> <span class="o">+</span> <span class="n">x_min_index</span>
+            <span class="k">for</span> <span class="n">y_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_min_index</span><span class="p">,</span> <span class="n">y_max_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">x_min_index</span>
+        <span class="n">x_index</span><span class="p">,</span> <span class="n">y_index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
 
         <span class="n">value</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">y_max</span> <span class="o">-</span> <span class="n">y_min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">upper_bound</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">list_l</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">list_k</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-            <span class="n">length</span> <span class="o">=</span> <span class="n">upper_bound</span> <span class="o">-</span> <span class="n">lower_bound</span>
-            <span class="n">value</span> <span class="o">+=</span> <span class="n">length</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">srv_1</span><span class="p">[</span><span class="n">x_min</span> <span class="o">+</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">srv_2</span><span class="p">[</span><span class="n">y_min</span> <span class="o">+</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">while</span> <span class="n">x_index</span> <span class="o">&lt;</span> <span class="n">delta_x_index</span> <span class="ow">and</span> <span class="n">y_index</span> <span class="o">&lt;</span> <span class="n">delta_y_index</span><span class="p">:</span>
+            <span class="n">upper_bound</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="n">x_bound_indices</span><span class="p">[</span><span class="n">x_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">y_bounds_indices</span><span class="p">[</span><span class="n">y_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">list_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">list_k</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
-                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">elif</span> <span class="n">list_l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">list_k</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
-                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># NB: normalization is done outside</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">upper_bound</span> <span class="o">-</span> <span class="n">lower_bound</span>
+            <span class="n">value</span> <span class="o">+=</span> <span class="n">length</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+                <span class="n">srv_1</span><span class="p">[</span><span class="n">x_min_index</span> <span class="o">+</span> <span class="n">x_index</span><span class="p">],</span> <span class="n">srv_2</span><span class="p">[</span><span class="n">y_min_index</span> <span class="o">+</span> <span class="n">y_index</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x_bound_indices</span><span class="p">[</span><span class="n">x_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_bounds_indices</span><span class="p">[</span><span class="n">y_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
+            <span class="p">):</span>
+                <span class="n">x_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">y_index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">x_bound_indices</span><span class="p">[</span><span class="n">x_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y_bounds_indices</span><span class="p">[</span><span class="n">y_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">x_index</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">y_index</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">upper_bound</span>
 
-        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">gamma_slope</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">gamma_slope</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">value</span>
 
-    <span class="k">def</span> <span class="nf">_reparametrize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_reparametrize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_with_origin</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reparametrize curve by gamma.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        curve : array, shape=[k_sampling_points, ambient_dim]</span>
+<span class="sd">        point_with_origin : array, shape=[k_sampling_points, ambient_dim]</span>
 <span class="sd">            Discrete curve.</span>
 <span class="sd">        gamma : array, shape=[n_subinterval]</span>
 <span class="sd">            Parametrization of a curve.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        new_curve : array , shape=[k_sampling_points, ambient_dim]</span>
+<span class="sd">        new_point : array , shape=[k_sampling_points - 1, ambient_dim]</span>
 <span class="sd">            Curve reparametrized by gamma.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_space_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span>
-        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">curve</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">k_sampling_points</span>
 
-        <span class="n">new_curve</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">curve</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">n_subinterval</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
-        <span class="n">list_gamma_slope</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_space_grid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">list_gamma_constant</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_space_grid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">x_uniform</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+        <span class="n">point_interpolator</span> <span class="o">=</span> <span class="n">UniformUnitIntervalLinearInterpolator</span><span class="p">(</span>
+            <span class="n">point_with_origin</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
 
-        <span class="n">new_curve</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">new_curve</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">x_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gamma_elem</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">gamma_elem</span> <span class="ow">in</span> <span class="n">gamma</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">y_space</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gamma_elem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">gamma_elem</span> <span class="ow">in</span> <span class="n">gamma</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_subinterval</span><span class="p">):</span>
-            <span class="p">(</span><span class="n">i_depart</span><span class="p">,</span> <span class="n">j_depart</span><span class="p">)</span> <span class="o">=</span> <span class="n">gamma</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="p">(</span><span class="n">i_arrive</span><span class="p">,</span> <span class="n">j_arrive</span><span class="p">)</span> <span class="o">=</span> <span class="n">gamma</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-            <span class="n">gamma_slope</span> <span class="o">=</span> <span class="p">(</span><span class="n">j_arrive</span> <span class="o">-</span> <span class="n">j_depart</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">i_arrive</span> <span class="o">-</span> <span class="n">i_depart</span><span class="p">)</span>
-            <span class="n">gamma_constant</span> <span class="o">=</span> <span class="n">j_depart</span> <span class="o">-</span> <span class="n">i_depart</span> <span class="o">*</span> <span class="n">gamma_slope</span>
+        <span class="n">repar_inverse</span> <span class="o">=</span> <span class="n">LinearInterpolator1D</span><span class="p">(</span><span class="n">y_space</span><span class="p">,</span> <span class="n">x_space</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i_depart</span><span class="p">,</span> <span class="n">i_arrive</span><span class="p">):</span>
-                <span class="n">list_gamma_slope</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma_slope</span>
-                <span class="n">list_gamma_constant</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma_constant</span>
+        <span class="k">return</span> <span class="n">point_interpolator</span><span class="p">(</span><span class="n">repar_inverse</span><span class="p">(</span><span class="n">x_uniform</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
 
-        <span class="n">ratio_k</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">k_sampling_points</span>
-        <span class="n">ratio_n</span> <span class="o">=</span> <span class="p">(</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_space_grid</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">):</span>
-            <span class="n">indice_n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">ratio_k</span><span class="p">))</span>
-            <span class="n">gamma_indice_n</span> <span class="o">=</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">ratio_k</span><span class="p">)</span> <span class="o">*</span> <span class="n">list_gamma_slope</span><span class="p">[</span>
-                <span class="n">indice_n</span>
-            <span class="p">]</span> <span class="o">+</span> <span class="n">list_gamma_constant</span><span class="p">[</span><span class="n">indice_n</span><span class="p">]</span>
-            <span class="n">gamma_indice_k</span> <span class="o">=</span> <span class="n">gamma_indice_n</span> <span class="o">*</span> <span class="n">ratio_n</span>
-            <span class="n">indice_k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">gamma_indice_k</span><span class="p">))</span>
-            <span class="n">alpha</span> <span class="o">=</span> <span class="n">gamma_indice_k</span> <span class="o">-</span> <span class="n">indice_k</span>
-
-            <span class="n">new_curve</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[</span><span class="n">indice_k</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">curve</span><span class="p">[</span><span class="n">indice_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">alpha</span>
-
-        <span class="k">return</span> <span class="n">new_curve</span>
-
-    <span class="k">def</span> <span class="nf">_compute_squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_srv</span><span class="p">,</span> <span class="n">end_srv</span><span class="p">,</span> <span class="n">tableau</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_srv</span><span class="p">,</span> <span class="n">end_srv</span><span class="p">,</span> <span class="n">grid_last</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute squared distance using algorithmic information.&quot;&quot;&quot;</span>
         <span class="n">n_space_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span>
 
-        <span class="n">norm_squared_initial_srv</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_integral_restricted</span><span class="p">(</span>
-                <span class="n">initial_srv</span><span class="p">,</span> <span class="n">initial_srv</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span>
-            <span class="p">)</span>
-            <span class="o">/</span> <span class="n">n_space_grid</span>
-        <span class="p">)</span>
-        <span class="n">norm_squared_end_srv</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_integral_restricted</span><span class="p">(</span>
-                <span class="n">end_srv</span><span class="p">,</span> <span class="n">end_srv</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span>
-            <span class="p">)</span>
-            <span class="o">/</span> <span class="n">n_space_grid</span>
-        <span class="p">)</span>
+        <span class="n">norm_squared_initial_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_restricted_integral</span><span class="p">(</span>
+            <span class="n">initial_srv</span><span class="p">,</span> <span class="n">initial_srv</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">norm_squared_end_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_restricted_integral</span><span class="p">(</span>
+            <span class="n">end_srv</span><span class="p">,</span> <span class="n">end_srv</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">maximum_scalar_product</span> <span class="o">=</span> <span class="n">tableau</span><span class="p">[(</span><span class="n">n_space_grid</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="p">)]</span> <span class="o">/</span> <span class="n">n_space_grid</span>
-
+        <span class="n">maximum_scalar_product</span> <span class="o">=</span> <span class="n">grid_last</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">norm_squared_initial_srv</span> <span class="o">+</span> <span class="n">norm_squared_end_srv</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">maximum_scalar_product</span>
         <span class="p">)</span>
@@ -1983,67 +1984,73 @@ document.write(`
 <span class="sd">            Quotient distance between point and base point.</span>
 <span class="sd">            If return_sdist is True.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_space_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span>
         <span class="n">max_slope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span>
+        <span class="n">n_space_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_space_grid</span>
 
-        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">k_sampling_points</span>
-        <span class="n">srv_transform</span> <span class="o">=</span> <span class="n">SRVTransform</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span>
-            <span class="n">k_sampling_points</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">initial_srv</span> <span class="o">=</span> <span class="n">srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">end_srv</span> <span class="o">=</span> <span class="n">srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">initial_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">end_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_srv_transform</span><span class="o">.</span><span class="n">diffeomorphism</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
-        <span class="n">initial_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample_srv_function</span><span class="p">(</span><span class="n">initial_srv</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
-        <span class="n">end_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample_srv_function</span><span class="p">(</span><span class="n">end_srv</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+        <span class="n">resampled_initial_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample_srv_function</span><span class="p">(</span><span class="n">initial_srv</span><span class="p">)</span>
+        <span class="n">resampled_end_srv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resample_srv_function</span><span class="p">(</span><span class="n">end_srv</span><span class="p">)</span>
 
-        <span class="n">initial_srv_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">initial_srv</span><span class="p">)</span>
-        <span class="n">end_srv_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">end_srv</span><span class="p">)</span>
-
-        <span class="n">tableau</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_space_grid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">tableau</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="mf">0.0</span><span class="p">}</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="p">{(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]}</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_space_grid</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">min_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-                <span class="nb">max</span><span class="p">(</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">j</span> <span class="o">/</span> <span class="n">max_slope</span><span class="p">),</span>
-                    <span class="n">n_space_grid</span> <span class="o">-</span> <span class="n">max_slope</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="n">j</span><span class="p">),</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">max_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-                <span class="nb">min</span><span class="p">(</span>
-                    <span class="n">j</span> <span class="o">*</span> <span class="n">max_slope</span><span class="p">,</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_space_grid</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">max_slope</span><span class="p">)),</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_i</span><span class="p">,</span> <span class="n">max_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">minimum_column_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="n">max_slope</span><span class="p">))</span>
-                <span class="n">minimum_line_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="n">max_slope</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">minimum_column_index</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">minimum_line_index</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">tableau</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                            <span class="n">new_value</span> <span class="o">=</span> <span class="n">tableau</span><span class="p">[</span>
-                                <span class="n">k</span><span class="p">,</span> <span class="n">m</span>
-                            <span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_integral_restricted</span><span class="p">(</span>
-                                <span class="n">initial_srv</span><span class="p">,</span> <span class="n">end_srv</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">j</span>
+
+        <span class="k">for</span> <span class="n">x_max_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="p">):</span>
+            <span class="n">max_y_max_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_space_grid</span><span class="p">,</span> <span class="n">x_max_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">y_max_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_y_max_index</span><span class="p">):</span>
+                <span class="c1"># NB: solves minimization part</span>
+                <span class="n">min_x_min_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x_max_index</span> <span class="o">-</span> <span class="n">max_slope</span><span class="p">)</span>
+                <span class="n">min_y_min_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">y_max_index</span> <span class="o">-</span> <span class="n">max_slope</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x_min_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_x_min_index</span><span class="p">,</span> <span class="n">x_max_index</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">y_min_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_y_min_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">x_min_index</span><span class="p">,</span> <span class="n">y_min_index</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+                            <span class="c1"># jump borders</span>
+                            <span class="k">continue</span>
+                        <span class="k">elif</span> <span class="p">(</span>
+                            <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                                <span class="p">(</span><span class="n">y_max_index</span> <span class="o">-</span> <span class="n">y_min_index</span><span class="p">)</span>
+                                <span class="o">/</span> <span class="p">(</span><span class="n">x_max_index</span> <span class="o">-</span> <span class="n">x_min_index</span><span class="p">)</span>
+                                <span class="o">-</span> <span class="mi">1</span>
                             <span class="p">)</span>
+                            <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
+                            <span class="ow">and</span> <span class="n">x_max_index</span> <span class="o">-</span> <span class="n">x_min_index</span> <span class="o">!=</span> <span class="mi">1</span>
+                            <span class="ow">and</span> <span class="n">y_max_index</span> <span class="o">-</span> <span class="n">y_max_index</span> <span class="o">!=</span> <span class="mi">1</span>
+                        <span class="p">):</span>
+                            <span class="c1"># jump slope == 1 except last</span>
+                            <span class="k">continue</span>
 
-                            <span class="k">if</span> <span class="n">tableau</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">new_value</span><span class="p">:</span>
-                                <span class="n">tableau</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
-                                <span class="n">new_gamma</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">gamma</span><span class="p">[(</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">)])</span>
-                                <span class="n">new_gamma</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
-                                <span class="n">gamma</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="n">new_gamma</span>
+                        <span class="n">new_value</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span>
+                            <span class="n">x_min_index</span><span class="p">,</span> <span class="n">y_min_index</span>
+                        <span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_restricted_integral</span><span class="p">(</span>
+                            <span class="n">resampled_initial_srv</span><span class="p">,</span>
+                            <span class="n">resampled_end_srv</span><span class="p">,</span>
+                            <span class="n">x_min_index</span><span class="p">,</span>
+                            <span class="n">x_max_index</span><span class="p">,</span>
+                            <span class="n">y_min_index</span><span class="p">,</span>
+                            <span class="n">y_max_index</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grid</span> <span class="ow">or</span> <span class="n">grid</span><span class="p">[</span>
+                            <span class="p">(</span><span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">)</span>
+                        <span class="p">]</span> <span class="o">&lt;</span> <span class="n">new_value</span><span class="p">:</span>
+                            <span class="n">grid</span><span class="p">[</span><span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
+                            <span class="n">new_gamma</span> <span class="o">=</span> <span class="n">gamma</span><span class="p">[(</span><span class="n">x_min_index</span><span class="p">,</span> <span class="n">y_min_index</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                            <span class="n">new_gamma</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">))</span>
+                            <span class="n">gamma</span><span class="p">[(</span><span class="n">x_max_index</span><span class="p">,</span> <span class="n">y_max_index</span><span class="p">)]</span> <span class="o">=</span> <span class="n">new_gamma</span>
 
+        <span class="n">last_index</span> <span class="o">=</span> <span class="n">n_space_grid</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="n">point_with_origin</span> <span class="o">=</span> <span class="n">insert_zeros</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">point_reparametrized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reparametrize</span><span class="p">(</span>
-            <span class="n">point_with_origin</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[(</span><span class="n">n_space_grid</span><span class="p">,</span> <span class="n">n_space_grid</span><span class="p">)]</span>
-        <span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">point_with_origin</span><span class="p">,</span> <span class="n">gamma</span><span class="p">[</span><span class="n">last_index</span><span class="p">,</span> <span class="n">last_index</span><span class="p">]</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">return_sdist</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">point_reparametrized</span>
 
         <span class="k">return</span> <span class="n">point_reparametrized</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_squared_dist</span><span class="p">(</span>
-            <span class="n">initial_srv_</span><span class="p">,</span> <span class="n">end_srv_</span><span class="p">,</span> <span class="n">tableau</span>
+            <span class="n">resampled_initial_srv</span><span class="p">,</span>
+            <span class="n">resampled_end_srv</span><span class="p">,</span>
+            <span class="n">grid</span><span class="p">[(</span><span class="n">last_index</span><span class="p">,</span> <span class="n">last_index</span><span class="p">)],</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="DynamicProgrammingAligner.align">
@@ -2121,10 +2128,13 @@ document.write(`
 <span class="sd">        Space of discrete curves starting at the origin</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">,</span> <span class="n">aligner</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">aligner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">aligner</span> <span class="o">=</span> <span class="n">IterativeHorizontalGeodesicAligner</span><span class="p">(</span><span class="n">total_space</span><span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span>
-            <span class="n">aligner</span><span class="o">=</span><span class="n">IterativeHorizontalGeodesicAligner</span><span class="p">(</span><span class="n">total_space</span><span class="p">),</span>
+            <span class="n">aligner</span><span class="o">=</span><span class="n">aligner</span><span class="p">,</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="SRVReparametrizationBundle.vertical_projection">
