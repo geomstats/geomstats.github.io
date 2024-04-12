@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 11, 2024, 2:40:05 PM"/>
+    <meta name="docbuild:last-update" content="Apr 12, 2024, 9:13:28 AM"/>
   </head>
   
   
@@ -1210,12 +1210,18 @@ document.write(`
 <div class="viewcode-block" id="ElasticMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.ElasticMetric">[docs]</a>
 <span class="k">class</span> <span class="nc">ElasticMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Elastic metric on the space of discrete curves.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Elastic metric on the space of discrete curves.</span>
 
 <span class="sd">    Family of elastic metric parametrized by bending and stretching parameters</span>
-<span class="sd">    a and b. These can be obtained as pullbacks of the L2 metric by the F-transforms.</span>
+<span class="sd">    a and b.</span>
 
-<span class="sd">    See [NK2018]_ for details.</span>
+<span class="sd">    For curves in :math:`\mathbb{R}^2`, it pullbacks the L2 metric by</span>
+<span class="sd">    the F-transform (see [NK2018]_).</span>
+
+<span class="sd">    For curves in :math:`\mathbb{R}^d`, it pullbacks a scaled L2 metric by the SRV</span>
+<span class="sd">    transform (see [BCKKNP2022_). It only works for ratio :math:`a / 2b = 1`.</span>
+
+<span class="sd">    When a=1, and b=1/2, it is equivalent to the SRV metric.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1229,6 +1235,10 @@ document.write(`
 <span class="sd">    .. [KN2018] S. Kurtek and T. Needham,</span>
 <span class="sd">        &quot;Simplifying transforms for general elastic metrics on the space of</span>
 <span class="sd">        plane curves&quot;, arXiv:1803.10894 [math.DG], 29 Mar 2018.</span>
+<span class="sd">    .. [BCKKNP2022] Martin Bauer, Nicolas Charon, Eric Klassen, Sebastian Kurtek,</span>
+<span class="sd">        Tom Needham, and Thomas Pierron.</span>
+<span class="sd">        “Elastic Metrics on Spaces of Euclidean Curves: Theory and Algorithms.”</span>
+<span class="sd">        arXiv, September 20, 2022. https://doi.org/10.48550/arXiv.2209.09862.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -1237,24 +1247,42 @@ document.write(`
         <span class="n">a</span><span class="p">,</span>
         <span class="n">b</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="n">image_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instantiate_image_space</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
-        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">FTransform</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">k_sampling_points</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+
+        <span class="n">ambient_manifold</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">ambient_manifold</span>
+        <span class="n">k_sampling_points</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">k_sampling_points</span>
+
+        <span class="n">image_space</span> <span class="o">=</span> <span class="n">Landmarks</span><span class="p">(</span>
+            <span class="n">ambient_manifold</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span>
+            <span class="n">k_landmarks</span><span class="o">=</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">image_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">L2CurvesMetric</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ambient_manifold</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">diffeo</span> <span class="o">=</span> <span class="n">FTransform</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">:</span>
+            <span class="n">diffeo</span> <span class="o">=</span> <span class="n">SRVTransform</span><span class="p">(</span><span class="n">ambient_manifold</span><span class="p">,</span> <span class="n">k_sampling_points</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">:</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">image_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">image_space</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot instantiate elastic metric for ambient dim=&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ambient_manifold</span><span class="o">.</span><span class="n">dim</span><span class="si">}</span><span class="s2">, a=</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> and b=</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Ratio must be 1 or ambient_dim=2.&quot;</span>
+            <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
             <span class="n">diffeo</span><span class="o">=</span><span class="n">diffeo</span><span class="p">,</span>
             <span class="n">image_space</span><span class="o">=</span><span class="n">image_space</span><span class="p">,</span>
             <span class="n">signature</span><span class="o">=</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_instantiate_image_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
-        <span class="n">image_space</span> <span class="o">=</span> <span class="n">Landmarks</span><span class="p">(</span>
-            <span class="n">ambient_manifold</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">ambient_manifold</span><span class="p">,</span>
-            <span class="n">k_landmarks</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">image_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">L2CurvesMetric</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">image_space</span></div>
+        <span class="p">)</span></div>
 
 
 
