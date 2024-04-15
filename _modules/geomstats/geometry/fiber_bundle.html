@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 12, 2024, 9:51:28 AM"/>
+    <meta name="docbuild:last-update" content="Apr 15, 2024, 6:51:14 PM"/>
   </head>
   
   
@@ -434,12 +434,17 @@ document.write(`
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.optimizers</span> <span class="kn">import</span> <span class="n">ScipyMinimize</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
+
+
+<span class="k">def</span> <span class="nf">_from_base</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate method in order to avoid recursive calls.&quot;&quot;&quot;</span>
+    <span class="n">method</span><span class="o">.</span><span class="n">_from_base</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">method</span>
 
 
 <div class="viewcode-block" id="AlignerAlgorithm">
@@ -652,6 +657,7 @@ document.write(`
 
 <div class="viewcode-block" id="FiberBundle.tangent_riemannian_submersion">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.fiber_bundle.FiberBundle.tangent_riemannian_submersion">[docs]</a>
+    <span class="nd">@_from_base</span>
     <span class="k">def</span> <span class="nf">tangent_riemannian_submersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a tangent vector to base manifold.</span>
 
@@ -701,12 +707,15 @@ document.write(`
 
 <div class="viewcode-block" id="FiberBundle.horizontal_projection">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.fiber_bundle.FiberBundle.horizontal_projection">[docs]</a>
+    <span class="nd">@_from_base</span>
     <span class="k">def</span> <span class="nf">horizontal_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Project to horizontal subspace.</span>
 
 <span class="sd">        Compute the horizontal component of a tangent vector at a</span>
-<span class="sd">        base point by removing the vertical component,</span>
-<span class="sd">        or by computing a horizontal lift of the tangent projection.</span>
+<span class="sd">        base point from:</span>
+<span class="sd">            1. the vertical projection</span>
+<span class="sd">            2. the horizontal lift of the tangent submersion</span>
+<span class="sd">            3. the align method</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -720,21 +729,27 @@ document.write(`
 <span class="sd">        horizontal : array-like, shape=[..., {total_space.dim, [n, m]}]</span>
 <span class="sd">            Horizontal component of `tangent_vec`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">caller_name</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">caller_name</span> <span class="o">==</span> <span class="s2">&quot;vertical_projection&quot;</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-                <span class="k">pass</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">,</span> <span class="s2">&quot;_from_base&quot;</span><span class="p">):</span>
+            <span class="n">ver_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_projection</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="n">ver_tangent_vec</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_lift</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tangent_riemannian_submersion</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">),</span>
-            <span class="n">fiber_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">horizontal_lift</span><span class="p">,</span> <span class="s2">&quot;_from_base&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tangent_riemannian_submersion</span><span class="p">,</span> <span class="s2">&quot;_from_base&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_lift</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tangent_riemannian_submersion</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">),</span>
+                <span class="n">fiber_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">aligned_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">aligned_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FiberBundle.vertical_projection">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.fiber_bundle.FiberBundle.vertical_projection">[docs]</a>
+    <span class="nd">@_from_base</span>
     <span class="k">def</span> <span class="nf">vertical_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Project to vertical subspace.</span>
 
@@ -753,10 +768,6 @@ document.write(`
 <span class="sd">        vertical : array-like, shape=[..., {total_space.dim, [n, m]}]</span>
 <span class="sd">            Vertical component of `tangent_vec`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">caller_name</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span>
-        <span class="k">if</span> <span class="n">caller_name</span> <span class="o">==</span> <span class="s2">&quot;horizontal_projection&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-
         <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_projection</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
@@ -824,6 +835,7 @@ document.write(`
 
 <div class="viewcode-block" id="FiberBundle.horizontal_lift">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.fiber_bundle.FiberBundle.horizontal_lift">[docs]</a>
+    <span class="nd">@_from_base</span>
     <span class="k">def</span> <span class="nf">horizontal_lift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fiber_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Lift a tangent vector to a horizontal vector in the total space.</span>
 
