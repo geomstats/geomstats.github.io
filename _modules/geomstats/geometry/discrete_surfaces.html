@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 16, 2024, 1:21:36 PM"/>
+    <meta name="docbuild:last-update" content="Apr 16, 2024, 4:36:03 PM"/>
   </head>
   
   
@@ -431,6 +431,17 @@ document.write(`
 <span></span><span class="sd">&quot;&quot;&quot;Discrete Surfaces with Elastic metrics.</span>
 
 <span class="sd">Lead authors: Emmanuel Hartman, Adele Myers.</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">.. [HSKCB2022] Emmanuel Hartman, Yashil Sukurdeep, Eric Klassen,</span>
+<span class="sd">    Nicolas Charon, and Martin Bauer.</span>
+<span class="sd">    &quot;Elastic shape analysis of surfaces with second-order Sobolev metrics:</span>
+<span class="sd">    a comprehensive numerical framework&quot;. arXiv:2204.04238 [cs.CV], 25 Sep 2022</span>
+<span class="sd">.. [HPBDC2023] Emmanuel Hartman, Emery Pierson, Martin Bauer,</span>
+<span class="sd">    Mohamed Daoudi, and Nicolas Charon.</span>
+<span class="sd">    “Basis Restricted Elastic Shape Analysis on the Space of Unregistered Surfaces.”</span>
+<span class="sd">    arXiv, November 7, 2023. https://doi.org/10.48550/arXiv.2311.04382.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
@@ -780,8 +791,10 @@ document.write(`
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">surface_metrics_bp</span><span class="p">))</span></div>
 
 
+<div class="viewcode-block" id="DiscreteSurfaces.surface_metric_matrices_from_one_forms">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_surfaces.DiscreteSurfaces.surface_metric_matrices_from_one_forms">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the surface metric matrices directly from the one_forms.</span>
 
 <span class="sd">        This function is useful for efficiency purposes.</span>
@@ -797,7 +810,8 @@ document.write(`
 <span class="sd">            Surface metric matrices evaluated at each face of</span>
 <span class="sd">            the triangulated surface.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms</span><span class="p">))</span></div>
+
 
 <div class="viewcode-block" id="DiscreteSurfaces.surface_metric_matrices">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_surfaces.DiscreteSurfaces.surface_metric_matrices">[docs]</a>
@@ -822,7 +836,7 @@ document.write(`
 <span class="sd">            the triangulated surface.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">one_forms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_one_forms</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiscreteSurfaces.laplacian">
@@ -834,6 +848,8 @@ document.write(`
 <span class="sd">        the laplacian at :math:`q` is defined as the operator:</span>
 <span class="sd">        :math:`\Delta_q = - Tr(g_q^{-1} \nabla^2)`</span>
 <span class="sd">        where :math:`g_q` is the surface metric matrix of :math:`q`.</span>
+
+<span class="sd">        The area of the triangles is computed using Heron&#39;s formula.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -880,11 +896,17 @@ document.write(`
         <span class="n">cot_flatten</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cot</span><span class="p">,</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">_laplacian</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Evaluate the mesh Laplacian operator.</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluate the mesh Laplacian operator.</span>
 
 <span class="sd">            The operator is evaluated at a tangent vector at point to the</span>
 <span class="sd">            manifold of DiscreteSurfaces. In other words, the operator is</span>
 <span class="sd">            evaluated at a vector field defined on the surface point.</span>
+
+<span class="sd">            .. math::</span>
+
+<span class="sd">                \left(\Delta_q h\right)_{v_i}=\frac{1}{2} \sum_{\substack{j \mid(i, j)</span>
+<span class="sd">                \in E \\ \text { or }(j, i) \in E}}\left(\cot \left(\alpha_{i j}</span>
+<span class="sd">                \right)+\cot \left(\beta_{i j}\right)\right)\left(h_i-h_j\right)</span>
 
 <span class="sd">            Parameters</span>
 <span class="sd">            ----------</span>
@@ -941,7 +963,7 @@ document.write(`
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Elastic metric defined by a family of second order Sobolev metrics.</span>
 
 <span class="sd">    Each individual discrete surface is represented by a 2D-array of shape</span>
-<span class="sd">    `[n_vertices, 3]`. See [HSKCB2022]_ for details.</span>
+<span class="sd">    `[n_vertices, 3]`. See [HSKCB2022]_ and [HPBDC2023]_ (appendix) for details.</span>
 
 <span class="sd">    The parameters a0, a1, b1, c1, d1, a2 (detailed below) are non-negative weighting</span>
 <span class="sd">    coefficients for the different terms in the metric.</span>
@@ -971,9 +993,14 @@ document.write(`
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">        Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">        arXiv:2204.04238 [cs.CV], 25 Sep 2022</span>
+<span class="sd">    .. [HSKCB2022] Emmanuel Hartman, Yashil Sukurdeep, Eric Klassen,</span>
+<span class="sd">        Nicolas Charon, and Martin Bauer.</span>
+<span class="sd">        &quot;Elastic shape analysis of surfaces with second-order Sobolev metrics:</span>
+<span class="sd">        a comprehensive numerical framework&quot;. arXiv:2204.04238 [cs.CV], 25 Sep 2022</span>
+<span class="sd">    .. [HPBDC2023] Emmanuel Hartman, Emery Pierson, Martin Bauer,</span>
+<span class="sd">        Mohamed Daoudi, and Nicolas Charon.</span>
+<span class="sd">        “Basis Restricted Elastic Shape Analysis on the Space of Unregistered Surfaces.”</span>
+<span class="sd">        arXiv, November 7, 2023. https://doi.org/10.48550/arXiv.2311.04382.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">a0</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">a1</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">b1</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">a2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
@@ -985,26 +1012,27 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">d1</span> <span class="o">=</span> <span class="n">d1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a2</span> <span class="o">=</span> <span class="n">a2</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">DiscreteSurfacesExpSolver</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;numpy&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exp_solver</span> <span class="o">=</span> <span class="n">DiscreteSurfacesExpSolver</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
-            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
-            <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">,</span>
-            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;ftol&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">PathStraightening</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
+                <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;autodiff&quot;</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;ftol&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_solver</span> <span class="o">=</span> <span class="n">PathStraightening</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_inner_product_a0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">vertex_areas_bp</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute term of order 0 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
+<span class="sd">        Denote q the base point.</span>
 
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        This method computes :math:`G_{a_0} = a_0 &lt;h, k&gt;`, i.e.</span>
 
-<span class="sd">        This method computes :math:`G_{a_0} = a_0 &lt;h, k&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{a_0}(h, h) = \sum_{i=1}^N\left\|h_i\right\|^2 \operatorname{vol}_{x_i}</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1017,18 +1045,11 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
+<span class="sd">        inner_prod_a0 : array-like, shape=[...,]</span>
 <span class="sd">            Term of order 0, and coefficient a0, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a0</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">vertex_areas_bp</span>
-            <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...bi,...bi-&gt;...b&quot;</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">),</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span> <span class="o">*</span> <span class="n">vertex_areas_bp</span><span class="p">,</span>
             <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1036,38 +1057,33 @@ document.write(`
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute a1 term of order 1 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
+<span class="sd">        Denote q the base point.</span>
 
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        This method computes :math:`G_{a_1} = a_1.g_q^{-1} &lt;dh_m, dk_m&gt;`, i.e.</span>
 
-<span class="sd">        This method computes :math:`G_{a_1} = a_1.g_q^{-1} &lt;dh_m, dk_m&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{a_1}(h, h) = \sum_{f \in F} \operatorname{tr}\left(g_f^{-1}</span>
+<span class="sd">            \delta g_f g_f^{-1} \delta g_f\right) \operatorname{vol}_f</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        ginvdga : array-like, shape=[n_faces, 2, 2]</span>
+<span class="sd">        ginvdga : array-like, shape=[..., n_faces, 2, 2]</span>
 <span class="sd">            Product of the inverse of the surface metric matrices</span>
 <span class="sd">            with their differential at a.</span>
-<span class="sd">        ginvdgb : array-like, shape=[n_faces, 2, 2]</span>
+<span class="sd">        ginvdgb : array-like, shape=[..., n_faces, 2, 2]</span>
 <span class="sd">            Product of the inverse of the surface metric matrices</span>
 <span class="sd">            with their differential at b.</span>
-<span class="sd">        areas_bp : array-like, shape=[n_faces,]</span>
+<span class="sd">        areas_bp : array-like, shape=[..., n_faces,]</span>
 <span class="sd">            Areas of the faces of the surface given by the base point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
-<span class="sd">            Term of order 0, and coefficient a1, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
+<span class="sd">        inner_prod_a1 : array-like, shape=[...,]</span>
+<span class="sd">            Term of order 1, and coefficient a1, of the inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a1</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...bii-&gt;...b&quot;</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">ginvdga</span><span class="p">,</span> <span class="n">ginvdgb</span><span class="p">))</span> <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">ginvdga</span><span class="p">,</span> <span class="n">ginvdgb</span><span class="p">))</span> <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span>
             <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1075,40 +1091,33 @@ document.write(`
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute b1 term of order 1 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
+<span class="sd">        Denote q the base point.</span>
 
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        This method computes :math:`G_{b_1} = b_1.g_q^{-1} &lt;dh_+, dk_+&gt;`, i.e.</span>
 
-<span class="sd">        This method computes :math:`G_{b_1} = b_1.g_q^{-1} &lt;dh_+, dk_+&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{b_1}(h, h) = \sum_{f \in F} \operatorname{tr}</span>
+<span class="sd">            \left(g_f^{-1} \delta g_f\right)^2 \operatorname{vol}_f</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        ginvdga : array-like, shape=[n_faces, 2, 2]</span>
+<span class="sd">        ginvdga : array-like, shape=[..., n_faces, 2, 2]</span>
 <span class="sd">            Product of the inverse of the surface metric matrices</span>
 <span class="sd">            with their differential at a.</span>
-<span class="sd">        ginvdgb : array-like, shape=[n_faces, 2, 2]</span>
+<span class="sd">        ginvdgb : array-like, shape=[..., n_faces, 2, 2]</span>
 <span class="sd">            Product of the inverse of the surface metric matrices</span>
 <span class="sd">            with their differential at b.</span>
-<span class="sd">        areas_bp : array-like, shape=[n_faces,]</span>
+<span class="sd">        areas_bp : array-like, shape=[..., n_faces,]</span>
 <span class="sd">            Areas of the faces of the surface given by the base point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
-<span class="sd">            Term of order 0, and coefficient b1, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
+<span class="sd">        inner_prod_b1 : array-like, shape=[...,]</span>
+<span class="sd">            Term of order 1, and coefficient b1, of the inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">b1</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...bii-&gt;...b&quot;</span><span class="p">,</span> <span class="n">ginvdga</span><span class="p">)</span>
-            <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...bii-&gt;...b&quot;</span><span class="p">,</span> <span class="n">ginvdgb</span><span class="p">)</span>
-            <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">ginvdga</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">ginvdgb</span><span class="p">)</span> <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span>
             <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1116,13 +1125,15 @@ document.write(`
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute c1 term of order 1 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
-
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        Denote q the base point.</span>
 
 <span class="sd">        This method computes :math:`G_{c_1} = c_1.g_q^{-1} &lt;dh_\perp, dk_\perp&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        i.e.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{c_1}(h, h) = \sum_{f \in F}\left\langle\delta n_f,</span>
+<span class="sd">            \delta n_f\right\rangle \mathrm{vol}_f</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1130,94 +1141,80 @@ document.write(`
 <span class="sd">            Point a corresponding to tangent vec a.</span>
 <span class="sd">        point_b : array-like, shape=[..., n_vertices, 3]</span>
 <span class="sd">            Point b corresponding to tangent vec b.</span>
-<span class="sd">        normals_bp : array-like, shape=[n_faces, 3]</span>
+<span class="sd">        normals_bp : array-like, shape=[..., n_faces, 3]</span>
 <span class="sd">            Normals of each face of the surface given by the base point.</span>
-<span class="sd">        areas_bp : array-like, shape=[n_faces,]</span>
+<span class="sd">        areas_bp : array-like, shape=[..., n_faces,]</span>
 <span class="sd">            Areas of the faces of the surface given by the base point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
-<span class="sd">            Term of order 0, and coefficient c1, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
+<span class="sd">        inner_prod_c1 : array-like, shape=[...,]</span>
+<span class="sd">            Term of order 1, and coefficient c1, of the inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dna</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">normals</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span> <span class="o">-</span> <span class="n">normals_bp</span>
         <span class="n">dnb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">normals</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span> <span class="o">-</span> <span class="n">normals_bp</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...bi,...bi-&gt;...b&quot;</span><span class="p">,</span> <span class="n">dna</span><span class="p">,</span> <span class="n">dnb</span><span class="p">)</span> <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
-        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dna</span><span class="p">,</span> <span class="n">dnb</span><span class="p">)</span> <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_inner_product_d1</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">one_forms_a</span><span class="p">,</span> <span class="n">one_forms_b</span><span class="p">,</span> <span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">areas_bp</span><span class="p">,</span> <span class="n">inv_surface_metrics_bp</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">one_forms_a</span><span class="p">,</span> <span class="n">one_forms_b</span><span class="p">,</span> <span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">areas_bp</span><span class="p">,</span> <span class="n">ginv_bp</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute d1 term of order 1 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
+<span class="sd">        Denote q the base point.</span>
 
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        This method computes :math:`G_{d_1} = d_1.g_q^{-1} &lt;dh_0, dk_0&gt;`, i.e.</span>
 
-<span class="sd">        This method computes :math:`G_{d_1} = d_1.g_q^{-1} &lt;dh_0, dk_0&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{d_1}(h, h) = \sum_{f \in F} \operatorname{tr}\left(g_f^{-1}</span>
+<span class="sd">            \xi_f g_f^{-1} \xi_f^T\right) \operatorname{vol}_f</span>
+
+<span class="sd">        where :math:`\xi_f=d q_f^T d h_f-d h_f^T d q_f`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        one_forms_a : array-like, shape=[n_points, n_faces, 2, 3]</span>
+<span class="sd">        one_forms_a : array-like, shape=[..., n_faces, 2, 3]</span>
 <span class="sd">            One forms at point a corresponding to tangent vec a.</span>
-<span class="sd">        one_forms_b : array-like, shape=[n_points, n_faces, 2, 3]</span>
+<span class="sd">        one_forms_b : array-like, shape=[..., n_faces, 2, 3]</span>
 <span class="sd">            One forms at point b corresponding to tangent vec b.</span>
-<span class="sd">        one_forms_bp : array-like, shape=[n_faces, 2, 3]</span>
+<span class="sd">        one_forms_bp : array-like, shape=[..., 2, 3]</span>
 <span class="sd">            One forms at base point.</span>
-<span class="sd">        areas_bp : array-like, shape=[n_faces,]</span>
+<span class="sd">        areas_bp : array-like, shape=[..., n_faces,]</span>
 <span class="sd">            Areas of the faces of the surface given by the base point.</span>
-<span class="sd">        inv_surface_metrics_bp : array-like, shape=[n_faces, 2, 2]</span>
+<span class="sd">        ginv_bp : array-like, shape=[..., n_faces, 2, 2]</span>
 <span class="sd">            Inverses of the surface metric matrices at each face.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
-<span class="sd">            Term of order 0, and coefficient d1, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
+<span class="sd">        inner_prod_d1 : array-like, shape=[...,]</span>
+<span class="sd">            Term of order 1, and coefficient d1, of the inner-product.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">one_forms_bp_t</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms_bp</span><span class="p">)</span>
 
-        <span class="n">one_forms_a_t</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms_a</span><span class="p">)</span>
-        <span class="n">xa</span> <span class="o">=</span> <span class="n">one_forms_a_t</span> <span class="o">-</span> <span class="n">one_forms_bp_t</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp_t</span><span class="p">,</span> <span class="n">ginv_bp</span><span class="p">)</span>
 
+        <span class="n">xa</span> <span class="o">=</span> <span class="n">one_forms_a</span> <span class="o">-</span> <span class="n">one_forms_bp</span>
         <span class="n">xa_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp_t</span><span class="p">,</span> <span class="n">inv_surface_metrics_bp</span><span class="p">),</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xa</span><span class="p">),</span> <span class="n">one_forms_bp_t</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">xa</span><span class="p">),</span>
+            <span class="n">aux</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">xa</span><span class="p">,</span> <span class="n">one_forms_bp_t</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xa</span><span class="p">)),</span>
         <span class="p">)</span>
 
-        <span class="n">one_forms_b_t</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms_b</span><span class="p">)</span>
-        <span class="n">xb</span> <span class="o">=</span> <span class="n">one_forms_b_t</span> <span class="o">-</span> <span class="n">one_forms_bp_t</span>
+        <span class="n">xb</span> <span class="o">=</span> <span class="n">one_forms_b</span> <span class="o">-</span> <span class="n">one_forms_bp</span>
         <span class="n">xb_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp_t</span><span class="p">,</span> <span class="n">inv_surface_metrics_bp</span><span class="p">),</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xb</span><span class="p">),</span> <span class="n">one_forms_bp_t</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">xb</span><span class="p">),</span>
+            <span class="n">aux</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">xb</span><span class="p">,</span> <span class="n">one_forms_bp_t</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_bp</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xb</span><span class="p">)),</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">d1</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s2">&quot;...bii-&gt;...b&quot;</span><span class="p">,</span>
-                <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
+                <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
                     <span class="n">xa_0</span><span class="p">,</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
-                        <span class="n">inv_surface_metrics_bp</span><span class="p">,</span>
-                        <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xb_0</span><span class="p">),</span>
-                    <span class="p">),</span>
+                    <span class="n">ginv_bp</span><span class="p">,</span>
+                    <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">xb_0</span><span class="p">),</span>
                 <span class="p">),</span>
             <span class="p">)</span>
             <span class="o">*</span> <span class="n">areas_bp</span><span class="p">,</span>
@@ -1230,13 +1227,15 @@ document.write(`
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute term of order 2 within the inner-product.</span>
 
 <span class="sd">        Denote h and k the tangent vectors a and b respectively.</span>
-<span class="sd">        Denote q the base point, i.e. the surface.</span>
+<span class="sd">        Denote q the base point.</span>
 
-<span class="sd">        The equation of the inner-product is:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`.</span>
+<span class="sd">        This method computes :math:`G_{a_2} = a_2 &lt;\Delta_q h, \Delta_q k&gt;`, i.e.</span>
 
-<span class="sd">        This method computes :math:`G_{a_2} = a_2 &lt;\Delta_q h, \Delta_q k&gt;`,</span>
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            G_{a_2}(h, h) = \sum_{i=1}^N\left\|\left(\Delta_q h\right)_{v_i}</span>
+<span class="sd">            \right\|^2 \operatorname{vol}_{x_i}</span>
+
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1244,26 +1243,19 @@ document.write(`
 <span class="sd">            Tangent vector at base point.</span>
 <span class="sd">        tangent_vec_b : array-like, shape=[..., n_vertices, 3]</span>
 <span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[n_vertices, 3]</span>
+<span class="sd">        base_point : array-like, shape=[..., n_vertices, 3]</span>
 <span class="sd">            Base point, a surface i.e. the 3D coordinates of its vertices.</span>
-<span class="sd">        vertex_areas_bp : array-like, shape=[n_vertices, 1]</span>
+<span class="sd">        vertex_areas_bp : array-like, shape=[..., n_vertices, 1]</span>
 <span class="sd">            Vertex areas for each vertex of the base_point.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
+<span class="sd">        inner_prod_a2 : array-like, shape=[...,]</span>
 <span class="sd">            Term of order 2, and coefficient a2, of the inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">laplacian_at_base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">laplacian</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-                <span class="s2">&quot;...bi,...bi-&gt;...b&quot;</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
                 <span class="n">laplacian_at_base_point</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">),</span>
                 <span class="n">laplacian_at_base_point</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">),</span>
             <span class="p">)</span>
@@ -1283,7 +1275,10 @@ document.write(`
 <span class="sd">        We denote q the base point, i.e. the surface.</span>
 
 <span class="sd">        The six terms of the inner-product are given by:</span>
-<span class="sd">        :math:`\int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q`</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \int_M (G_{a_0} + G_{a_1} + G_{b_1} + G_{c_1} + G_{d_1} + G_{a_2})vol_q</span>
 
 <span class="sd">        where:</span>
 
@@ -1293,8 +1288,6 @@ document.write(`
 <span class="sd">        - :math:`G_{c_1} = c_1.g_q^{-1} &lt;dh_\perp, dk_\perp&gt;`</span>
 <span class="sd">        - :math:`G_{d_1} = d_1.g_q^{-1} &lt;dh_0, dk_0&gt;`</span>
 <span class="sd">        - :math:`G_{a_2} = a_2 &lt;\Delta_q h, \Delta_q k&gt;`</span>
-
-<span class="sd">        with notations taken from [HSKCB2022]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1309,12 +1302,6 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        inner_prod : array-like, shape=[...]</span>
 <span class="sd">            Inner-product.</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        .. [HSKCB2022] &quot;Elastic shape analysis of surfaces with second-order</span>
-<span class="sd">            Sobolev metrics: a comprehensive numerical framework&quot;.</span>
-<span class="sd">            arXiv:2204.04238 [cs.CV], 25 Sep 2022.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">inner_prod_a0</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">inner_prod_a1</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1338,7 +1325,7 @@ document.write(`
                 <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">a1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">b1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">b1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">one_forms_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">surface_one_forms</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-            <span class="n">surface_metrics_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">_surface_metric_matrices_from_one_forms</span><span class="p">(</span>
+            <span class="n">surface_metrics_bp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">surface_metric_matrices_from_one_forms</span><span class="p">(</span>
                 <span class="n">one_forms_bp</span>
             <span class="p">)</span>
             <span class="n">areas_bp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">surface_metrics_bp</span><span class="p">))</span>
@@ -1360,19 +1347,19 @@ document.write(`
                         <span class="n">one_forms_a</span><span class="p">,</span>
                         <span class="n">one_forms_b</span><span class="p">,</span>
                         <span class="n">one_forms_bp</span><span class="p">,</span>
-                        <span class="n">areas_bp</span><span class="o">=</span><span class="n">areas_bp</span><span class="p">,</span>
-                        <span class="n">inv_surface_metrics_bp</span><span class="o">=</span><span class="n">ginv_bp</span><span class="p">,</span>
+                        <span class="n">areas_bp</span><span class="p">,</span>
+                        <span class="n">ginv_bp</span><span class="p">,</span>
                     <span class="p">)</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">a1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">dga</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_a</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms_a</span><span class="p">))</span>
-                        <span class="o">-</span> <span class="n">surface_metrics_bp</span>
+                    <span class="n">surface_metrics_a</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms_a</span><span class="p">)</span>
                     <span class="p">)</span>
-                    <span class="n">dgb</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">one_forms_b</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">one_forms_b</span><span class="p">))</span>
-                        <span class="o">-</span> <span class="n">surface_metrics_bp</span>
+                    <span class="n">surface_metrics_b</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">surface_metric_matrices_from_one_forms</span><span class="p">(</span><span class="n">one_forms_b</span><span class="p">)</span>
                     <span class="p">)</span>
+                    <span class="n">dga</span> <span class="o">=</span> <span class="n">surface_metrics_a</span> <span class="o">-</span> <span class="n">surface_metrics_bp</span>
+                    <span class="n">dgb</span> <span class="o">=</span> <span class="n">surface_metrics_b</span> <span class="o">-</span> <span class="n">surface_metrics_bp</span>
                     <span class="n">ginvdga</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">ginv_bp</span><span class="p">,</span> <span class="n">dga</span><span class="p">)</span>
                     <span class="n">ginvdgb</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">ginv_bp</span><span class="p">,</span> <span class="n">dgb</span><span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">a1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
