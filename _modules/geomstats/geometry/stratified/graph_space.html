@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 18, 2024, 2:13:44 PM"/>
+    <meta name="docbuild:last-update" content="Apr 24, 2024, 4:29:15 PM"/>
   </head>
   
   
@@ -447,6 +447,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">geomstats.errors</span> <span class="kn">import</span> <span class="n">check_parameter_accepted_values</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.fiber_bundle</span> <span class="kn">import</span> <span class="n">AlignerAlgorithm</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.group_action</span> <span class="kn">import</span> <span class="n">PermutationAction</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.manifold</span> <span class="kn">import</span> <span class="n">register_quotient_structure</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span><span class="p">,</span> <span class="n">MatricesMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.stratified.quotient</span> <span class="kn">import</span> <span class="n">Aligner</span><span class="p">,</span> <span class="n">QuotientMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.numerics.optimizers</span> <span class="kn">import</span> <span class="n">ScipyMinimize</span>
@@ -1005,13 +1006,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="p">(</span><span class="n">MatricesMetric</span><span class="p">,</span> <span class="n">PermutationAction</span><span class="p">):</span> <span class="p">(</span>
-                <span class="n">GraphSpaceAligner</span><span class="p">,</span>
-                <span class="n">GraphSpaceQuotientMetric</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
-
 <div class="viewcode-block" id="GraphSpace.new">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.graph_space.GraphSpace.new">[docs]</a>
     <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1027,34 +1021,6 @@ document.write(`
             <span class="n">group_action</span> <span class="o">=</span> <span class="n">PermutationAction</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">equip_with_group_action</span><span class="p">(</span><span class="n">group_action</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="GraphSpace.equip_with_quotient_structure">
-<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.graph_space.GraphSpace.equip_with_quotient_structure">[docs]</a>
-    <span class="k">def</span> <span class="nf">equip_with_quotient_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equip manifold with quotient structure.</span>
-
-<span class="sd">        Creates attributes `quotient` and `aligner`.</span>
-
-<span class="sd">        NB: `aligner` instead of `bundle` because total space does not</span>
-<span class="sd">        have fiber bundle structure due to the nature of the group actions</span>
-<span class="sd">        on this space.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_equip_with_quotient_structure</span><span class="p">()</span>
-
-        <span class="n">key</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group_action</span><span class="p">)</span>
-
-        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quotient_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No mapping for key: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Aligner</span><span class="p">,</span> <span class="n">QuotientMetric_</span> <span class="o">=</span> <span class="n">out</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">aligner</span> <span class="o">=</span> <span class="n">Aligner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">quotient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">quotient</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">QuotientMetric_</span><span class="p">,</span> <span class="n">total_space</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quotient</span></div>
 </div>
 
 
@@ -1205,6 +1171,15 @@ document.write(`
 <span class="sd">        https://www.jmlr.org/papers/v10/jain09a.html.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
+
+
+<span class="n">register_quotient_structure</span><span class="p">(</span>
+    <span class="n">Space</span><span class="o">=</span><span class="n">GraphSpace</span><span class="p">,</span>
+    <span class="n">Metric</span><span class="o">=</span><span class="n">MatricesMetric</span><span class="p">,</span>
+    <span class="n">GroupAction</span><span class="o">=</span><span class="n">PermutationAction</span><span class="p">,</span>
+    <span class="n">FiberBundle</span><span class="o">=</span><span class="n">GraphSpaceAligner</span><span class="p">,</span>
+    <span class="n">QuotientMetric</span><span class="o">=</span><span class="n">GraphSpaceQuotientMetric</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 
                 </article>
@@ -1257,7 +1232,7 @@ document.write(`
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     <br/>
   </p>
 </div>

@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Apr 18, 2024, 2:13:44 PM"/>
+    <meta name="docbuild:last-update" content="Apr 24, 2024, 4:29:15 PM"/>
   </head>
   
   
@@ -435,6 +435,7 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.matrices</span> <span class="kn">import</span> <span class="n">Matrices</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.special_orthogonal</span> <span class="kn">import</span> <span class="n">SpecialOrthogonal</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">get_batch_shape</span>
 
 
@@ -462,27 +463,31 @@ document.write(`
 
 
 
-<div class="viewcode-block" id="LieAlgebraBasedGroupAction">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.group_action.LieAlgebraBasedGroupAction">[docs]</a>
-<span class="k">class</span> <span class="nc">LieAlgebraBasedGroupAction</span><span class="p">(</span><span class="n">GroupAction</span><span class="p">):</span>
+<div class="viewcode-block" id="ComposeAction">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.group_action.ComposeAction">[docs]</a>
+<span class="k">class</span> <span class="nc">ComposeAction</span><span class="p">(</span><span class="n">GroupAction</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Action of a group on itself by composition.</span>
-
-<span class="sd">    Group elements are represented by the vector representation</span>
-<span class="sd">    of Lie algebra elements. This is amenable to perform gradient-based</span>
-<span class="sd">    optimizations on the Lie algebra.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    group : LieGroup.</span>
+<span class="sd">    group : LieGroup</span>
+<span class="sd">    lie_algebra_repr : bool</span>
+<span class="sd">        If True, group elements are represented by the vector</span>
+<span class="sd">        representation of Lie algebra elements.</span>
+<span class="sd">        This is amenable to perform gradient-based optimizations</span>
+<span class="sd">        on the Lie algebra.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">lie_algebra_repr</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra_repr</span> <span class="o">=</span> <span class="n">lie_algebra_repr</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">group_elem_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shape of the group element representation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">dim</span><span class="p">,)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra_repr</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">dim</span><span class="p">,)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_elem</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compose action of a group element on a point.</span>
@@ -490,7 +495,7 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        group_elem : array-like, shape=[..., *group_elem_shape]</span>
-<span class="sd">            Group element represented in the Lie algebra as a vector.</span>
+<span class="sd">            Group element in chosen representation.</span>
 <span class="sd">        point : array-like, shape=[..., *group.shape]</span>
 <span class="sd">            Point on the group.</span>
 
@@ -499,9 +504,31 @@ document.write(`
 <span class="sd">        orbit_point : array-like, shape=[..., *group.shape]</span>
 <span class="sd">            A point in the orbit of point.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">algebra_elt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">group_elem</span><span class="p">)</span>
-        <span class="n">group_elt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">algebra_elt</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">group_elt</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lie_algebra_repr</span><span class="p">:</span>
+            <span class="n">algebra_elt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">lie_algebra</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">group_elem</span><span class="p">)</span>
+            <span class="n">group_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">algebra_elt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">group_elem</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SpecialOrthogonalComposeAction">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.group_action.SpecialOrthogonalComposeAction">[docs]</a>
+<span class="k">class</span> <span class="nc">SpecialOrthogonalComposeAction</span><span class="p">(</span><span class="n">ComposeAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Action of the special orthogonal group.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        Integer representing the shapes of the matrices : n x n.</span>
+<span class="sd">    lie_algebra_repr : bool</span>
+<span class="sd">        If True, group elements are represented by the vector</span>
+<span class="sd">        representation of Lie algebra elements.</span>
+<span class="sd">        This is amenable to perform gradient-based optimizations</span>
+<span class="sd">        on the Lie algebra.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">SpecialOrthogonal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span></div>
 
 
 
@@ -670,7 +697,7 @@ document.write(`
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
     <br/>
   </p>
 </div>
