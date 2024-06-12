@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jun 11, 2024, 9:58:12 AM"/>
+    <meta name="docbuild:last-update" content="Jun 12, 2024, 3:09:14 PM"/>
   </head>
   
   
@@ -1127,9 +1127,98 @@ document.write(`
 
 
 
+<div class="viewcode-block" id="PathBasedLogSolver">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathBasedLogSolver">[docs]</a>
+<span class="k">class</span> <span class="nc">PathBasedLogSolver</span><span class="p">(</span><span class="n">LogSolver</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A geodesic BVP solver based on finding a discrete geodesic path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
+<span class="sd">    n_nodes : int</span>
+<span class="sd">        Number of midpoints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PathBasedLogSolver.discrete_geodesic_bvp">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathBasedLogSolver.discrete_geodesic_bvp">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">discrete_geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve boundary value problem (BVP).</span>
+
+<span class="sd">        Given an initial point and an end point, solve the geodesic equation</span>
+<span class="sd">        via minimizing the Riemannian path energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        discr_geod_path : array-like, shape=[..., n_nodes, *point_shape]</span>
+<span class="sd">            Discrete geodesic.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="PathBasedLogSolver.log">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathBasedLogSolver.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Logarithm map.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PathBasedLogSolver.geodesic_bvp">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathBasedLogSolver.geodesic_bvp">[docs]</a>
+    <span class="k">def</span> <span class="nf">geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for boundary value problem.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UniformlySampledDiscretePath</span><span class="p">(</span>
+            <span class="n">discr_geod_path</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="PathStraightening">
 <a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening">[docs]</a>
-<span class="k">class</span> <span class="nc">PathStraightening</span><span class="p">(</span><span class="n">LogSolver</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">PathStraightening</span><span class="p">(</span><span class="n">PathBasedLogSolver</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to solve the geodesic boundary value problem with path-straightening.</span>
 
 <span class="sd">    Parameters</span>
@@ -1139,7 +1228,7 @@ document.write(`
 <span class="sd">    path_energy : callable</span>
 <span class="sd">        Method to compute Riemannian path energy.</span>
 <span class="sd">    n_nodes : int</span>
-<span class="sd">        Number of midpoints.</span>
+<span class="sd">        Number of path discretization points.</span>
 <span class="sd">    optimizer : ScipyMinimize</span>
 <span class="sd">        An optimizer to solve path energy minimization problem.</span>
 <span class="sd">    initialization : callable</span>
@@ -1155,8 +1244,7 @@ document.write(`
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">path_energy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialization</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solves_bvp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span>
                 <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
@@ -1170,7 +1258,6 @@ document.write(`
         <span class="k">if</span> <span class="n">initialization</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">initialization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_initialization</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_energy</span> <span class="o">=</span> <span class="n">path_energy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">=</span> <span class="n">initialization</span>
@@ -1200,7 +1287,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        discr_geod_path : array-like, shape=[n_times, *point_shape]</span>
+<span class="sd">        discr_geod_path : array-like, shape=[n_nodes, *point_shape]</span>
 <span class="sd">            Discrete geodesic.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">init_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
@@ -1263,7 +1350,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        discr_geod_path : array-like, shape=[..., n_times, *point_shape]</span>
+<span class="sd">        discr_geod_path : array-like, shape=[..., n_nodes, *point_shape]</span>
 <span class="sd">            Discrete geodesic.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
@@ -1278,54 +1365,6 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">_discrete_geodesic_bvp_single</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
             <span class="p">]</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PathStraightening.log">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Logarithm map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Tangent vector at the base point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">point_ndim_slc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
-            <span class="o">-</span> <span class="n">discr_geod_path</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">point_ndim_slc</span><span class="p">]</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PathStraightening.geodesic_bvp">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PathStraightening.geodesic_bvp">[docs]</a>
-    <span class="k">def</span> <span class="nf">geodesic_bvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geodesic curve for boundary value problem.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        end_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            Time parametrized geodesic curve. `f(t)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">discr_geod_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_geodesic_bvp</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">UniformlySampledDiscretePath</span><span class="p">(</span>
-            <span class="n">discr_geod_path</span><span class="p">,</span> <span class="n">point_ndim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
         <span class="p">)</span></div>
 </div>
 
