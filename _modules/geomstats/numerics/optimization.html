@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>geomstats.numerics.optimizers &#8212; Geomstats latest documentation</title>
+    <title>geomstats.numerics.optimization &#8212; Geomstats latest documentation</title>
   
   
   
@@ -39,13 +39,13 @@
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/numerics/optimizers';</script>
-    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/numerics/optimizers.html" />
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/numerics/optimization';</script>
+    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/numerics/optimization.html" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jul 29, 2024, 8:20:50 AM"/>
+    <meta name="docbuild:last-update" content="Jul 29, 2024, 8:21:48 AM"/>
   </head>
   
   
@@ -425,7 +425,7 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for geomstats.numerics.optimizers</h1><div class="highlight"><pre>
+  <h1>Source code for geomstats.numerics.optimization</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Optimizers implementations.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
@@ -440,19 +440,19 @@ document.write(`
 
 
 <div class="viewcode-block" id="ScipyMinimize">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.ScipyMinimize">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.ScipyMinimize">[docs]</a>
 <span class="k">class</span> <span class="nc">ScipyMinimize</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for scipy.optimize.minimize.</span>
 
-<span class="sd">    Only `jac` differs from scipy: if `autodiff`, then</span>
-<span class="sd">    `gs.autodiff.value_and_grad` is used to compute the jacobian.</span>
+<span class="sd">    Only `autodiff_jac` and `autodiff_hess` differ from scipy: if True, then</span>
+<span class="sd">    automatic differentiation is used to compute jacobian and/or hessian.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
-        <span class="n">jac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">hess</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">autodiff_jac</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">autodiff_hess</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">constraints</span><span class="o">=</span><span class="p">(),</span>
         <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -460,7 +460,7 @@ document.write(`
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="n">jac</span> <span class="o">==</span> <span class="s2">&quot;autodiff&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">():</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">autodiff_jac</span> <span class="ow">or</span> <span class="n">autodiff_hess</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">AutodiffNotImplementedError</span><span class="p">(</span>
                 <span class="s2">&quot;Minimization with &#39;autodiff&#39; requires automatic differentiation.&quot;</span>
                 <span class="s2">&quot;Change backend via the command &quot;</span>
@@ -468,8 +468,8 @@ document.write(`
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">jac</span> <span class="o">=</span> <span class="n">jac</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hess</span> <span class="o">=</span> <span class="n">hess</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_jac</span> <span class="o">=</span> <span class="n">autodiff_jac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_hess</span> <span class="o">=</span> <span class="n">autodiff_hess</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
@@ -481,31 +481,34 @@ document.write(`
 
     <span class="k">def</span> <span class="nf">_handle_jac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">fun_jac</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">fun_jac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">fun</span><span class="p">,</span> <span class="n">fun_jac</span>
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">fun_jac_</span> <span class="o">=</span> <span class="n">fun_jac</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fun_jac</span><span class="p">):</span>
+                <span class="n">fun_jac_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun_jac</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
-        <span class="n">jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jac</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">jac</span> <span class="o">==</span> <span class="s2">&quot;autodiff&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fun_</span><span class="p">,</span> <span class="n">fun_jac_</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_jac</span><span class="p">:</span>
             <span class="n">jac</span> <span class="o">=</span> <span class="kc">True</span>
-
-            <span class="k">def</span> <span class="nf">fun_</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-                <span class="n">value</span><span class="p">,</span> <span class="n">grad</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">value_and_grad</span><span class="p">(</span><span class="n">fun</span><span class="p">)(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-                <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">grad</span>
-
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">value_and_grad</span><span class="p">(</span><span class="n">fun</span><span class="p">)(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-
-            <span class="k">def</span> <span class="nf">fun_</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">jac</span> <span class="o">=</span> <span class="n">fun_jac</span>
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">fun_</span><span class="p">,</span> <span class="n">jac</span>
 
-    <span class="k">def</span> <span class="nf">_handle_hess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun_hess</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">fun_hess</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">fun_hess</span>
+    <span class="k">def</span> <span class="nf">_handle_hess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">fun_hess</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fun_hess</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_hess</span><span class="p">:</span>
+            <span class="n">fun_hess_</span> <span class="o">=</span> <span class="n">fun_hess</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fun_hess</span><span class="p">):</span>
+                <span class="n">fun_hess_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun_hess</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hess</span>
+            <span class="k">return</span> <span class="n">fun_hess_</span>
+
+        <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">hessian</span><span class="p">(</span><span class="n">fun</span><span class="p">)(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
 <div class="viewcode-block" id="ScipyMinimize.minimize">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.ScipyMinimize.minimize">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.ScipyMinimize.minimize">[docs]</a>
     <span class="k">def</span> <span class="nf">minimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">fun_jac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fun_hess</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hessp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Minimize objective function.</span>
 
@@ -516,13 +519,13 @@ document.write(`
 <span class="sd">        x0 : array-like</span>
 <span class="sd">            Initial guess.</span>
 <span class="sd">        fun_jac : callable</span>
-<span class="sd">            If not None, jac is ignored.</span>
+<span class="sd">            Jacobian of fun.</span>
 <span class="sd">        fun_hess : callable</span>
-<span class="sd">            If not None, hess is ignored.</span>
+<span class="sd">            Hessian of fun.</span>
 <span class="sd">        hessp : callable</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">fun_</span><span class="p">,</span> <span class="n">jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_jac</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">fun_jac</span><span class="p">)</span>
-        <span class="n">hess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_hess</span><span class="p">(</span><span class="n">fun_hess</span><span class="p">)</span>
+        <span class="n">hess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_hess</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">fun_hess</span><span class="p">)</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
             <span class="n">fun_</span><span class="p">,</span>
@@ -540,7 +543,7 @@ document.write(`
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">result_to_backend_type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_result</span><span class="p">:</span>
@@ -552,12 +555,12 @@ document.write(`
 
 
 <div class="viewcode-block" id="RootFinder">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.RootFinder">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.RootFinder">[docs]</a>
 <span class="k">class</span> <span class="nc">RootFinder</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a root of a vector-valued function.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="RootFinder.root">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.RootFinder.root">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.RootFinder.root">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">fun_jac</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a root of a vector-valued function.</span>
@@ -580,27 +583,58 @@ document.write(`
 
 
 <div class="viewcode-block" id="ScipyRoot">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.ScipyRoot">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.ScipyRoot">[docs]</a>
 <span class="k">class</span> <span class="nc">ScipyRoot</span><span class="p">(</span><span class="n">RootFinder</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for scipy.optimize.root.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for scipy.optimize.root.</span>
+
+<span class="sd">    Only `autodiff_jac` differs from scipy: if True, then</span>
+<span class="sd">    automatic differentiation is used to compute jacobian.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="o">=</span><span class="s2">&quot;hybr&quot;</span><span class="p">,</span>
+        <span class="n">autodiff_jac</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">save_result</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">autodiff_jac</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">AutodiffNotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Root finding with &#39;autodiff&#39; requires automatic differentiation.&quot;</span>
+                <span class="s2">&quot;Change backend via the command &quot;</span>
+                <span class="s2">&quot;export GEOMSTATS_BACKEND=pytorch in a terminal&quot;</span>
+            <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_jac</span> <span class="o">=</span> <span class="n">autodiff_jac</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">save_result</span> <span class="o">=</span> <span class="n">save_result</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">result_</span> <span class="o">=</span> <span class="kc">None</span>
 
+    <span class="k">def</span> <span class="nf">_handle_jac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">fun_jac</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fun_jac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="n">fun_jac_</span> <span class="o">=</span> <span class="n">fun_jac</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fun_jac</span><span class="p">):</span>
+                <span class="n">fun_jac_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun_jac</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">fun_</span><span class="p">,</span> <span class="n">fun_jac_</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">autodiff_jac</span><span class="p">:</span>
+            <span class="n">jac</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">value_and_jacobian</span><span class="p">(</span><span class="n">fun</span><span class="p">)(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">jac</span> <span class="o">=</span> <span class="n">fun_jac</span>
+            <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">fun_</span><span class="p">,</span> <span class="n">jac</span>
+
 <div class="viewcode-block" id="ScipyRoot.root">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.ScipyRoot.root">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.ScipyRoot.root">[docs]</a>
     <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">fun_jac</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a root of a vector-valued function.</span>
 
@@ -617,8 +651,7 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        res : OptimizeResult</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">fun_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="n">fun_jac_</span> <span class="o">=</span> <span class="n">fun_jac</span> <span class="k">if</span> <span class="n">fun_jac</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fun_jac</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">fun_</span><span class="p">,</span> <span class="n">fun_jac_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_jac</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">fun_jac</span><span class="p">)</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">root</span><span class="p">(</span>
             <span class="n">fun_</span><span class="p">,</span>
@@ -644,7 +677,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="NewtonMethod">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.NewtonMethod">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.NewtonMethod">[docs]</a>
 <span class="k">class</span> <span class="nc">NewtonMethod</span><span class="p">(</span><span class="n">RootFinder</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a root of a vector-valued function with Newton&#39;s method.</span>
 
@@ -664,7 +697,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
 
 <div class="viewcode-block" id="NewtonMethod.root">
-<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimizers.NewtonMethod.root">[docs]</a>
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.optimization.NewtonMethod.root">[docs]</a>
     <span class="k">def</span> <span class="nf">root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">fun_jac</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a root of a vector-valued function.</span>
 
@@ -688,7 +721,7 @@ document.write(`
             <span class="n">y</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">fun_jac</span><span class="p">(</span><span class="n">xk</span><span class="p">),</span> <span class="n">fun_xk</span><span class="p">)</span>
             <span class="n">xk</span> <span class="o">=</span> <span class="n">xk</span> <span class="o">-</span> <span class="n">y</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached. The mean may be inaccurate&quot;</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Maximum number of iterations </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="si">}</span><span class="s2"> reached. Results may be inaccurate&quot;</span>
             <span class="n">status</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">OptimizeResult</span><span class="p">(</span>
