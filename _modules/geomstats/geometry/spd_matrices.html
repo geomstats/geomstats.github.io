@@ -45,7 +45,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Sep 9, 2024, 5:13:19 PM"/>
+    <meta name="docbuild:last-update" content="Oct 8, 2024, 6:28:17 PM"/>
   </head>
   
   
@@ -434,6 +434,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
+<span class="kn">from</span> <span class="nn">geomstats.algebra_utils</span> <span class="kn">import</span> <span class="n">columnwise_scaling</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.complex_matrices</span> <span class="kn">import</span> <span class="n">ComplexMatrices</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.diffeo</span> <span class="kn">import</span> <span class="n">Diffeo</span>
@@ -525,6 +526,45 @@ document.write(`
         <span class="n">denominator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">denominator</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">temp_result</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span><span class="n">eigvectors</span><span class="p">,</span> <span class="n">transp_eigvectors</span><span class="p">,</span> <span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">,</span> <span class="n">temp_result</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="generalized_eigenvalues">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.generalized_eigenvalues">[docs]</a>
+<span class="k">def</span> <span class="nf">generalized_eigenvalues</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the generalized eigenvalues of SPD matrix pair.</span>
+
+<span class="sd">    Steps (check section 7.2 of [GKC2023]_):</span>
+<span class="sd">    1. compute eigendecomposition of point_b</span>
+<span class="sd">    2. get matrix turning point_b into identity by congruence</span>
+<span class="sd">    3. apply congruence to point_a and get generalized eigenvalues</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point_a : array_like, shape=[..., n, n]</span>
+<span class="sd">        Symmetric positive definite matrix.</span>
+<span class="sd">    point_b : array_like, shape=[..., n, n]</span>
+<span class="sd">        Symmetric positive definite matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    generalized_eigenvalues : array-like, shape=[...]</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [GKC2023] Benyamin Ghojogh, Fakhri Karray, and Mark Crowley.</span>
+<span class="sd">    “Eigenvalue and Generalized Eigenvalue Problems: Tutorial.”</span>
+<span class="sd">    arXiv, May 20, 2023. https://doi.org/10.48550/arXiv.1903.11240.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">eigvals_b</span><span class="p">,</span> <span class="n">eigvecs_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span>
+
+    <span class="n">inv_sqrt_eigvals_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">eigvals_b</span><span class="p">)</span>
+    <span class="n">scaled_b_eigvecs</span> <span class="o">=</span> <span class="n">columnwise_scaling</span><span class="p">(</span><span class="n">inv_sqrt_eigvals_b</span><span class="p">,</span> <span class="n">eigvecs_b</span><span class="p">)</span>
+
+    <span class="n">point_a_scaled</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+        <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">scaled_b_eigvecs</span><span class="p">),</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">scaled_b_eigvecs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">point_a_scaled</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="SymMatrixLog">
@@ -1138,6 +1178,29 @@ document.write(`
 
         <span class="n">log_at_id</span> <span class="o">=</span> <span class="n">logmh</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">log_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SPDAffineMetric.squared_dist">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.spd_matrices.SPDAffineMetric.squared_dist">[docs]</a>
+    <span class="k">def</span> <span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the Affine Invariant squared distance.</span>
+
+<span class="sd">        Compute the Riemannian squared distance between point_a and point_b.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_a : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point.</span>
+<span class="sd">        point_b : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        squared_dist : array-like, shape=[...]</span>
+<span class="sd">            Riemannian squared distance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gen_eigvals</span> <span class="o">=</span> <span class="n">generalized_eigenvalues</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gen_eigvals</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SPDAffineMetric.parallel_transport">
