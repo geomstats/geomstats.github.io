@@ -55,7 +55,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Dec 18, 2024, 8:58:44 PM"/>
+    <meta name="docbuild:last-update" content="Dec 31, 2024, 5:40:32 PM"/>
   </head>
   
   
@@ -475,7 +475,7 @@
 <p>Lead author: Jules Deschamps.</p>
 <p>This notebook presents a simple use case of <em>information geometry</em>, in the context of <em>traffic optimization</em> in Sao Paulo. We rely on a dataset listing all traffic jams in Sao Paulo for the past two decades (their location, date, their size, their duration, i.e. how long the traffic was jammed) to propose a solution involving information geometry.</p>
 <p>This analysis relies heavily on the geometry of the <em>Gamma manifold</em>, which is particularly adapted to addressing this situation, as seen later on.</p>
-<center><p><img alt="79cdd32250344d7088d39ced6840c154" class="no-scaled-link" src="../_images/sao_paulo_traffic.jpg" style="width: 600px;" /></p>
+<center><p><img alt="d3ed38b4897641ada0d8f50e8b89e897" class="no-scaled-link" src="../_images/sao_paulo_traffic.jpg" style="width: 600px;" /></p>
 </center><center><p>Figure 1: Sao Paulo: A city with 180km traffic jams – BBC News</p>
 </center><div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [1]:
@@ -506,7 +506,16 @@ grow. In that regard, considering the increase in car ownership and air pollutio
 <section id="2.-Dataset-description">
 <h1>2. Dataset description<a class="headerlink" href="#2.-Dataset-description" title="Link to this heading">#</a></h1>
 <p>We have at our disposal a dataset (accessible <a class="reference external" href="https://www.kaggle.com/datasets/danlessa/sao-paulo-traffic-jams-since-2001">here</a>) containing traffic jam size measurements by CET at several locations on São Paulo between 2001 and 2019, with more than 5M entries.</p>
-<p>Available columns: - passage (str) - Name of the passage - direction (str) - type (str) - Indicates if the passage is an expressway (E) - region (str) - São Paulo region - timestamp (datetime) - When the traffic jam was measured (UTC-4) - jam_size (int) - Traffic jam in meters - segment (str) - Where the passage is located</p>
+<p>Available columns:</p>
+<ul class="simple">
+<li><p>passage (str) - Name of the passage</p></li>
+<li><p>direction (str)</p></li>
+<li><p>type (str) - Indicates if the passage is an expressway (E)</p></li>
+<li><p>region (str) - São Paulo region</p></li>
+<li><p>timestamp (datetime) - When the traffic jam was measured (UTC-4)</p></li>
+<li><p>jam_size (int) - Traffic jam in meters</p></li>
+<li><p>segment (str) - Where the passage is located</p></li>
+</ul>
 <p>Our modeling will not take into account the fact that many of the passages/roads must have been renovated between 2001 and 2019. Similarly, the dataset does not offer information on the width of given roads (even though we could base it off of the type of the road), and therefore on their flow rate: this is an obvious flaw in our analysis but it is easy to fix if the relevant data can be accessed.</p>
 <section id="Pre-processing-the-dataset">
 <h2>Pre-processing the dataset<a class="headerlink" href="#Pre-processing-the-dataset" title="Link to this heading">#</a></h2>
@@ -529,7 +538,12 @@ INFO: Data has already been downloaded... using cached file (&#39;/home/luisfper
 </pre></div></div>
 </div>
 <p>Some of the columns of the dataset are not necessary for our study: let alone <strong>index</strong>, <strong>type</strong> and <strong>segment</strong> do not seem to add any value to the table in our case. In addition, the times (<strong>timestamp</strong>) at which jams are occurring are not relevant in that specific format: it would make much more sense to have the duration of given jam. We also decide to drop the <strong>jam_size</strong> column.</p>
-<p>Additionally, we would want to transform the original dataset so as to access a more relevant table, with features: - name of the road (primary key = passage + direction for instance, segments are regrouped within same key) - date (day only) - duration of the traffic jam (in h)</p>
+<p>Additionally, we would want to transform the original dataset so as to access a more relevant table, with features:</p>
+<ul class="simple">
+<li><p>name of the road (primary key = passage + direction for instance, segments are regrouped within same key)</p></li>
+<li><p>date (day only)</p></li>
+<li><p>duration of the traffic jam (in h)</p></li>
+</ul>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span> In [3]:
 </pre></div>
@@ -1208,7 +1222,11 @@ INFO: Data has already been downloaded... using cached file (&#39;/home/luisfper
 </section>
 <section id="3.-Mathematical-modeling">
 <h1>3. Mathematical modeling<a class="headerlink" href="#3.-Mathematical-modeling" title="Link to this heading">#</a></h1>
-<p>In the following 2 sections, we establish a precise framework, listing the hypotheses and simplifications supporting our model. In particular: - 3.1. gives an introduction to the Gamma manifold and explains how each road can be represented by a point on it. - 3.2. justifies the use of information geometry to tackle the problem at hand, by seeing a renovation effort on a given road as a tangent vector based at its associated point.</p>
+<p>In the following 2 sections, we establish a precise framework, listing the hypotheses and simplifications supporting our model. In particular:</p>
+<ul class="simple">
+<li><p>3.1. gives an introduction to the Gamma manifold and explains how each road can be represented by a point on it.</p></li>
+<li><p>3.2. justifies the use of information geometry to tackle the problem at hand, by seeing a renovation effort on a given road as a tangent vector based at its associated point.</p></li>
+</ul>
 <section id="3.1.-Road-representation:-introduction-to-the-Gamma-manifold.">
 <h2>3.1. Road representation: introduction to the Gamma manifold.<a class="headerlink" href="#3.1.-Road-representation:-introduction-to-the-Gamma-manifold." title="Link to this heading">#</a></h2>
 <p>The modeling of the study relies heavily on the representation of a traffic jam as a random variable. In fact, the waiting time in a given traffic jam can be predicted by a Gamma distribution.</p>
@@ -1223,12 +1241,16 @@ mentioned in the introduction.</p>
 <h3>3.1.2. Model<a class="headerlink" href="#3.1.2.-Model" title="Link to this heading">#</a></h3>
 <p>In a traffic jam, you wait until every car in front of you has exited the traffic jam, meaning that the waiting time for a car entering the jam is merely the sum of the exit times of all the cars in front.</p>
 <p>As a <span class="math notranslate nohighlight">\(\nu\)</span>-exponential process predicts the waiting time until one very first event (where <span class="math notranslate nohighlight">\(\nu\)</span> is a rate of a unit of time), a <span class="math notranslate nohighlight">\((k,\, \nu)\)</span>-Gamma process will predict the waiting time until the <span class="math notranslate nohighlight">\(k\)</span>-th event: mathematically, it is the sum of <span class="math notranslate nohighlight">\(k\)</span> i.i.d. <span class="math notranslate nohighlight">\(\nu\)</span>-exponential processes. In the context of congestion time in a traffic jam, we are summing exit times, hence the connection between waiting time and Gamma disribution.</p>
-<p>Therefore, the congestion time of the jam follows a Gamma distribution associated to the road. Its parameters are: - <span class="math notranslate nohighlight">\(k\)</span>, the length of the car lane (jam size) in arbitrary units; - <span class="math notranslate nohighlight">\(\nu\)</span>, the exit time rate of the traffic jam, i.e. the number of cars (in the same arbitrary unit) that exit the traffic jam in a given amount of time, so essentially the speed of the traffic jam.</p>
+<p>Therefore, the congestion time of the jam follows a Gamma distribution associated to the road. Its parameters are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(k\)</span>, the length of the car lane (jam size) in arbitrary units;</p></li>
+<li><p><span class="math notranslate nohighlight">\(\nu\)</span>, the exit time rate of the traffic jam, i.e. the number of cars (in the same arbitrary unit) that exit the traffic jam in a given amount of time, so essentially the speed of the traffic jam.</p></li>
+</ul>
 <p>By arbitrary units we mean that there exists a number <span class="math notranslate nohighlight">\(n\)</span> of cars, common to every road, such that <span class="math notranslate nohighlight">\(n\)</span> cars will exit the jam every <span class="math notranslate nohighlight">\(\frac{1}{\nu}\)</span> (depending on the road) unit of time on average. From this we draw that a road with car length <span class="math notranslate nohighlight">\(k\)</span> is in fact as long as <span class="math notranslate nohighlight">\(kn\)</span> cars.</p>
 <p>For a given road <span class="math notranslate nohighlight">\(r\)</span>, we note <span class="math notranslate nohighlight">\(T_r\)</span> the congestion time that cars will have to wait in the case the traffic is jammed: <span class="math notranslate nohighlight">\(T_r \rightsquigarrow G(k_r, \nu_r)\)</span>, with distribution:</p>
 <div class="math notranslate nohighlight">
 \[\forall t&gt;0, \, \mathbb{f}(t) = \frac{\nu_r^{k_r}}{\Gamma(k_r)} t^{k_r-1} e^{-\nu_r t}.\]</div>
-<center><p><img alt="750958cb49bd4173aa0598b30a2dbfed" class="no-scaled-link" src="../_images/car_lane.png" style="width: 600px;" /></p>
+<center><p><img alt="52ef97f67ba14bf78fd74f4bec4fe63b" class="no-scaled-link" src="../_images/car_lane.png" style="width: 600px;" /></p>
 </center><p>As a road <span class="math notranslate nohighlight">\(x_r\)</span> can be represented by two parameters <span class="math notranslate nohighlight">\(k_r\)</span> and <span class="math notranslate nohighlight">\(\nu_r\)</span>, we can consider our space of study to be the space of such parameters (i.e. <span class="math notranslate nohighlight">\(\mathbb{(R_+^*)^2}\)</span>).</p>
 <p>For the following, we denote Gamma distributions’ parameters by <span class="math notranslate nohighlight">\((\kappa_r, \gamma_r)\)</span>, where <span class="math notranslate nohighlight">\(\kappa_r\)</span>=<span class="math notranslate nohighlight">\(k_r\)</span> (expected jam size) and <span class="math notranslate nohighlight">\(\gamma_r\)</span>=<span class="math notranslate nohighlight">\(\frac{k_r}{\nu_r}\)</span> is the expected congestion time (mean of the Gamma distribution). The space of study is still <span class="math notranslate nohighlight">\(\mathbb{(R_+^*)^2}\)</span>, and we are instantiating it in the next cell.</p>
 <div class="nbinput nblast docutils container">
@@ -1288,7 +1310,12 @@ mentioned in the introduction.</p>
 <img alt="../_images/notebooks_18_real_world_applications__sao_paulo_traffic_optimization_37_0.png" src="../_images/notebooks_18_real_world_applications__sao_paulo_traffic_optimization_37_0.png" />
 </div>
 </div>
-<p>Here: - road 1 is <span class="math notranslate nohighlight">\((\kappa_1=1,\gamma_1=1)\)</span>; - road 2 is <span class="math notranslate nohighlight">\((\kappa_2=2,\gamma_2=1)\)</span>; - road 3 is <span class="math notranslate nohighlight">\((\kappa_3=1,\gamma_3=2)\)</span>.</p>
+<p>Here:</p>
+<ul class="simple">
+<li><p>road 1 is <span class="math notranslate nohighlight">\((\kappa_1=1,\gamma_1=1)\)</span>;</p></li>
+<li><p>road 2 is <span class="math notranslate nohighlight">\((\kappa_2=2,\gamma_2=1)\)</span>;</p></li>
+<li><p>road 3 is <span class="math notranslate nohighlight">\((\kappa_3=1,\gamma_3=2)\)</span>.</p></li>
+</ul>
 <p>This means that cars on road 1 will spend half as much time as cars on road 3 in the case of a traffic jam, on average. On the other hand, cars on road 1 and road 2 will spend the same time in traffic on average, but the line is twice as long on road 2.</p>
 </section>
 </section>
@@ -1431,8 +1458,19 @@ different evolutions regarding the expected jam size: it increases by 44% in the
 \sum_{1 \leq i \leq n} r_i = r \\
 \end{cases},
 \end{equation}</span></p>
-<p>where: - <span class="math notranslate nohighlight">\((x_i)\)</span> are the roads; - <span class="math notranslate nohighlight">\(\left(\begin{array}{c} 0 \\ -1 \end{array}\right)_{x_i}\)</span> is the unit tangent vector at <span class="math notranslate nohighlight">\(x_i\)</span> with direction and orientation <span class="math notranslate nohighlight">\(-\gamma\)</span>; - <span class="math notranslate nohighlight">\(\exp_{x_i}\)</span> is the exponential map at <span class="math notranslate nohighlight">\(x_i\)</span>; - for <span class="math notranslate nohighlight">\(x \in G\)</span> (the Gamma manifold), <span class="math notranslate nohighlight">\(x_{\gamma}\)</span> is its <span class="math notranslate nohighlight">\(\gamma\)</span> coordinate; - <span class="math notranslate nohighlight">\(r_i\)</span> is the resource allocated for renovating road <span class="math notranslate nohighlight">\(i\)</span>.</p>
-<p>We could rewrite the problem in a simpler way analytically, making use of the following results: - the relative efficiency of renovation (i.e. the ratio of expected congestion times) does not depend on the original expected congestion time of the road (<span class="math notranslate nohighlight">\(\gamma\)</span>); - similarly, the length of the car lane of the renovated road does not depend on the original expected congestion time of the road (<span class="math notranslate nohighlight">\(\gamma\)</span>).</p>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\((x_i)\)</span> are the roads;</p></li>
+<li><p><span class="math notranslate nohighlight">\(\left(\begin{array}{c} 0 \\ -1 \end{array}\right)_{x_i}\)</span> is the unit tangent vector at <span class="math notranslate nohighlight">\(x_i\)</span> with direction and orientation <span class="math notranslate nohighlight">\(-\gamma\)</span>;</p></li>
+<li><p><span class="math notranslate nohighlight">\(\exp_{x_i}\)</span> is the exponential map at <span class="math notranslate nohighlight">\(x_i\)</span>;</p></li>
+<li><p>for <span class="math notranslate nohighlight">\(x \in G\)</span> (the Gamma manifold), <span class="math notranslate nohighlight">\(x_{\gamma}\)</span> is its <span class="math notranslate nohighlight">\(\gamma\)</span> coordinate;</p></li>
+<li><p><span class="math notranslate nohighlight">\(r_i\)</span> is the resource allocated for renovating road <span class="math notranslate nohighlight">\(i\)</span>.</p></li>
+</ul>
+<p>We could rewrite the problem in a simpler way analytically, making use of the following results:</p>
+<ul class="simple">
+<li><p>the relative efficiency of renovation (i.e. the ratio of expected congestion times) does not depend on the original expected congestion time of the road (<span class="math notranslate nohighlight">\(\gamma\)</span>);</p></li>
+<li><p>similarly, the length of the car lane of the renovated road does not depend on the original expected congestion time of the road (<span class="math notranslate nohighlight">\(\gamma\)</span>).</p></li>
+</ul>
 <p>However, we will not use these results to make way for a better computational solution of the problem.</p>
 </section>
 </section>

@@ -49,7 +49,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Dec 18, 2024, 8:58:44 PM"/>
+    <meta name="docbuild:last-update" content="Dec 31, 2024, 5:40:32 PM"/>
   </head>
   
   
@@ -416,16 +416,115 @@
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">dirichlet</span><span class="p">,</span> <span class="n">multinomial</span>
 
 <span class="kn">import</span> <span class="nn">geomstats.backend</span> <span class="k">as</span> <span class="nn">gs</span>
-<span class="kn">from</span> <span class="nn">geomstats.algebra_utils</span> <span class="kn">import</span> <span class="n">from_vector_to_diagonal_matrix</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.base</span> <span class="kn">import</span> <span class="n">LevelSet</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.diffeo</span> <span class="kn">import</span> <span class="n">Diffeo</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.euclidean</span> <span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span> <span class="nn">geomstats.geometry.hypersphere</span> <span class="kn">import</span> <span class="n">Hypersphere</span>
-<span class="kn">from</span> <span class="nn">geomstats.geometry.riemannian_metric</span> <span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.pullback_metric</span> <span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
+<span class="kn">from</span> <span class="nn">geomstats.geometry.scalar_product_metric</span> <span class="kn">import</span> <span class="n">ScalarProductMetric</span>
 <span class="kn">from</span> <span class="nn">geomstats.information_geometry.base</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">InformationManifoldMixin</span><span class="p">,</span>
     <span class="n">ScipyMultivariateRandomVariable</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">geomstats.vectorization</span> <span class="kn">import</span> <span class="n">repeat_out</span>
+
+
+<div class="viewcode-block" id="SimplexToPositiveHypersphere">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere">[docs]</a>
+<span class="k">class</span> <span class="nc">SimplexToPositiveHypersphere</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Diffeomorphism between simplex and its image under componentwise square root.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send point of the simplex to the sphere.</span>
+
+<span class="sd">        The map takes the square root of each component.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the simplex.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the sphere.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SimplexToPositiveHypersphere.inverse">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.inverse">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send point of the sphere to the simplex.</span>
+
+<span class="sd">        The map squares each component.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the sphere.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the simplex.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">image_point</span><span class="o">**</span><span class="mi">2</span></div>
+
+
+<div class="viewcode-block" id="SimplexToPositiveHypersphere.tangent">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.tangent">[docs]</a>
+    <span class="k">def</span> <span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send tangent vector of the simplex to tangent space of sphere.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vec to the simplex at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point of the simplex.</span>
+<span class="sd">        image_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point of the sphere.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vector : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vec to the sphere at the image of</span>
+<span class="sd">            base point by simplex_to_sphere.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">image_point</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SimplexToPositiveHypersphere.inverse_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.inverse_tangent">[docs]</a>
+    <span class="k">def</span> <span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send tangent vector of the sphere to tangent space of simplex.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vec to the sphere at base point.</span>
+<span class="sd">        image_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point of the sphere.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point of the simplex.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec_simplex : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vec to the simplex at the image of</span>
+<span class="sd">            base point by sphere_to_simplex.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">image_point</span><span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="MultinomialDistributions">
@@ -449,11 +548,11 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">n_draws</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_draws</span> <span class="o">=</span> <span class="n">n_draws</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_draws</span> <span class="o">=</span> <span class="n">n_draws</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">MultinomialRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MultinomialDistributions.default_metric">
@@ -632,7 +731,7 @@
 
 <div class="viewcode-block" id="MultinomialMetric">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric">[docs]</a>
-<span class="k">class</span> <span class="nc">MultinomialMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">MultinomialMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for the Fisher information metric on multinomial distributions.</span>
 
 <span class="sd">    The Fisher information metric on the $n$-simplex of multinomial</span>
@@ -646,294 +745,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span> <span class="o">=</span> <span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
-
-<div class="viewcode-block" id="MultinomialMetric.metric_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.metric_matrix">[docs]</a>
-    <span class="k">def</span> <span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the inner-product matrix.</span>
-
-<span class="sd">        Compute the inner-product matrix of the Fisher information metric</span>
-<span class="sd">        at the tangent space at base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mat : array-like, shape=[..., dim, dim]</span>
-<span class="sd">            Inner-product matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_draws</span> <span class="o">*</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.simplex_to_sphere">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.simplex_to_sphere">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">simplex_to_sphere</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send point of the simplex to the sphere.</span>
-
-<span class="sd">        The map takes the square root of each component.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the simplex.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point_sphere : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the sphere.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.sphere_to_simplex">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.sphere_to_simplex">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">sphere_to_simplex</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send point of the sphere to the simplex.</span>
-
-<span class="sd">        The map squares each component.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the sphere.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point_simplex : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the simplex.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">point</span><span class="o">**</span><span class="mi">2</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.tangent_simplex_to_sphere">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.tangent_simplex_to_sphere">[docs]</a>
-    <span class="k">def</span> <span class="nf">tangent_simplex_to_sphere</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send tangent vector of the simplex to tangent space of sphere.</span>
-
-<span class="sd">        This is the differential of the simplex_to_sphere map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vec to the simplex at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point of the simplex.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec_sphere : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vec to the sphere at the image of</span>
-<span class="sd">            base point by simplex_to_sphere.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">&quot;...i,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">base_point</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">space</span><span class="p">,</span>
+            <span class="n">diffeo</span><span class="o">=</span><span class="n">SimplexToPositiveHypersphere</span><span class="p">(),</span>
+            <span class="n">image_space</span><span class="o">=</span><span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
+                <span class="n">ScalarProductMetric</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">n_draws</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="p">),</span>
         <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.tangent_sphere_to_simplex">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.tangent_sphere_to_simplex">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">tangent_sphere_to_simplex</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send tangent vector of the sphere to tangent space of simplex.</span>
-
-<span class="sd">        This is the differential of the sphere_to_simplex map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vec to the sphere at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point of the sphere.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec_simplex : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vec to the simplex at the image of</span>
-<span class="sd">            base point by sphere_to_simplex.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,...i-&gt;...i&quot;</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">base_point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.exp">[docs]</a>
-    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the exponential map.</span>
-
-<span class="sd">        Compute the exponential map associated to the Fisher information</span>
-<span class="sd">        metric by pulling back the exponential map on the sphere by the</span>
-<span class="sd">        simplex_to_sphere map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            End point of the geodesic starting at base_point with</span>
-<span class="sd">            initial velocity tangent_vec and stopping at time 1.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base_point_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">tangent_vec_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_simplex_to_sphere</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">exp_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec_sphere</span><span class="p">,</span> <span class="n">base_point_sphere</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sphere_to_simplex</span><span class="p">(</span><span class="n">exp_sphere</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.log">[docs]</a>
-    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the logarithm map.</span>
-
-<span class="sd">        Compute logarithm map associated to the Fisher information</span>
-<span class="sd">        metric by pulling back the exponential map on the sphere by</span>
-<span class="sd">        the simplex_to_sphere map.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Base po int.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Initial velocity of the geodesic starting at base_point and</span>
-<span class="sd">            reaching point at time 1.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">base_point_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">log_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point_sphere</span><span class="p">,</span> <span class="n">base_point_sphere</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_sphere_to_simplex</span><span class="p">(</span><span class="n">log_sphere</span><span class="p">,</span> <span class="n">base_point_sphere</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.geodesic">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.geodesic">[docs]</a>
-    <span class="k">def</span> <span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for the geodesic curve.</span>
-
-<span class="sd">        Geodesic curve defined by either:</span>
-
-<span class="sd">        - an initial point and an initial tangent vector,</span>
-<span class="sd">        - an initial point and an end point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        initial_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
-<span class="sd">        end_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the manifold, end point of the geodesic.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">            If None, an initial tangent vector must be given.</span>
-<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
-<span class="sd">            Optional, default: None.</span>
-<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        path : callable</span>
-<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
-<span class="sd">            conditions is passed, the output array&#39;s first dimension</span>
-<span class="sd">            represents time, and the second corresponds to the different</span>
-<span class="sd">            initial conditions.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">initial_point_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">initial_point</span><span class="p">)</span>
-        <span class="n">end_point_sphere</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">vec_sphere</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">end_point_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_to_sphere</span><span class="p">(</span><span class="n">end_point</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">vec_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tangent_simplex_to_sphere</span><span class="p">(</span>
-                <span class="n">initial_tangent_vec</span><span class="p">,</span> <span class="n">initial_point</span>
-            <span class="p">)</span>
-        <span class="n">geodesic_sphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sphere</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">geodesic</span><span class="p">(</span>
-            <span class="n">initial_point_sphere</span><span class="p">,</span> <span class="n">end_point_sphere</span><span class="p">,</span> <span class="n">vec_sphere</span>
-        <span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate parameterized function for geodesic curve.</span>
-
-<span class="sd">            Parameters</span>
-<span class="sd">            ----------</span>
-<span class="sd">            t : array-like, shape=[n_times,]</span>
-<span class="sd">                Times at which to compute points of the geodesics.</span>
-
-<span class="sd">            Returns</span>
-<span class="sd">            -------</span>
-<span class="sd">            geodesic : array-like, shape=[..., n_times, dim + 1]</span>
-<span class="sd">                Values of the geodesic at times t.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">geod_sphere_at_t</span> <span class="o">=</span> <span class="n">geodesic_sphere</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sphere_to_simplex</span><span class="p">(</span><span class="n">geod_sphere_at_t</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">path</span></div>
-
-
-<div class="viewcode-block" id="MultinomialMetric.sectional_curvature">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialMetric.sectional_curvature">[docs]</a>
-    <span class="k">def</span> <span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sectional curvature.</span>
-
-<span class="sd">        In the literature sectional curvature is noted K.</span>
-
-<span class="sd">        For two orthonormal tangent vectors :math:`x,y` at a base point,</span>
-<span class="sd">        the sectional curvature is defined by :math:`K(x,y) = &lt;R(x, y)x, y&gt;`.</span>
-
-<span class="sd">        For non-orthonormal vectors, it is</span>
-<span class="sd">        :math:`K(x,y) = &lt;R(x, y)y, x&gt; / (&lt;x, x&gt;&lt;y, y&gt; - &lt;x, y&gt;^2)`.</span>
-
-<span class="sd">        sectional_curvature(X, Y, P) = K(X,Y) where X, Y are tangent vectors</span>
-<span class="sd">        at base point P.</span>
-
-<span class="sd">        The information manifold of multinomial distributions has constant</span>
-<span class="sd">        sectional curvature given by :math:`K = 2 \sqrt{n}`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        tangent_vec_b : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vector at `base_point`.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point in the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
-<span class="sd">            Sectional curvature at `base_point`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sectional_curv</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">n_draws</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
-            <span class="ow">and</span> <span class="n">tangent_vec_b</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
-            <span class="ow">and</span> <span class="p">(</span><span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sectional_curv</span><span class="p">)</span>
-
-        <span class="n">n_sec_curv</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">n_sec_curv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">n_sec_curv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">tangent_vec_b</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">n_sec_curv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">n_sec_curv</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_sec_curv</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">sectional_curv</span><span class="p">,</span> <span class="p">(</span><span class="n">n_sec_curv</span><span class="p">,))</span></div>
-</div>
 
 
 
