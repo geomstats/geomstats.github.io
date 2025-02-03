@@ -49,7 +49,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Jan 30, 2025, 11:35:33 PM"/>
+    <meta name="docbuild:last-update" content="Feb 3, 2025, 6:59:34 PM"/>
   </head>
   
   
@@ -620,15 +620,13 @@
 <span class="sd">        mat : array-like, shape=[..., dim, dim]</span>
 <span class="sd">            Inner-product matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">n_points</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="n">mat_ones</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
-        <span class="n">poly_sum</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">mat_ones</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+        <span class="n">poly_sum</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">mat_diag</span> <span class="o">=</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">))</span>
 
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">mat_diag</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i,ijk-&gt;ijk&quot;</span><span class="p">,</span> <span class="n">poly_sum</span><span class="p">,</span> <span class="n">mat_ones</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">mat_diag</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...,...jk-&gt;...jk&quot;</span><span class="p">,</span> <span class="n">poly_sum</span><span class="p">,</span> <span class="n">mat_ones</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DirichletMetric.christoffels">
