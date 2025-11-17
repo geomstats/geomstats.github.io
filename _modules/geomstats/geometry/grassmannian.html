@@ -49,7 +49,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 5, 2025, 5:04:07 PM"/>
+    <meta name="docbuild:last-update" content="Nov 17, 2025, 8:27:38 PM"/>
   </head>
   
   
@@ -448,9 +448,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.errors</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LevelSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.fiber_bundle</span><span class="w"> </span><span class="kn">import</span> <span class="n">FiberBundle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.general_linear</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralLinear</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_quotient</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">Matrices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.stiefel</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stiefel</span><span class="p">,</span> <span class="n">StiefelCanonicalMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.symmetric_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
 
@@ -959,6 +962,136 @@
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 </div>
 
+
+
+<div class="viewcode-block" id="GrassmannianBundle">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GrassmannianBundle</span><span class="p">(</span><span class="n">FiberBundle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fiber bundle representing the Grassmannian quotient structure.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GrassmannianBundle.riemannian_submersion">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle.riemannian_submersion">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">riemannian_submersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a point to base manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point of the total space.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        projection : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point of the base manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">point</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="GrassmannianBundle.tangent_riemannian_submersion">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle.tangent_riemannian_submersion">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent_riemannian_submersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Project a tangent vector to base manifold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec :  array-like, shape=[..., n, p]</span>
+<span class="sd">            Tangent vector to the total space at ``base_point``.</span>
+<span class="sd">        base_point: array-like, shape=[..., n, p]</span>
+<span class="sd">            Point of the total space.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        projection: array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector to the base manifold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">))</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+            <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GrassmannianBundle.lift">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle.lift">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lift a point to total space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point of the base manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lift : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point of the total space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">p</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vecs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="o">-</span><span class="n">rank</span><span class="p">:]</span></div>
+
+
+<div class="viewcode-block" id="GrassmannianBundle.horizontal_lift">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle.horizontal_lift">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">horizontal_lift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fiber_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lift a tangent vector to a horizontal vector in the total space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">        fiber_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point of the total space.</span>
+<span class="sd">            Optional, default : None. The `lift` method is used to compute a</span>
+<span class="sd">            point at which to compute a tangent vector.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point of the base space.</span>
+<span class="sd">            Optional, default : None. In this case, point must be given,</span>
+<span class="sd">            and `submersion` is used to compute the base_point if needed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        horizontal_lift : array-like, shape=[..., n, p]</span>
+<span class="sd">            Horizontal tangent vector to the total space at point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fiber_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Either a point (of the total space) or a &quot;</span>
+                <span class="s2">&quot;base point (of the base manifold) must be &quot;</span>
+                <span class="s2">&quot;given.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fiber_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fiber_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lift</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">fiber_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GrassmannianBundle.align">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.grassmannian.GrassmannianBundle.align">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">align</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Align point to base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Point to align.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, p]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned_point : array-like, shape=[...,  n, p]</span>
+<span class="sd">            Aligned point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">align_matrices</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">register_quotient</span><span class="p">(</span>
+    <span class="n">Space</span><span class="o">=</span><span class="n">Stiefel</span><span class="p">,</span>
+    <span class="n">Metric</span><span class="o">=</span><span class="n">StiefelCanonicalMetric</span><span class="p">,</span>
+    <span class="n">GroupAction</span><span class="o">=</span><span class="s2">&quot;right_orthogonal_action&quot;</span><span class="p">,</span>
+    <span class="n">FiberBundle</span><span class="o">=</span><span class="n">GrassmannianBundle</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 
                 </article>
