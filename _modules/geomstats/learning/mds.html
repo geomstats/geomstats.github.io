@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>geomstats.geometry.complex_riemannian_metric &#8212; Geomstats latest documentation</title>
+    <title>geomstats.learning.mds &#8212; Geomstats latest documentation</title>
   
   
   
@@ -42,8 +42,8 @@
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/geometry/complex_riemannian_metric';</script>
-    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/geometry/complex_riemannian_metric.html" />
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/geomstats/learning/mds';</script>
+    <link rel="canonical" href="geomstats.github.io/_modules/geomstats/learning/mds.html" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -390,7 +390,7 @@
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">geomstats.geometry.complex_riemannian_metric</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">geomstats.learning.mds</span></li>
   </ul>
 </nav>
 </div>
@@ -407,106 +407,132 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for geomstats.geometry.complex_riemannian_metric</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Riemannian and pseudo-Riemannian metrics for complex manifolds.</span>
+  <h1>Source code for geomstats.learning.mds</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Multidimensional scaling (MDS).&quot;&quot;&quot;</span>
 
-<span class="sd">Lead author: Yann Cabanes.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">MDS</span> <span class="k">as</span> <span class="n">_MDS</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_is_batch</span>
 
 
-<div class="viewcode-block" id="ComplexRiemannianMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_riemannian_metric.ComplexRiemannianMetric">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ComplexRiemannianMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for Riemannian and pseudo-Riemannian metrics for Complex manifolds.</span>
+<div class="viewcode-block" id="pairwise_dists">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.pairwise_dists">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pairwise_dists</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the pairwise distance between points.</span>
 
-<span class="sd">    The associated Levi-Civita connection on the tangent bundle.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold or PointSet</span>
+<span class="sd">    points : array-like, shape=[n_samples, dim]</span>
+<span class="sd">        Set of points in the manifold.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pairwise_dist_matrix : array-like, shape=[n_samples, n_samples]</span>
+<span class="sd">        Pairwise distance matrix between all the points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+    <span class="n">pairwise_dist_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
+        <span class="n">pairwise_dist_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">dists</span>
+        <span class="n">pairwise_dist_matrix</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dists</span>
+    <span class="k">return</span> <span class="n">pairwise_dist_matrix</span></div>
+
+
+
+<div class="viewcode-block" id="MDS">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.MDS">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MDS</span><span class="p">(</span><span class="n">_MDS</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Multidimensional scaling (MDS).</span>
+
+<span class="sd">    MDS is used to translate pairwise distances of N objects into</span>
+<span class="sd">    n points mapped into abstract Cartesian space, usually two-dimensional.</span>
+
+<span class="sd">    In general, MDS doesn&#39;t need a metric, though this implementation will use one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold or PointSet</span>
+<span class="sd">        Space equipped with a distance metric.</span>
+<span class="sd">    n_components : int</span>
+<span class="sd">        Number of dimensions in which to immerse the dissimilarities.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    embedding_ : array-like, shape=[n_samples, n_components]</span>
+<span class="sd">        Data transformed in the new space.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * For all other parameters see documentation in scikit-learn.</span>
+<span class="sd">    * Required metric methods for general case:</span>
+<span class="sd">        * `dist`</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    This algorithm uses the scikit-learn library:</span>
+<span class="sd">    https://scikit-learn.org/stable/modules/generated/sklearn.manifold.MDS.html</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ComplexRiemannianMetric.inner_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_riemannian_metric.ComplexRiemannianMetric.inner_product">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner product between two tangent vectors at a base point.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">metric_mds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">n_init</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">init</span><span class="o">=</span><span class="s2">&quot;classical_mds&quot;</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">eps</span><span class="o">=</span><span class="mf">1e-06</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metric_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">normalized_stress</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec_a: array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        tangent_vec_b: array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point: array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-<span class="sd">            Optional, default: None.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        inner_product : array-like, shape=[...,]</span>
-<span class="sd">            Inner-product.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...j,...jk-&gt;...k&quot;</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">),</span> <span class="n">inner_prod_mat</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="ComplexRiemannianMetric.squared_norm">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_riemannian_metric.ComplexRiemannianMetric.squared_norm">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the square of the norm of a vector.</span>
-
-<span class="sd">        Squared norm of a vector associated to the inner product</span>
-<span class="sd">        at the tangent space at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., dim]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        sq_norm : array-like, shape=[...,]</span>
-<span class="sd">            Squared norm.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">sq_norm</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="ComplexRiemannianMetric.random_unit_tangent_vec">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_riemannian_metric.ComplexRiemannianMetric.random_unit_tangent_vec">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">random_unit_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_vectors</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a random unit tangent vector at a given point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point.</span>
-<span class="sd">        n_vectors : float</span>
-<span class="sd">            Number of vectors to be generated at base_point.</span>
-<span class="sd">            For vectorization purposes n_vectors can be greater than 1 iff</span>
-<span class="sd">            base_point consists of a single point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        normalized_vector : array-like, shape=[..., n_vectors, dim]</span>
-<span class="sd">            Random unit tangent vector at base_point.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">is_batch</span> <span class="ow">and</span> <span class="n">n_vectors</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Several tangent vectors is only applicable to a single base point.&quot;</span>
-            <span class="p">)</span>
-        <span class="n">dtype</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">()</span> <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base_point</span><span class="o">.</span><span class="n">dtype</span>
-        <span class="n">point_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">random_vector</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_vectors</span><span class="p">,</span> <span class="o">*</span><span class="n">point_shape</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_vectors</span><span class="p">,</span> <span class="o">*</span><span class="n">point_shape</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span>
+            <span class="n">metric_mds</span><span class="o">=</span><span class="n">metric_mds</span><span class="p">,</span>
+            <span class="n">n_init</span><span class="o">=</span><span class="n">n_init</span><span class="p">,</span>
+            <span class="n">init</span><span class="o">=</span><span class="n">init</span><span class="p">,</span>
+            <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span>
+            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+            <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;precomputed&quot;</span><span class="p">,</span>
+            <span class="n">metric_params</span><span class="o">=</span><span class="n">metric_params</span><span class="p">,</span>
+            <span class="n">normalized_stress</span><span class="o">=</span><span class="n">normalized_stress</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">normalized_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">random_vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">normalized_vector</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MDS.fit_transform">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.MDS.fit_transform">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the data and return the embedded coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
+<span class="sd">            Training input samples.</span>
+<span class="sd">        y: ignored</span>
+<span class="sd">            Not used, present for API consistency by convention.</span>
+<span class="sd">        init : ndarray of shape (n_samples, n_components), default=None</span>
+<span class="sd">            Starting configuration of the embedding to initialize the SMACOF</span>
+<span class="sd">            algorithm. By default, the algorithm is initialized with a randomly</span>
+<span class="sd">            chosen array. DON&#39;T USE</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X_new : array-like, shape=[n_samples, n_components]</span>
+<span class="sd">            X transformed in the new space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dissimilarity_matrix</span> <span class="o">=</span> <span class="n">pairwise_dists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">dissimilarity_matrix</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dissimilarity_matrix_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">dissimilarity_matrix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_</span></div>
 </div>
 
 </pre></div>
