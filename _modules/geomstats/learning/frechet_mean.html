@@ -50,7 +50,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="May 12, 2026, 8:29:51 PM"/>
+    <meta name="docbuild:last-update" content="May 12, 2026, 10:11:54 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -1066,94 +1066,51 @@
 
 
 
-<div class="viewcode-block" id="FrechetMean">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.FrechetMean">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">FrechetMean</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Empirical Frechet mean.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_BaseMeanEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for mean estimators on manifolds.</span>
+
+<span class="sd">    This class implements the common estimator interface shared by</span>
+<span class="sd">    manifold-valued mean estimators. Subclasses are responsible for</span>
+<span class="sd">    defining the optimization procedure through `_make_optimizer`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    space : Manifold</span>
-<span class="sd">        Equipped manifold.</span>
-<span class="sd">    method : str, {\&#39;default\&#39;, \&#39;adaptive\&#39;, \&#39;batch\&#39;}</span>
-<span class="sd">        Gradient descent method.</span>
-<span class="sd">        The `adaptive` method uses a Levenberg-Marquardt style adaptation of</span>
-<span class="sd">        the learning rate. The `batch` method is similar to the default</span>
-<span class="sd">        method but for batches of equal length of samples. In this case,</span>
-<span class="sd">        samples must be of shape [n_samples, n_batch, *space.shape].</span>
-<span class="sd">        Optional, default: \&#39;default\&#39;.</span>
+<span class="sd">        Equipped manifold on which the data lie.</span>
+<span class="sd">    optimizer_kwargs : dict or None</span>
+<span class="sd">        Keyword arguments passed to the optimizer constructor.</span>
+<span class="sd">        Optional, default: None.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    estimate_ : array-like, shape=[*space.shape]</span>
-<span class="sd">        If fit, Frechet mean.</span>
+<span class="sd">        Estimated mean after calling `fit`.</span>
+<span class="sd">    optimizer_ : object</span>
+<span class="sd">        Optimizer instance used during fitting.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    * Required metric methods for general case:</span>
-<span class="sd">        * `log`, `exp`, `squared_norm` (for convergence criteria)</span>
+<span class="sd">    Subclasses must implement `_make_optimizer`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface for instantiating proper algorithm.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">HypersphereMetric</span><span class="p">)</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">CircleMean</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">LinearMean</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">ElasticMean</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">optimizer_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span> <span class="o">=</span> <span class="n">optimizer_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="FrechetMean.set">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.FrechetMean.set">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set optimizer parameters.</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_optimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create optimizer instance.</span>
 
-<span class="sd">        Especially useful for one line instantiations.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        optimizer : object</span>
+<span class="sd">            Optimizer implementing a `minimize` method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown parameter </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gradient descent method.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span>
-
-    <span class="nd">@method</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gradient descent method.&quot;&quot;&quot;</span>
-        <span class="n">error</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
-            <span class="n">value</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;batch&quot;</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">:</span>
-            <span class="k">return</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="n">MAP_OPTIMIZER</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="n">GradientDescent</span><span class="p">,</span>
-            <span class="s2">&quot;adaptive&quot;</span><span class="p">:</span> <span class="n">AdaptiveGradientDescent</span><span class="p">,</span>
-            <span class="s2">&quot;batch&quot;</span><span class="p">:</span> <span class="n">BatchGradientDescent</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">MAP_OPTIMIZER</span><span class="p">[</span><span class="n">value</span><span class="p">]()</span>
-
-<div class="viewcode-block" id="FrechetMean.fit">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.FrechetMean.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the empirical weighted Frechet mean.</span>
 
@@ -1172,13 +1129,81 @@
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_optimizer</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
             <span class="n">space</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span>
             <span class="n">points</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
             <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-</div>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<div class="viewcode-block" id="GeneralFrechetMean">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.GeneralFrechetMean">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GeneralFrechetMean</span><span class="p">(</span><span class="n">_BaseMeanEstimator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Empirical Frechet mean.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
+<span class="sd">    method : str, {\&#39;default\&#39;, \&#39;adaptive\&#39;, \&#39;batch\&#39;}</span>
+<span class="sd">        Gradient descent method.</span>
+<span class="sd">        The `adaptive` method uses a Levenberg-Marquardt style adaptation of</span>
+<span class="sd">        the learning rate. The `batch` method is similar to the default</span>
+<span class="sd">        method but for batches of equal length of samples. In this case,</span>
+<span class="sd">        samples must be of shape [n_samples, n_batch, *space.shape].</span>
+<span class="sd">        Optional, default: \&#39;default\&#39;.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    estimate_ : array-like, shape=[*space.shape]</span>
+<span class="sd">        Estimated mean after calling `fit`.</span>
+<span class="sd">    optimizer_ : object</span>
+<span class="sd">        Optimizer instance used during fitting.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    * Required metric methods for general case:</span>
+<span class="sd">        * `log`, `exp`, `squared_norm` (for convergence criteria)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_optimizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gradient descent method.&quot;&quot;&quot;</span>
+        <span class="n">error</span><span class="o">.</span><span class="n">check_parameter_accepted_values</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;batch&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">MAP_OPTIMIZER</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="n">GradientDescent</span><span class="p">,</span>
+            <span class="s2">&quot;adaptive&quot;</span><span class="p">:</span> <span class="n">AdaptiveGradientDescent</span><span class="p">,</span>
+            <span class="s2">&quot;batch&quot;</span><span class="p">:</span> <span class="n">BatchGradientDescent</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">MAP_OPTIMIZER</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">](</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FrechetMean">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.FrechetMean">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FrechetMean</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Empirical Frechet mean.</span>
+
+<span class="sd">    Interface for instantiating proper algorithm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">HypersphereMetric</span><span class="p">)</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">CircleMean</span>
+
+    <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">LinearMean</span>
+
+    <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">ElasticMean</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">GeneralFrechetMean</span>
+
+    <span class="k">return</span> <span class="n">Estimator</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 </pre></div>
 
