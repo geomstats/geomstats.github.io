@@ -55,7 +55,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="May 12, 2026, 10:11:54 PM"/>
+    <meta name="docbuild:last-update" content="May 14, 2026, 7:37:18 PM"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -654,18 +654,43 @@ between 0 and 1 at which the corresponding point on the path is returned.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="geomstats.geometry.stratified.bhv_space.Tree">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.bhv_space.</span></span><span class="sig-name descname"><span class="pre">Tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/bhv_space.html#Tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.bhv_space.Tree" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.bhv_space.</span></span><span class="sig-name descname"><span class="pre">Tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/bhv_space.html#Tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.bhv_space.Tree" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#geomstats.geometry.stratified.point_set.Point" title="geomstats.geometry.stratified.point_set.Point"><code class="xref py py-class docutils literal notranslate"><span class="pre">Point</span></code></a></p>
-<p>A class for trees, that are phylogenetic trees, elements of the BHV space.</p>
-<p>A tree is essentially a phylogenetic tree with edges having length greater
-than zero.
-The representation of the tree is via splits, the edge lengths are stored in
-a vector.</p>
+<p>A class for unrooted phylogenetic trees, which are elements of the BHV space.</p>
+<p>Following Semple and Steel 2003 and Lueg, 2023, an unrooted phylogenetic tree an
+unrooted phylogenetic tree is a tuple of edge splits and edge lengths; T=(E,l)
+where E ⊂ e_compatible$ and l∈(0,∞)^{<a href="#id17"><span class="problematic" id="id18">|E|</span></a>}$. Such a tree has N labels,
+L_0={0, 1,…,N-1}. Those N labels yield a set of possible edges, e = {A|B : L_0=A⋃B,
+<a href="#id19"><span class="problematic" id="id20">|A|</span></a>,|B|≥ 2}$. Note that this definition excludes pendant edges (those touching a
+leaf), yielding <a href="#id21"><span class="problematic" id="id22">|e|</span></a> = 2^{N-1} - N - 3 possible interior edges of which a maximum
+of N-3 are compatible at once. BHV space is defined for N≥4, as any less will not
+yield any interior edges and thus be boringly Euclidean.</p>
+<p>People working with phylogenetic trees might have additional requirements, and the
+way the code is now set up allows these to be added on top of the existing class
+structure, rather than needing to set up weird internal modifications. The possible
+additional constraints concern pendant edges and roots.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Pendant edges: No pendant edges is now the default, because often it is the</p></li>
+</ul>
+<p>distance between splits that matters in phylogenetic trees, not the distance
+between the split and the leaf, because the leaf is at an arbitrary time, the
+present. Too add lengths to the pendant edges we will create a space that is the
+Cartesian product of BHV space and Euclidean space of dimension N. Geodesics in
+this new space are just geodesics in pendant-less BHV space, with extra straight
+line segments in (0,∞)^N added on.
+- Roots: Unrooted is the default. There is a bijection between unrooted
+phylogenetic trees with N labels and rooted ones with N−1 labels (just add a leaf,
+label it 0, and call it a day). We can add more explicit support for this during
+class construction in a subsequent PR.</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>splits</strong> (<em>list[Split]</em>) – The structure of the tree in form of a set of splits of the set of labels.</p></li>
 <li><p><strong>lengths</strong> (<em>array-like, shape=[n_splits]</em>) – The edge lengths of the splits, a vector containing positive numbers.</p></li>
+<li><p><strong>n_labels</strong> (<em>int, optional</em>) – Number of labels, the set of labels is then <span class="math notranslate nohighlight">\(\{0,\dots,n-1\}\)</span>.
+Needed to instantiate star tree at origin, as labels cannot be inferred from empty split set.</p></li>
 </ul>
 </dd>
 </dl>
@@ -784,6 +809,7 @@ Optional, default: backend atol.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n_samples</strong> (<em>int</em>) – Number of samples. Defaults to 1.</p></li>
+<li><p><strong>exclude_pendant_edges</strong> (<em>bool</em>) – Phylogenetic trees do not usually have lengths on pendant (external) edges (ie, those touching a leaf).</p></li>
 <li><p><strong>p_keep</strong> (<em>float between 0 and 1</em>) – The probability that a sampled edge is kept and not deleted randomly.
 To be precise, it is not exactly the probability, as some edges cannot be
 deleted since the requirement that two labels are separated by a split might
@@ -802,12 +828,18 @@ Defaults to 0.9</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="geomstats.geometry.stratified.bhv_space.TreeTopology">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.bhv_space.</span></span><span class="sig-name descname"><span class="pre">TreeTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">splits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/bhv_space.html#TreeTopology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.bhv_space.TreeTopology" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.bhv_space.</span></span><span class="sig-name descname"><span class="pre">TreeTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/bhv_space.html#TreeTopology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.bhv_space.TreeTopology" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#geomstats.geometry.stratified.trees.ForestTopology" title="geomstats.geometry.stratified.trees.ForestTopology"><code class="xref py py-class docutils literal notranslate"><span class="pre">ForestTopology</span></code></a></p>
-<p>The topology of a tree, using a split-based representation.</p>
+<p>The topology of a tree with only interior edges, using a split-based representation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>splits</strong> (<em>list[Split]</em>) – The structure of the tree in form of a set of splits of the set of labels.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>splits</strong> (<em>list[Split]</em>) – The structure of the tree in form of a set of splits of the set of labels.
+Pendant edges (i.e., singleton splits) are not permitted.</p></li>
+<li><p><strong>n_labels</strong> (<em>int, optional</em>) – Number of labels, the set of labels is then <span class="math notranslate nohighlight">\(\{0,\dots,n-1\}\)</span>.
+Needed to instantiate star tree at origin, as labels cannot be inferred
+from empty split set.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -896,24 +928,6 @@ uv-th entry is <code class="docutils literal notranslate"><span class="pre">True
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="geomstats.geometry.stratified.bhv_space.generate_random_tree">
-<span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.bhv_space.</span></span><span class="sig-name descname"><span class="pre">generate_random_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/bhv_space.html#generate_random_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.bhv_space.generate_random_tree" title="Link to this definition">#</a></dt>
-<dd><p>Generate a random instance of <code class="docutils literal notranslate"><span class="pre">Tree</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>p_keep</strong> (<em>float between 0 and 1</em>) – The probability that a sampled edge is kept and not deleted randomly.
-To be precise, it is not exactly the probability, as some edges cannot be
-deleted since the requirement that two labels are separated by a split might
-be violated otherwise.
-Defaults to 0.9</p></li>
-<li><p><strong>btol</strong> (<em>float</em>) – Tolerance for the boundary of the edge lengths. Defaults to 1e-08.</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -2003,7 +2017,7 @@ will not be deleted. If False, any split can be randomly deleted.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="geomstats.geometry.stratified.trees.generate_splits">
-<span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.trees.</span></span><span class="sig-name descname"><span class="pre">generate_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/trees.html#generate_splits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.trees.generate_splits" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">geomstats.geometry.stratified.trees.</span></span><span class="sig-name descname"><span class="pre">generate_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_singletons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/stratified/trees.html#generate_splits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.stratified.trees.generate_splits" title="Link to this definition">#</a></dt>
 <dd><p>Generate random maximal set of compatible splits of set <code class="docutils literal notranslate"><span class="pre">labels</span></code>.</p>
 <p>This method works inductively on the number of elements in labels.
 Start with a split of two randomly chosen labels. Then, successively choose
@@ -2012,7 +2026,11 @@ tree by attaching it to a random split, thereby dividing this split into two
 splits and one has to update all the other splits accordingly.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>labels</strong> (<em>list[int]</em>) – A list of integers, the set of labels that we generate splits for.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>labels</strong> (<em>list[int]</em>) – A list of integers, the set of labels that we generate splits for.</p></li>
+<li><p><strong>exclude_singletons</strong> (<em>bool</em>) – If True does not generate singleton splits, which would result in pendant edges.
+Trees do not have pendant edges. There are 2^(N-1) - N - 1 splits, but maximum N-1 compatible.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>splits</strong> (<em>list[Split]</em>) – A list of splits of the set of labels, maximal number of splits.</p>
@@ -2466,7 +2484,7 @@ Defaults to 0.9</p></li>
 <li><p><strong>p_keep</strong> (<em>float</em>) – The probability will be inserted into the generation of a partition as
 well as for the generation of a split set for the topology of the wald.</p></li>
 <li><p><strong>p_new</strong> (<em>float</em>) – A float between 0 and 1, the probability that no new component is added,
-and probability of 1 - <a href="#id17"><span class="problematic" id="id18">p_new_</span></a> that a new component is added.</p></li>
+and probability of 1 - <a href="#id23"><span class="problematic" id="id24">p_new_</span></a> that a new component is added.</p></li>
 <li><p><strong>btol</strong> (<em>float</em>) – Tolerance for the boundary of the coordinates in each grove. Defaults to
 1e-08.</p></li>
 <li><p><strong>check</strong> (<em>bool</em>) – If True, checks if splits still separate all labels. In this case, the split
@@ -2603,7 +2621,6 @@ will not be deleted. If False, any split can be randomly deleted.</p></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.stratified.bhv_space.TreeTopology.splits"><code class="docutils literal notranslate"><span class="pre">TreeTopology.splits</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.stratified.bhv_space.generate_random_tree"><code class="docutils literal notranslate"><span class="pre">generate_random_tree()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-geomstats.geometry.stratified.graph_space">geomstats.geometry.stratified.graph_space module</a><ul class="nav section-nav flex-column">

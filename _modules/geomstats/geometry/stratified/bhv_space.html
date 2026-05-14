@@ -50,7 +50,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="May 12, 2026, 10:11:54 PM"/>
+    <meta name="docbuild:last-update" content="May 14, 2026, 7:37:18 PM"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -454,44 +454,20 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.stratified.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast_lists</span><span class="p">,</span> <span class="n">vectorize_point</span>
 
 
-<div class="viewcode-block" id="generate_random_tree">
-<a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.bhv_space.generate_random_tree">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">generate_random_tree</span><span class="p">(</span><span class="n">n_labels</span><span class="p">,</span> <span class="n">p_keep</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">btol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a random instance of ``Tree``.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    p_keep : float between 0 and 1</span>
-<span class="sd">        The probability that a sampled edge is kept and not deleted randomly.</span>
-<span class="sd">        To be precise, it is not exactly the probability, as some edges cannot be</span>
-<span class="sd">        deleted since the requirement that two labels are separated by a split might</span>
-<span class="sd">        be violated otherwise.</span>
-<span class="sd">        Defaults to 0.9</span>
-<span class="sd">    btol: float</span>
-<span class="sd">        Tolerance for the boundary of the edge lengths. Defaults to 1e-08.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_labels</span><span class="p">))</span>
-
-    <span class="n">initial_splits</span> <span class="o">=</span> <span class="n">generate_splits</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
-    <span class="n">splits</span> <span class="o">=</span> <span class="n">delete_splits</span><span class="p">(</span><span class="n">initial_splits</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">p_keep</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-    <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">),),</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">btol</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">btol</span><span class="p">)</span>
-    <span class="n">lengths</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">btol</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)))</span>
-
-    <span class="k">return</span> <span class="n">Tree</span><span class="p">(</span><span class="n">splits</span><span class="p">,</span> <span class="n">lengths</span><span class="p">)</span></div>
-
-
-
 <div class="viewcode-block" id="TreeTopology">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.bhv_space.TreeTopology">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TreeTopology</span><span class="p">(</span><span class="n">ForestTopology</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The topology of a tree, using a split-based representation.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The topology of a tree with only interior edges, using a split-based representation.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    splits : list[Split]</span>
 <span class="sd">        The structure of the tree in form of a set of splits of the set of labels.</span>
+<span class="sd">        Pendant edges (i.e., singleton splits) are not permitted.</span>
+<span class="sd">    n_labels : int, optional</span>
+<span class="sd">        Number of labels, the set of labels is then :math:`\{0,\dots,n-1\}`.</span>
+<span class="sd">        Needed to instantiate star tree at origin, as labels cannot be inferred</span>
+<span class="sd">        from empty split set.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -516,11 +492,51 @@
 <span class="sd">        ``False``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">splits</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">splits</span><span class="p">,</span> <span class="n">n_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">splits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n_labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Cannot make tree with no interior splits and ``n_labels`` as None.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">partition</span> <span class="o">=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_labels</span><span class="p">)),)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_no_pendant_edges</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span>
+            <span class="n">partition</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">part1</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">part2</span><span class="p">)),)</span>
+            <span class="n">n_labels_</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">n_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n_labels_</span> <span class="o">!=</span> <span class="n">n_labels</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Splits (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span><span class="si">}</span><span class="s2">) disagrees with n_labels (</span><span class="si">{</span><span class="n">n_labels</span><span class="si">}</span><span class="s2">).&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">n_labels</span> <span class="o">=</span> <span class="n">n_labels_</span>
+
+        <span class="k">if</span> <span class="n">n_labels</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;BHV space only defined for N &gt;= 4. You tried </span><span class="si">{</span><span class="n">n_labels</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">partition</span><span class="o">=</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">part1</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">part2</span><span class="p">)),),</span>
+            <span class="n">partition</span><span class="o">=</span><span class="n">partition</span><span class="p">,</span>
             <span class="n">split_sets</span><span class="o">=</span><span class="p">(</span><span class="n">splits</span><span class="p">,),</span>
         <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_no_pendant_edges</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify that there are no pendant edges (i.e., singleton splits).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        splits : list[Split]</span>
+<span class="sd">            The structure of the tree in form of a set of splits of the set of labels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">splits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">part1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">part2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Pendant edges / singleton splits like </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> are not allowed.&quot;</span>
+                <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">splits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -549,12 +565,32 @@
 <div class="viewcode-block" id="Tree">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.bhv_space.Tree">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tree</span><span class="p">(</span><span class="n">Point</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A class for trees, that are phylogenetic trees, elements of the BHV space.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A class for unrooted phylogenetic trees, which are elements of the BHV space.</span>
 
-<span class="sd">    A tree is essentially a phylogenetic tree with edges having length greater</span>
-<span class="sd">    than zero.</span>
-<span class="sd">    The representation of the tree is via splits, the edge lengths are stored in</span>
-<span class="sd">    a vector.</span>
+<span class="sd">    Following Semple and Steel 2003 and Lueg, 2023, an unrooted phylogenetic tree an</span>
+<span class="sd">    unrooted phylogenetic tree is a tuple of edge splits and edge lengths; T=(E,l)</span>
+<span class="sd">    where E ⊂ e\_compatible$ and l∈(0,∞)^{|E|}$. Such a tree has N labels,</span>
+<span class="sd">    L_0={0, 1,...,N-1}. Those N labels yield a set of possible edges, e = {A|B : L_0=A⋃B,</span>
+<span class="sd">    |A|,|B|≥ 2}$. Note that this definition excludes pendant edges (those touching a</span>
+<span class="sd">    leaf), yielding |e| = 2^{N-1} - N - 3 possible interior edges of which a maximum</span>
+<span class="sd">    of N-3 are compatible at once. BHV space is defined for N≥4, as any less will not</span>
+<span class="sd">    yield any interior edges and thus be boringly Euclidean.</span>
+
+<span class="sd">    People working with phylogenetic trees might have additional requirements, and the</span>
+<span class="sd">    way the code is now set up allows these to be added on top of the existing class</span>
+<span class="sd">    structure, rather than needing to set up weird internal modifications. The possible</span>
+<span class="sd">    additional constraints concern pendant edges and roots.</span>
+<span class="sd">        - Pendant edges: No pendant edges is now the default, because often it is the</span>
+<span class="sd">        distance between splits that matters in phylogenetic trees, not the distance</span>
+<span class="sd">        between the split and the leaf, because the leaf is at an arbitrary time, the</span>
+<span class="sd">        present. Too add lengths to the pendant edges we will create a space that is the</span>
+<span class="sd">        Cartesian product of BHV space and Euclidean space of dimension N. Geodesics in</span>
+<span class="sd">        this new space are just geodesics in pendant-less BHV space, with extra straight</span>
+<span class="sd">        line segments in (0,∞)^N added on.</span>
+<span class="sd">        - Roots: Unrooted is the default. There is a bijection between unrooted</span>
+<span class="sd">        phylogenetic trees with N labels and rooted ones with N−1 labels (just add a leaf,</span>
+<span class="sd">        label it 0, and call it a day). We can add more explicit support for this during</span>
+<span class="sd">        class construction in a subsequent PR.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -562,6 +598,10 @@
 <span class="sd">        The structure of the tree in form of a set of splits of the set of labels.</span>
 <span class="sd">    lengths : array-like, shape=[n_splits]</span>
 <span class="sd">        The edge lengths of the splits, a vector containing positive numbers.</span>
+<span class="sd">    n_labels : int, optional</span>
+<span class="sd">        Number of labels, the set of labels is then :math:`\{0,\dots,n-1\}`.</span>
+<span class="sd">        Needed to instantiate star tree at origin, as labels cannot be inferred from empty split set.</span>
+
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -571,8 +611,10 @@
 <span class="sd">        The edge lengths of the splits, a vector containing positive numbers.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">splits</span><span class="p">,</span> <span class="n">lengths</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="o">=</span> <span class="n">TreeTopology</span><span class="p">(</span><span class="n">splits</span><span class="o">=</span><span class="n">splits</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">splits</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">n_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_valid_lengths</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="o">=</span> <span class="n">TreeTopology</span><span class="p">(</span><span class="n">splits</span><span class="o">=</span><span class="n">splits</span><span class="p">,</span> <span class="n">n_labels</span><span class="o">=</span><span class="n">n_labels</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="n">length</span>
@@ -626,6 +668,25 @@
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lengths</span> <span class="o">-</span> <span class="n">point</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_valid_lengths</span><span class="p">(</span><span class="n">lengths</span><span class="p">,</span> <span class="n">n_splits</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify edge lengths are in (0, infinity).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lengths : array-like, shape=[n_splits]</span>
+<span class="sd">            The edge lengths of the splits, a vector containing positive numbers.</span>
+<span class="sd">        len_splits : int</span>
+<span class="sd">            Number of splits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_splits</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Splits and lengths different size. </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">n_splits</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Lengths must be positive.&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Tree.equal">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.bhv_space.Tree.equal">[docs]</a>
@@ -691,6 +752,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_labels</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n_labels</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;BHV space only defined for N &gt;= 4. You tried </span><span class="si">{</span><span class="n">n_labels</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span> <span class="o">=</span> <span class="n">n_labels</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">equip</span><span class="p">)</span>
 
@@ -718,7 +783,7 @@
 <span class="sd">        belongs : bool</span>
 <span class="sd">            Boolean denoting if point belongs to Tree space.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">n_labels</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">Tree</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">n_labels</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">lengths</span> <span class="o">&gt;</span> <span class="o">-</span><span class="n">atol</span><span class="p">)</span>
 
@@ -744,6 +809,31 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_belongs_single</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span> <span class="k">for</span> <span class="n">point_</span> <span class="ow">in</span> <span class="n">point</span><span class="p">])</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_random_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_keep</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">btol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate a random instance of ``Tree``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p_keep : float between 0 and 1</span>
+<span class="sd">            The probability that a sampled edge is kept and not deleted randomly.</span>
+<span class="sd">            To be precise, it is not exactly the probability, as some edges cannot be</span>
+<span class="sd">            deleted since the requirement that two labels are separated by a split might</span>
+<span class="sd">            be violated otherwise.</span>
+<span class="sd">            Defaults to 0.9</span>
+<span class="sd">        btol: float</span>
+<span class="sd">            Tolerance for the boundary of the edge lengths. Defaults to 1e-08.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">))</span>
+
+        <span class="n">initial_splits</span> <span class="o">=</span> <span class="n">generate_splits</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">exclude_singletons</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="n">delete_splits</span><span class="p">(</span><span class="n">initial_splits</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">p_keep</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">),),</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">btol</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">btol</span><span class="p">)</span>
+        <span class="n">lengths</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">btol</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">Tree</span><span class="p">(</span><span class="n">splits</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">n_labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">)</span>
+
 <div class="viewcode-block" id="TreeSpace.random_point">
 <a class="viewcode-back" href="../../../../api/geomstats.geometry.stratified.html#geomstats.geometry.stratified.bhv_space.TreeSpace.random_point">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">p_keep</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">btol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
@@ -753,6 +843,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of samples. Defaults to 1.</span>
+<span class="sd">        exclude_pendant_edges : bool</span>
+<span class="sd">            Phylogenetic trees do not usually have lengths on pendant (external) edges (ie, those touching a leaf).</span>
 <span class="sd">        p_keep : float between 0 and 1</span>
 <span class="sd">            The probability that a sampled edge is kept and not deleted randomly.</span>
 <span class="sd">            To be precise, it is not exactly the probability, as some edges cannot be</span>
@@ -768,7 +860,11 @@
 <span class="sd">            Points sampled in Tree space.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">trees</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">generate_random_tree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">,</span> <span class="n">p_keep</span><span class="p">,</span> <span class="n">btol</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_generate_random_tree</span><span class="p">(</span>
+                <span class="n">p_keep</span><span class="o">=</span><span class="n">p_keep</span><span class="p">,</span>
+                <span class="n">btol</span><span class="o">=</span><span class="n">btol</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
         <span class="p">]</span>
 
         <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -902,14 +998,9 @@
 <span class="sd">        squared_dist : array-like, shape=[...]</span>
 <span class="sd">            The squared distance between the two points.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sp_a</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">split</span><span class="p">:</span> <span class="n">length</span>
-            <span class="k">for</span> <span class="n">split</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point_a</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">splits</span><span class="p">,</span> <span class="n">point_a</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="n">sp_b</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">split</span><span class="p">:</span> <span class="n">length</span>
-            <span class="k">for</span> <span class="n">split</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point_b</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">splits</span><span class="p">,</span> <span class="n">point_b</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span>
-        <span class="p">}</span>
+        <span class="n">sp_a</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">point_a</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">splits</span><span class="p">,</span> <span class="n">point_a</span><span class="o">.</span><span class="n">lengths</span><span class="p">))</span>
+        <span class="n">sp_b</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">point_b</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">splits</span><span class="p">,</span> <span class="n">point_b</span><span class="o">.</span><span class="n">lengths</span><span class="p">))</span>
+
         <span class="n">common_a</span><span class="p">,</span> <span class="n">common_b</span><span class="p">,</span> <span class="n">supports</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trees_with_common_support</span><span class="p">(</span>
             <span class="n">sp_a</span><span class="p">,</span>
             <span class="n">sp_b</span><span class="p">,</span>
@@ -946,17 +1037,12 @@
 <span class="sd">            The squared distance between the two points.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span> <span class="o">=</span> <span class="n">broadcast_lists</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
-        <span class="n">sq_dists</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_squared_dist_single</span><span class="p">(</span><span class="n">point_a_</span><span class="p">,</span> <span class="n">point_b_</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">point_a_</span><span class="p">,</span> <span class="n">point_b_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
             <span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sq_dists</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">sq_dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">sq_dists</span></div>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="GTPSolver.dist">
@@ -1010,13 +1096,17 @@
         <span class="p">}</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">geodesic_t</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">t</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Geodesics only exist for 0&lt;=t&lt;=1. You tried </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">initial_point</span>
-            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">end_point</span>
 
             <span class="n">t_ratio</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span>
             <span class="n">splits_t</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">common_a</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+</span> <span class="n">t</span> <span class="o">*</span> <span class="n">common_b</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">common_a</span><span class="p">}</span>
+
             <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="p">(</span><span class="n">supp_a</span><span class="p">,</span> <span class="n">supp_b</span><span class="p">)</span> <span class="ow">in</span> <span class="n">supports</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">argmax</span><span class="p">([</span><span class="n">t_ratio</span> <span class="o">&lt;=</span> <span class="n">_r</span> <span class="k">for</span> <span class="n">_r</span> <span class="ow">in</span> <span class="n">ratios</span><span class="p">[</span><span class="n">part</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]])</span>
                 <span class="n">splits_t_a</span> <span class="o">=</span> <span class="p">{</span>
@@ -1036,11 +1126,13 @@
                 <span class="k">for</span> <span class="n">split</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">splits_t</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span>
             <span class="p">]</span>
-            <span class="n">tree_t</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splits_lengths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Tree</span><span class="p">((),</span> <span class="p">[],</span> <span class="n">n_labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_labels</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Tree</span><span class="p">(</span>
                 <span class="n">splits</span><span class="o">=</span><span class="p">[</span><span class="n">sl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="n">splits_lengths</span><span class="p">],</span>
                 <span class="n">lengths</span><span class="o">=</span><span class="p">[</span><span class="n">sl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="n">splits_lengths</span><span class="p">],</span>
             <span class="p">)</span>
-            <span class="k">return</span> <span class="n">tree_t</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">geodesic_</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
@@ -1228,7 +1320,7 @@
         <span class="n">weights_a</span> <span class="o">=</span> <span class="p">{</span><span class="n">split</span><span class="p">:</span> <span class="n">splits_a</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">splits_a</span><span class="p">}</span>
         <span class="n">weights_b</span> <span class="o">=</span> <span class="p">{</span><span class="n">split</span><span class="p">:</span> <span class="n">splits_b</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">splits_b</span><span class="p">}</span>
         <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">new_support_a</span><span class="p">,</span> <span class="n">new_support_b</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span> <span class="nb">tuple</span><span class="p">()</span>
+            <span class="n">new_support_a</span><span class="p">,</span> <span class="n">new_support_b</span> <span class="o">=</span> <span class="p">(),</span> <span class="p">()</span>
             <span class="k">for</span> <span class="n">pair_a</span><span class="p">,</span> <span class="n">pair_b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">old_support_a</span><span class="p">,</span> <span class="n">old_support_b</span><span class="p">):</span>
                 <span class="n">pair_a_w</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">weights_a</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">pair_a</span><span class="p">}</span>
                 <span class="n">pair_b_w</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">weights_b</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">pair_b</span><span class="p">}</span>
@@ -1243,8 +1335,7 @@
                     <span class="n">new_support_b</span> <span class="o">+=</span> <span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_support_a</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_support_a</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">new_support_a</span><span class="p">,</span> <span class="n">new_support_b</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">old_support_a</span><span class="p">,</span> <span class="n">old_support_b</span> <span class="o">=</span> <span class="n">new_support_a</span><span class="p">,</span> <span class="n">new_support_b</span>
+            <span class="n">old_support_a</span><span class="p">,</span> <span class="n">old_support_b</span> <span class="o">=</span> <span class="n">new_support_a</span><span class="p">,</span> <span class="n">new_support_b</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_solve_extension_problem</span><span class="p">(</span><span class="n">sq_splits_a</span><span class="p">,</span> <span class="n">sq_splits_b</span><span class="p">):</span>
