@@ -50,7 +50,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="May 28, 2026, 10:01:44 PM"/>
+    <meta name="docbuild:last-update" content="Jun 3, 2026, 6:16:33 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -431,21 +431,33 @@
   <h1>Source code for geomstats.learning.mds</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Multidimensional scaling (MDS).&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">sklearn.manifold._mds</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_mds</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sklearn.metrics.pairwise</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">MDS</span> <span class="k">as</span> <span class="n">_MDS</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._sklearngs.manifold._classical_mds</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassicalMDS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._sklearngs.manifold._mds</span><span class="w"> </span><span class="kn">import</span> <span class="n">smacof</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">Manifold</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._sklearn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SklearnInteropMixin</span><span class="p">,</span>
+    <span class="n">check_array_allow_nd</span><span class="p">,</span>
+    <span class="n">validate_data_skip_check_array</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="pairwise_dists">
 <a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.pairwise_dists">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">pairwise_dists</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pairwise_dists</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dist_fnc</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the pairwise distance between points.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    space : Manifold or PointSet</span>
 <span class="sd">    points : array-like, shape=[n_samples, dim]</span>
 <span class="sd">        Set of points in the manifold.</span>
+<span class="sd">    space : Manifold or PointSet</span>
+
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -456,7 +468,7 @@
 
     <span class="n">pairwise_dist_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">dists</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">dist_fnc</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
         <span class="n">pairwise_dist_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">dists</span>
         <span class="n">pairwise_dist_matrix</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dists</span>
     <span class="k">return</span> <span class="n">pairwise_dist_matrix</span></div>
@@ -465,7 +477,7 @@
 
 <div class="viewcode-block" id="MDS">
 <a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.MDS">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MDS</span><span class="p">(</span><span class="n">_MDS</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MDS</span><span class="p">(</span><span class="n">SklearnInteropMixin</span><span class="p">,</span> <span class="n">_MDS</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Multidimensional scaling (MDS).</span>
 
 <span class="sd">    MDS is used to translate pairwise distances of N objects into</span>
@@ -497,6 +509,10 @@
 <span class="sd">    https://scikit-learn.org/stable/modules/generated/sklearn.manifold.MDS.html</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">_patched_methods</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;fit_transform&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">space</span><span class="p">,</span>
@@ -514,6 +530,8 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_interop</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span>
             <span class="n">metric_mds</span><span class="o">=</span><span class="n">metric_mds</span><span class="p">,</span>
@@ -524,37 +542,53 @@
             <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
             <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
-            <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;precomputed&quot;</span><span class="p">,</span>
+            <span class="n">metric</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">,</span>
             <span class="n">metric_params</span><span class="o">=</span><span class="n">metric_params</span><span class="p">,</span>
             <span class="n">normalized_stress</span><span class="o">=</span><span class="n">normalized_stress</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="MDS.fit_transform">
-<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.mds.MDS.fit_transform">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the data and return the embedded coordinates.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_interop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">array_repr</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">Manifold</span><span class="p">)</span>
+        <span class="n">backend_fix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;pytorch&quot;</span><span class="p">)</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        X : array-like, shape=[n_samples, *metric.shape]</span>
-<span class="sd">            Training input samples.</span>
-<span class="sd">        y: ignored</span>
-<span class="sd">            Not used, present for API consistency by convention.</span>
-<span class="sd">        init : ndarray of shape (n_samples, n_components), default=None</span>
-<span class="sd">            Starting configuration of the embedding to initialize the SMACOF</span>
-<span class="sd">            algorithm. By default, the algorithm is initialized with a randomly</span>
-<span class="sd">            chosen array. DON&#39;T USE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_sklearn_patches</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">array_repr</span> <span class="ow">or</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">backend_fix</span>
+        <span class="p">)</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        X_new : array-like, shape=[n_samples, n_components]</span>
-<span class="sd">            X transformed in the new space.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dissimilarity_matrix</span> <span class="o">=</span> <span class="n">pairwise_dists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">dissimilarity_matrix</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dissimilarity_matrix_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">dissimilarity_matrix</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_</span></div>
-</div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_sklearn_patches</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">patches</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">backend_fix</span><span class="p">:</span>
+            <span class="n">patches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="n">_mds</span><span class="p">,</span> <span class="s2">&quot;smacof&quot;</span><span class="p">,</span> <span class="n">smacof</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">_mds</span><span class="p">,</span> <span class="s2">&quot;ClassicalMDS&quot;</span><span class="p">,</span> <span class="n">ClassicalMDS</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">array_repr</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">patches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="n">_mds</span><span class="p">,</span> <span class="s2">&quot;validate_data&quot;</span><span class="p">,</span> <span class="n">validate_data_skip_check_array</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">mp</span><span class="p">,</span> <span class="s2">&quot;check_array&quot;</span><span class="p">,</span> <span class="n">check_array_allow_nd</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">array_repr</span><span class="p">:</span>
+            <span class="n">patches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="n">_mds</span><span class="p">,</span> <span class="s2">&quot;validate_data&quot;</span><span class="p">,</span> <span class="n">validate_data_skip_check_array</span><span class="p">),</span>
+                    <span class="p">(</span>
+                        <span class="n">_mds</span><span class="p">,</span>
+                        <span class="s2">&quot;pairwise_distances&quot;</span><span class="p">,</span>
+                        <span class="k">lambda</span> <span class="n">X</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="n">pairwise_dists</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">metric</span><span class="p">),</span>
+                    <span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sklearn_patches</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span></div>
 
 </pre></div>
 

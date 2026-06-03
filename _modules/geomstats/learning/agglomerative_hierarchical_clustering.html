@@ -50,7 +50,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="May 28, 2026, 10:01:44 PM"/>
+    <meta name="docbuild:last-update" content="Jun 3, 2026, 6:16:33 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -429,19 +429,20 @@
                 <article class="bd-article">
                   
   <h1>Source code for geomstats.learning.agglomerative_hierarchical_clustering</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;The Agglomerative Hierarchical Clustering (AHC) on manifolds.</span>
+<span></span><span class="sd">&quot;&quot;&quot;The Agglomerative Hierarchical Clustering (AHC) on manifolds.&quot;&quot;&quot;</span>
 
-<span class="sd">Lead author: Yann Cabanes.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
+<span class="kn">import</span><span class="w"> </span><span class="nn">sklearn.cluster._agglomerative</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ca</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgglomerativeClustering</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._sklearngs.cluster._agglomerative</span><span class="w"> </span><span class="kn">import</span> <span class="n">linkage_tree</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._sklearn</span><span class="w"> </span><span class="kn">import</span> <span class="n">SklearnInteropMixin</span>
 
 
 <div class="viewcode-block" id="AgglomerativeHierarchicalClustering">
 <a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.agglomerative_hierarchical_clustering.AgglomerativeHierarchicalClustering">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">AgglomerativeHierarchicalClustering</span><span class="p">(</span><span class="n">AgglomerativeClustering</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AgglomerativeHierarchicalClustering</span><span class="p">(</span><span class="n">SklearnInteropMixin</span><span class="p">,</span> <span class="n">AgglomerativeClustering</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The Agglomerative Hierarchical Clustering on manifolds.</span>
 
 <span class="sd">    Recursively merges the pair of clusters that minimally increases</span>
@@ -516,9 +517,12 @@
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    This algorithm uses the scikit-learn library:</span>
-<span class="sd">    https://github.com/scikit-learn/scikit-learn/blob/95d4f0841/sklearn/cluster</span>
-<span class="sd">    /_agglomerative.py#L656</span>
+<span class="sd">    https://github.com/scikit-learn/scikit-learn/blob/95d4f0841/sklearn/cluster/_agglomerative.py#L656</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_patched_methods</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;fit&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -531,8 +535,6 @@
         <span class="n">distance_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">affinity</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
             <span class="n">n_samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">affinity_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">i_sample</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
@@ -544,6 +546,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_interop</span><span class="p">()</span>
+
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">n_clusters</span><span class="o">=</span><span class="n">n_clusters</span><span class="p">,</span>
             <span class="n">metric</span><span class="o">=</span><span class="n">affinity</span><span class="p">,</span>
@@ -552,7 +556,16 @@
             <span class="n">compute_full_tree</span><span class="o">=</span><span class="n">compute_full_tree</span><span class="p">,</span>
             <span class="n">linkage</span><span class="o">=</span><span class="n">linkage</span><span class="p">,</span>
             <span class="n">distance_threshold</span><span class="o">=</span><span class="n">distance_threshold</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_interop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_sklearn_patches</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;pytorch&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_sklearn_patches</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">patches</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ca</span><span class="p">,</span> <span class="s2">&quot;linkage_tree&quot;</span><span class="p">,</span> <span class="n">linkage_tree</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sklearn_patches</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span></div>
 
 </pre></div>
 
