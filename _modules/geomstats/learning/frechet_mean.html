@@ -50,7 +50,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Jul 15, 2026, 9:58:50 PM"/>
+    <meta name="docbuild:last-update" content="Jul 24, 2026, 9:49:11 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -442,24 +442,15 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.errors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">error</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.discrete_curves</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElasticMetric</span><span class="p">,</span> <span class="n">SRVMetric</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">EuclideanMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hypersphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">HypersphereMetric</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.metric_geometry.bhv_space</span><span class="w"> </span><span class="kn">import</span> <span class="n">BHVMetric</span>
 
-<span class="n">ELASTIC_METRICS</span> <span class="o">=</span> <span class="p">(</span><span class="n">SRVMetric</span><span class="p">,</span> <span class="n">ElasticMetric</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_is_linear_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">EuclideanMetric</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_is_elastic_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ELASTIC_METRICS</span><span class="p">))</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_is_bhv_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">BHVMetric</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_is_elastic_metric</span><span class="p">,</span>
+    <span class="n">_is_geodesic_metric</span><span class="p">,</span>
+    <span class="n">_is_graph_space</span><span class="p">,</span>
+    <span class="n">_is_linear_metric</span><span class="p">,</span>
+    <span class="n">_warn_max_iterations</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_scalarmul</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
@@ -539,8 +530,7 @@
 
     <span class="n">weighted_points</span> <span class="o">=</span> <span class="n">_scalarmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
 
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">sum_weights</span>
-    <span class="k">return</span> <span class="n">mean</span></div>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">sum_weights</span></div>
 
 
 
@@ -646,10 +636,7 @@
                 <span class="n">step_size</span> <span class="o">=</span> <span class="n">step_size</span> <span class="o">/</span> <span class="mf">2.0</span>
 
         <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Maximum number of iterations </span><span class="si">%d</span><span class="s2"> reached. The mean may be inaccurate&quot;</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -711,10 +698,7 @@
                 <span class="n">step_size</span> <span class="o">=</span> <span class="n">step_size</span> <span class="o">/</span> <span class="mf">2.0</span>
 
         <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Maximum number of iterations </span><span class="si">%d</span><span class="s2"> reached. The mean may be inaccurate&quot;</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1263,6 +1247,128 @@
 
 
 
+<div class="viewcode-block" id="AACFrechetMean">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.AACFrechetMean">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AACFrechetMean</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class AAC for Frechet Mean on Graph Space.</span>
+
+<span class="sd">    The Align All and Compute (AAC) algorithm for Frechet Mean (FM)estimation is</span>
+<span class="sd">    introduced in [CFV2020]_ and it estimates the Frechet Mean for a set of</span>
+<span class="sd">    labeled or unlabeled graphs. The idea is to optimally aligned the graphs to the</span>
+<span class="sd">    current mean estimator using the optimal alignment between the graphs and the mean</span>
+<span class="sd">    (graph matching between two graphs) and compute the mean estimation between the</span>
+<span class="sd">    aligned adjacency matrices (the arithmetic mean in the euclidean space of dimension</span>
+<span class="sd">    :math:`nodes \times nodes`). The algorithm stops as soon as the distance between two</span>
+<span class="sd">    consecutive estimations is lower then :math:`\epsilon` or the maximum number of</span>
+<span class="sd">    iterations is reached. The initialization step consists in aligning the data</span>
+<span class="sd">    with respect to an initial point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : GraphSpace</span>
+<span class="sd">        Graph space total space with a quotient structure.</span>
+<span class="sd">    epsilon: float, default=1e-6</span>
+<span class="sd">        Stopping criterion for the estimation step, i.e., the distance between two</span>
+<span class="sd">        consecutive estimators.</span>
+<span class="sd">    max_iter: int, default = 20</span>
+<span class="sd">        Stopping criterion on the maximum number of iterations.</span>
+<span class="sd">    init_point: array-like, shape=[n_nodes, n_nodes] or GraphPoint, default random.</span>
+<span class="sd">        Algorithm initialization.</span>
+<span class="sd">    save_last_X: bool, default = True</span>
+<span class="sd">        Flag to save the data as aligned in the last algorithm iteration.</span>
+<span class="sd">    total_space_estimator_kwargs : dict</span>
+<span class="sd">        Total space estimator keyword arguments.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    total_space_estimator : BaseEstimator</span>
+<span class="sd">        Frechet mean estimator in total space.</span>
+<span class="sd">    estimate_ : array-like, mean=[n_nodes, n_nodes]</span>
+<span class="sd">        Mean.</span>
+<span class="sd">    n_iter_ : int</span>
+<span class="sd">        Number of performed iterations.</span>
+<span class="sd">    aligned_X_: array-like, shape=[n_samples, n_nodes, n_nodes] or set of GraphPoint.</span>
+<span class="sd">        Set of aligned data as after the last call of fit.</span>
+<span class="sd">        Saved if ``save_last_X is True``.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [CFV2020]  Calissano, A., Feragen, A., Vantini, S.</span>
+<span class="sd">        “Graph Space: Geodesic Principal Components for a Population of</span>
+<span class="sd">        Network-valued Data.” Mox report 14, 2020.</span>
+<span class="sd">        https://mox.polimi.it/reports-and-theses/publication-results/?id=855.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">space</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">init_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">total_space_estimator_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">save_last_X</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="o">=</span> <span class="n">init_point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span> <span class="o">=</span> <span class="n">save_last_X</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;linear&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">total_space_estimator_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator</span> <span class="o">=</span> <span class="n">FrechetMean</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator_kwargs</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aligned_X_</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AACFrechetMean.fit">
+<a class="viewcode-back" href="../../../api/geomstats.learning.html#geomstats.learning.frechet_mean.AACFrechetMean.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the Frechet Mean.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like, shape=[n_samples, n_nodes, n_nodes].</span>
+<span class="sd">            Dataset to estimate the FM.</span>
+<span class="sd">        y : Ignored</span>
+<span class="sd">            Ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns self.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">previous_estimate</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_point</span>
+        <span class="p">)</span>
+        <span class="n">aligned_X</span> <span class="o">=</span> <span class="n">X</span>
+
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">aligned_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">aligned_X</span><span class="p">,</span> <span class="n">previous_estimate</span><span class="p">)</span>
+            <span class="n">new_estimate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_space_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">aligned_X</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_</span>
+
+            <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">previous_estimate</span><span class="p">,</span> <span class="n">new_estimate</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">previous_estimate</span> <span class="o">=</span> <span class="n">new_estimate</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_warn_max_iterations</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_last_X</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aligned_X_</span> <span class="o">=</span> <span class="n">aligned_X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">new_estimate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_iter_</span> <span class="o">=</span> <span class="n">iteration</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+
+
+
 <span class="k">class</span><span class="w"> </span><span class="nc">_BaseMeanEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for mean estimators on manifolds.</span>
 
@@ -1388,21 +1494,40 @@
 
 <span class="sd">    Interface for instantiating proper algorithm.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">HypersphereMetric</span><span class="p">)</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">CircleMean</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
-        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">LinearMean</span>
+    <span class="n">Estimator</span> <span class="o">=</span> <span class="n">GeneralFrechetMean</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_is_graph_space</span><span class="p">(</span><span class="n">space</span><span class="p">):</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="n">AACFrechetMean</span>
 
-    <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
-        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">ElasticMean</span>
+        <span class="k">elif</span> <span class="n">_is_geodesic_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+            <span class="n">Estimator</span> <span class="o">=</span> <span class="n">SturmsMean</span>
 
-    <span class="k">elif</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;sturms&quot;</span> <span class="ow">or</span> <span class="n">_is_bhv_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span> <span class="n">HypersphereMetric</span><span class="p">)</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">Estimator</span> <span class="o">=</span> <span class="n">CircleMean</span>
+
+        <span class="k">elif</span> <span class="n">_is_linear_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+            <span class="n">Estimator</span> <span class="o">=</span> <span class="n">LinearMean</span>
+
+        <span class="k">elif</span> <span class="n">_is_elastic_metric</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">metric</span><span class="p">):</span>
+            <span class="n">Estimator</span> <span class="o">=</span> <span class="n">ElasticMean</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;aac&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="s2">&quot;aligner&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;AAC requires aligner.&quot;</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">AACFrechetMean</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;sturms&quot;</span><span class="p">:</span>
         <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">Estimator</span> <span class="o">=</span> <span class="n">SturmsMean</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">GeneralFrechetMean</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">Estimator</span> <span class="o">=</span> <span class="n">LinearMean</span>
 
     <span class="k">return</span> <span class="n">Estimator</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
