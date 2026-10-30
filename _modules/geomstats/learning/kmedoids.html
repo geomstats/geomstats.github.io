@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Oct 30, 2026, 9:51:25 PM"/>
+    <meta name="docbuild:last-update" content="Oct 30, 2026, 11:58:06 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -439,7 +439,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">ClusterMixin</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn_max_iterations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.learning._template</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransformerMixin</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="RiemannianKMedoids">
@@ -494,7 +497,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">==</span> <span class="s2">"random"</span><span class="p">:</span>
             <span class="n">medoids</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">distances</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Unknown initialization method."</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Unknown initialization method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="si">!r}</span><span class="s2">. Expected 'random'."</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">medoids</span>
 
@@ -529,11 +534,7 @@
             <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">old_medoids_indices</span> <span class="o">==</span> <span class="n">medoids_indices</span><span class="p">):</span>
                 <span class="k">break</span>
             <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">"Maximum number of iteration reached before "</span>
-                    <span class="s2">"convergence. Consider increasing max_iter to "</span>
-                    <span class="s2">"improve the fit."</span>
-                <span class="p">)</span>
+                <span class="n">warn_max_iterations</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cluster_centers_</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">medoids_indices</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">labels_</span> <span class="o">=</span> <span class="n">labels</span>
@@ -546,7 +547,7 @@
         <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_clusters</span><span class="p">):</span>
             <span class="n">cluster_index</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">cluster</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"One cluster is empty."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"One cluster is empty."</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">in_cluster_distances</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span>
