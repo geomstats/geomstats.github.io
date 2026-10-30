@@ -55,7 +55,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Oct 30, 2026, 7:42:58 PM"/>
+    <meta name="docbuild:last-update" content="Oct 30, 2026, 9:51:25 PM"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -4421,15 +4421,28 @@ Functional and Shape Data Analysis. Springer, 2016.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="geomstats.geometry.fiber_bundle.DistanceMinimizingAligner">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.fiber_bundle.</span></span><span class="sig-name descname"><span class="pre">DistanceMinimizingAligner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">total_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_elem_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/fiber_bundle.html#DistanceMinimizingAligner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.fiber_bundle.DistanceMinimizingAligner" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.fiber_bundle.</span></span><span class="sig-name descname"><span class="pre">DistanceMinimizingAligner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">total_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_elem_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_log_gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/fiber_bundle.html#DistanceMinimizingAligner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.fiber_bundle.DistanceMinimizingAligner" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#geomstats.geometry.fiber_bundle.AlignerAlgorithm" title="geomstats.geometry.fiber_bundle.AlignerAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlignerAlgorithm</span></code></a></p>
-<p>Aligment based on minimization of squared distance.</p>
-<dl class="field-list simple">
+<p>Align points by minimizing squared distance.</p>
+<p>Solve</p>
+<div class="math notranslate nohighlight">
+\[g^\star \in \arg\min_{g \in G}
+d(g \cdot p, q)^2,\]</div>
+<p>where <span class="math notranslate nohighlight">\(G\)</span> acts on the total space by isometries. For batched
+inputs, minimize the sum of these objectives over the batch.</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
+<dd class="field-odd"><ul>
 <li><p><strong>total_space</strong> (<em>Manifold</em>) – Space equipped with a group action and a group-invariant metric.</p></li>
-<li><p><strong>optimizer</strong> (<em>Minimizer</em>) – Optimizer to solve minimization problem.</p></li>
+<li><p><strong>optimizer</strong> (<em>Minimizer</em>) – Optimizer to solve the minimization problem.</p></li>
 <li><p><strong>group_elem_shape</strong> (<em>tuple</em>) – Shape of the group element representation.</p></li>
+<li><p><strong>use_log_gradient</strong> (<em>bool</em>) – Whether to register a custom squared-distance derivative using</p>
+<div class="math notranslate nohighlight">
+\[d_p\bigl(d(\cdot, q)^2\bigr)[h]
+= -2 g_p(\mathrm{Log}_p(q), h).\]</div>
+<p>Requires an autodiff backend and a metric whose <cite>flat</cite> method
+returns an autodiff-compatible covector representation.</p>
+</li>
 </ul>
 </dd>
 </dl>
@@ -15343,6 +15356,23 @@ This gives a symmetric positive definite matrix.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="geomstats.geometry.spd_matrices.SPDAffineMetric.flat">
+<span class="sig-name descname"><span class="pre">flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/spd_matrices.html#SPDAffineMetric.flat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.flat" title="Link to this definition">#</a></dt>
+<dd><p>Map a tangent vector to a covector under the Frobenius pairing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Symmetric tangent vector.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n]</em>) – SPD matrix.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>cotangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Symmetric matrix representing the covector.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="geomstats.geometry.spd_matrices.SPDAffineMetric.injectivity_radius">
 <span class="sig-name descname"><span class="pre">injectivity_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/spd_matrices.html#SPDAffineMetric.injectivity_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.injectivity_radius" title="Link to this definition">#</a></dt>
 <dd><p>Radius of the largest ball where the exponential is injective.</p>
@@ -15425,6 +15455,23 @@ Optional, default: None.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>transported_tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Transported tangent vector at <cite>exp_(base_point)(tangent_vec_b)</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomstats.geometry.spd_matrices.SPDAffineMetric.sharp">
+<span class="sig-name descname"><span class="pre">sharp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cotangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/spd_matrices.html#SPDAffineMetric.sharp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.sharp" title="Link to this definition">#</a></dt>
+<dd><p>Map a covector to a tangent vector under the Frobenius pairing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cotangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Symmetric matrix representing the covector.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n]</em>) – SPD matrix.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Symmetric tangent vector.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -18498,10 +18545,12 @@ Geometry [math.DG]. Université Côte d’Azur, 2022.</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.exp"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.exp()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.flat"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.flat()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.injectivity_radius"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.injectivity_radius()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.inner_product"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.inner_product()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.log"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.log()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.parallel_transport"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.parallel_transport()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.sharp"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.sharp()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.spd_matrices.SPDAffineMetric.squared_dist"><code class="docutils literal notranslate"><span class="pre">SPDAffineMetric.squared_dist()</span></code></a></li>
 </ul>
 </li>
