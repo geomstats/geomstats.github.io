@@ -55,7 +55,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Oct 30, 2026, 11:58:06 PM"/>
+    <meta name="docbuild:last-update" content="Oct 31, 2026, 12:28:05 AM"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -4784,17 +4784,31 @@ Paris, France, 2021.
 <dl class="py method">
 <dt class="sig sig-object py" id="geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.horizontal_lift">
 <span class="sig-name descname"><span class="pre">horizontal_lift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fiber_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/full_rank_correlation_matrices.html#CorrelationMatricesBundle.horizontal_lift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.horizontal_lift" title="Link to this definition">#</a></dt>
-<dd><p>Compute the horizontal lift wrt the affine-invariant metric.</p>
+<dd><p>Compute the horizontal lift under the affine-invariant metric.</p>
+<p>If <cite>base_point</cite> is supplied, compute the lift at that correlation
+matrix, even if <cite>fiber_point</cite> is also supplied. Otherwise, compute
+the lift at <cite>fiber_point</cite>.</p>
+<p>At a correlation matrix <span class="math notranslate nohighlight">\(C\)</span>, a base tangent vector <span class="math notranslate nohighlight">\(v\)</span>
+satisfies <span class="math notranslate nohighlight">\(d\operatorname{Cor}_C(v)=v\)</span>, so its horizontal
+projection is its horizontal lift.</p>
+<p>At a general fiber point <span class="math notranslate nohighlight">\(\Sigma\)</span>, first construct</p>
+<div class="math notranslate nohighlight">
+\[X = \operatorname{Diag}(\Sigma)^{1/2}
+    v \operatorname{Diag}(\Sigma)^{1/2}.\]</div>
+<p>This satisfies <span class="math notranslate nohighlight">\(d\operatorname{Cor}_\Sigma(X)=v\)</span>.
+Horizontal projection preserves this equality because it removes
+a vector in the kernel of the differential.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Tangent vector of the manifold of full-rank correlation matrices.</p></li>
-<li><p><strong>fiber_point</strong> (<em>array-like, shape=[…, n, n]</em>) – SPD matrix in the fiber above point.</p></li>
-<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n]</em>) – Full-rank correlation matrix.</p></li>
+<li><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Tangent vector to the correlation manifold.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n], optional</em>) – Correlation matrix at which to compute the lift.</p></li>
+<li><p><strong>fiber_point</strong> (<em>array-like, shape=[…, n, n], optional</em>) – SPD matrix at which to compute the lift when <cite>base_point</cite>
+is not supplied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>hor_lift</strong> (<em>array-like, shape=[…, n, n]</em>) – Horizontal lift of tangent_vec from point to base_point.</p>
+<dd class="field-even"><p><strong>hor_lift</strong> (<em>array-like, shape=[…, n, n]</em>) – Horizontal lift at the selected total-space point.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4833,16 +4847,22 @@ Paris, France, 2021.
 <dl class="py method">
 <dt class="sig sig-object py" id="geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.vertical_projection">
 <span class="sig-name descname"><span class="pre">vertical_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/full_rank_correlation_matrices.html#CorrelationMatricesBundle.vertical_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.vertical_projection" title="Link to this definition">#</a></dt>
-<dd><p>Compute the vertical projection wrt the affine-invariant metric.</p>
+<dd><p>Project a tangent vector vertically under the affine-invariant metric.</p>
+<p>Solve</p>
+<div class="math notranslate nohighlight">
+\[(I_n + \Sigma \odot \Sigma^{-1})a
+= \operatorname{diag}(\Sigma^{-1}X),\]</div>
+<p>then return <span class="math notranslate nohighlight">\(A\Sigma + \Sigma A\)</span>, where
+<span class="math notranslate nohighlight">\(A = \operatorname{diag}(a)\)</span>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, n, n]</em>) – Tangent vector.</p></li>
-<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n]</em>) – Base point.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, n, n]</em>) – SPD matrix.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ver</strong> (<em>array-like, shape=[…, n, n]</em>) – Vertical projection.</p>
+<dd class="field-even"><p><strong>ver</strong> (<em>array-like, shape=[…, n, n]</em>) – Vertical component of the tangent vector.</p>
 </dd>
 </dl>
 </dd></dl>

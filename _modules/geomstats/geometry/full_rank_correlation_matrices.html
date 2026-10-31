@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Oct 30, 2026, 11:58:06 PM"/>
+    <meta name="docbuild:last-update" content="Oct 31, 2026, 12:28:05 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -448,7 +448,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LevelSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComposedDiffeo</span><span class="p">,</span> <span class="n">Diffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.fiber_bundle</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistanceMinimizingAligner</span><span class="p">,</span> <span class="n">FiberBundle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.general_linear</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hermitian_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">expmh</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hyperboloid</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hyperboloid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.lower_triangular_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrictlyLowerTriangularMatrices</span>
@@ -745,13 +744,14 @@
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_space</span><span class="p">):</span>
-        <span class="n">aligner</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">DistanceMinimizingAligner</span><span class="p">(</span><span class="n">total_space</span><span class="p">,</span> <span class="n">group_elem_shape</span><span class="o">=</span><span class="p">(</span><span class="n">total_space</span><span class="o">.</span><span class="n">n</span><span class="p">,))</span>
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">()</span>
-            <span class="k">else</span> <span class="kc">None</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span>
+            <span class="n">aligner</span><span class="o">=</span><span class="n">DistanceMinimizingAligner</span><span class="p">(</span>
+                <span class="n">total_space</span><span class="p">,</span>
+                <span class="n">group_elem_shape</span><span class="o">=</span><span class="p">(</span><span class="n">total_space</span><span class="o">.</span><span class="n">n</span><span class="p">,),</span>
+                <span class="n">use_log_gradient</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">(),</span>
+            <span class="p">),</span>
         <span class="p">)</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">total_space</span><span class="o">=</span><span class="n">total_space</span><span class="p">,</span> <span class="n">aligner</span><span class="o">=</span><span class="n">aligner</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CorrelationMatricesBundle.riemannian_submersion">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.riemannian_submersion">[docs]</a>
@@ -794,47 +794,80 @@
 <div class="viewcode-block" id="CorrelationMatricesBundle.vertical_projection">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.vertical_projection">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vertical_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the vertical projection wrt the affine-invariant metric.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Project a tangent vector vertically under the affine-invariant metric.</span>
+
+<span class="sd">        Solve</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            (I_n + \Sigma \odot \Sigma^{-1})a</span>
+<span class="sd">            = \operatorname{diag}(\Sigma^{-1}X),</span>
+
+<span class="sd">        then return :math:`A\Sigma + \Sigma A`, where</span>
+<span class="sd">        :math:`A = \operatorname{diag}(a)`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
 <span class="sd">            Tangent vector.</span>
 <span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Base point.</span>
+<span class="sd">            SPD matrix.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        ver : array-like, shape=[..., n, n]</span>
-<span class="sd">            Vertical projection.</span>
+<span class="sd">            Vertical component of the tangent vector.</span>
 <span class="sd">        """</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_space</span><span class="o">.</span><span class="n">n</span>
-        <span class="n">inverse_base_point</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">inverse_base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="n">operator</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="n">base_point</span> <span class="o">*</span> <span class="n">inverse_base_point</span>
-        <span class="n">inverse_operator</span> <span class="o">=</span> <span class="n">GeneralLinear</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
+
         <span class="n">vector</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...ji-&gt;...i"</span><span class="p">,</span> <span class="n">inverse_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...j-&gt;...i"</span><span class="p">,</span> <span class="n">inverse_operator</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
+
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">vector</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">base_point</span> <span class="o">*</span> <span class="p">(</span><span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">diagonal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="CorrelationMatricesBundle.horizontal_lift">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.full_rank_correlation_matrices.CorrelationMatricesBundle.horizontal_lift">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">horizontal_lift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fiber_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the horizontal lift wrt the affine-invariant metric.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the horizontal lift under the affine-invariant metric.</span>
+
+<span class="sd">        If `base_point` is supplied, compute the lift at that correlation</span>
+<span class="sd">        matrix, even if `fiber_point` is also supplied. Otherwise, compute</span>
+<span class="sd">        the lift at `fiber_point`.</span>
+
+<span class="sd">        At a correlation matrix :math:`C`, a base tangent vector :math:`v`</span>
+<span class="sd">        satisfies :math:`d\operatorname{Cor}_C(v)=v`, so its horizontal</span>
+<span class="sd">        projection is its horizontal lift.</span>
+
+<span class="sd">        At a general fiber point :math:`\Sigma`, first construct</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            X = \operatorname{Diag}(\Sigma)^{1/2}</span>
+<span class="sd">                v \operatorname{Diag}(\Sigma)^{1/2}.</span>
+
+<span class="sd">        This satisfies :math:`d\operatorname{Cor}_\Sigma(X)=v`.</span>
+<span class="sd">        Horizontal projection preserves this equality because it removes</span>
+<span class="sd">        a vector in the kernel of the differential.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
-<span class="sd">            Tangent vector of the manifold of full-rank correlation matrices.</span>
-<span class="sd">        fiber_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            SPD matrix in the fiber above point.</span>
-<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
-<span class="sd">            Full-rank correlation matrix.</span>
+<span class="sd">            Tangent vector to the correlation manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n], optional</span>
+<span class="sd">            Correlation matrix at which to compute the lift.</span>
+<span class="sd">        fiber_point : array-like, shape=[..., n, n], optional</span>
+<span class="sd">            SPD matrix at which to compute the lift when `base_point`</span>
+<span class="sd">            is not supplied.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        hor_lift : array-like, shape=[..., n, n]</span>
-<span class="sd">            Horizontal lift of tangent_vec from point to base_point.</span>
+<span class="sd">            Horizontal lift at the selected total-space point.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_projection</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
