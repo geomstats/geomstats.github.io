@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 5, 2026, 8:12:37 PM"/>
+    <meta name="docbuild:last-update" content="Nov 5, 2026, 10:47:16 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -647,7 +647,16 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">are_antipodals</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Determine if two rotation matrices are antipodals.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Determine if two rotation matrices are antipodals.</span>
+
+<span class="sd">        Two rotations :math:`R_1` and :math:`R_2` are antipodal when</span>
+<span class="sd">        :math:`R_2` belongs to the cut locus of :math:`R_1` for the canonical</span>
+<span class="sd">        metric, i.e. when the relative rotation :math:`R_1^T R_2` has</span>
+<span class="sd">        :math:`-1` as an eigenvalue, or equivalently</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \det(I + R_1^T R_2) = 0</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -658,18 +667,21 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        _ : array-like, shape=[...,]</span>
+<span class="sd">        are_antipodals : array-like, shape=[...,]</span>
 <span class="sd">            Boolean determining if each pair of rotation</span>
 <span class="sd">            matrices corresponds to a pair of antipodal rotation</span>
 <span class="sd">            matrices.</span>
-<span class="sd">        """</span>
-        <span class="n">sq_rot_mat1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat1</span><span class="p">)</span>
-        <span class="n">sq_rot_mat2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_mat2</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">)</span>
-        <span class="n">are_different</span> <span class="o">=</span> <span class="o">~</span><span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">,</span> <span class="n">rotation_mat2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">are_different</span> <span class="o">&amp;</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">sq_rot_mat1</span><span class="p">,</span> <span class="n">sq_rot_mat2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="p">)</span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Geometrically, :math:`R_1^T R_2` rotates by an angle :math:`\pi` on at</span>
+<span class="sd">        least one invariant two-dimensional subspace. Distinct minimizing</span>
+<span class="sd">        geodesics then join :math:`R_1` to :math:`R_2`, so the logarithm is</span>
+<span class="sd">        not uniquely defined.</span>
+<span class="sd">        """</span>
+        <span class="n">relative_rot</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">rotation_mat1</span><span class="p">),</span> <span class="n">rotation_mat2</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">relative_rot</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="n">relative_rot</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
