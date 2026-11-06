@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:32:53 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 11:00:06 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -435,6 +435,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.algebra_utils</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">utils</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">scalarvecmul</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
 
@@ -497,7 +498,7 @@
 <span class="sd">            Point projected to the hypersphere.</span>
 <span class="sd">        """</span>
         <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...i-&gt;...i"</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HilbertSphere.belongs">
@@ -568,7 +569,7 @@
         <span class="n">sq_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="n">inner_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">coef</span> <span class="o">=</span> <span class="n">inner_product</span> <span class="o">/</span> <span class="n">sq_norm</span>
-        <span class="k">return</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HilbertSphere.random_point">
@@ -658,9 +659,7 @@
         <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
         <span class="n">coef_1</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cos_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">coef_2</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">proj_tangent_vec</span>
-        <span class="p">)</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef_1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span> <span class="o">+</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef_2</span><span class="p">,</span> <span class="n">proj_tangent_vec</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">exp</span></div>
 
@@ -688,8 +687,8 @@
         <span class="n">theta</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_angle</span><span class="p">)</span>
         <span class="n">coef_1_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">inv_sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
         <span class="n">coef_2_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">inv_tanc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">coef_1_</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">coef_2_</span><span class="p">,</span> <span class="n">base_point</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">theta</span> <span class="o">*</span> <span class="n">coef_1_</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span> <span class="o">-</span> <span class="n">scalarvecmul</span><span class="p">(</span>
+            <span class="n">theta</span> <span class="o">*</span> <span class="n">coef_2_</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">log</span></div>

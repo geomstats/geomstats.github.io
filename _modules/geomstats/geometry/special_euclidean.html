@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:32:53 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 11:00:06 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -440,6 +440,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.algebra_utils</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">utils</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">scalarmatmul</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LevelSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.general_linear</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralLinear</span>
@@ -1274,8 +1275,8 @@
         <span class="n">coef_1_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">sq_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cosc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">coef_2_</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">sq_angle</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">var_sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
-        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...ij-&gt;...ij"</span><span class="p">,</span> <span class="n">coef_1_</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
-        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...ij-&gt;...ij"</span><span class="p">,</span> <span class="n">coef_2_</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
+        <span class="n">term_1</span> <span class="o">=</span> <span class="n">scalarmatmul</span><span class="p">(</span><span class="n">coef_1_</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
+        <span class="n">term_2</span> <span class="o">=</span> <span class="n">scalarmatmul</span><span class="p">(</span><span class="n">coef_2_</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
         <span class="n">term_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">term_id</span> <span class="o">+</span> <span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span>
 
@@ -1294,7 +1295,6 @@
 <span class="sd">        Matrix to be applied to the translation part in log</span>
 <span class="sd">        """</span>
         <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">angle</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">skew_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotations</span><span class="o">.</span><span class="n">skew</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">rot_vec</span><span class="p">)</span>
         <span class="n">sq_skew_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">skew_mat</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
@@ -1340,8 +1340,8 @@
         <span class="n">psi</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">angle</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
         <span class="n">coef_2</span> <span class="o">+=</span> <span class="n">mask_else_float</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">angle</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
-        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
-        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
+        <span class="n">term_1</span> <span class="o">=</span> <span class="n">scalarmatmul</span><span class="p">(</span><span class="n">coef_1</span><span class="p">,</span> <span class="n">skew_mat</span><span class="p">)</span>
+        <span class="n">term_2</span> <span class="o">=</span> <span class="n">scalarmatmul</span><span class="p">(</span><span class="n">coef_2</span><span class="p">,</span> <span class="n">sq_skew_mat</span><span class="p">)</span>
         <span class="n">term_id</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">term_id</span> <span class="o">+</span> <span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span>
 

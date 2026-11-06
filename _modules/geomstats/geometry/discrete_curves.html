@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:32:53 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 11:00:06 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -440,6 +440,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">CubicSpline</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">scalarmatmul</span><span class="p">,</span> <span class="n">scalarvecmul</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn_max_iterations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._scipygs.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">PchipInterpolator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.algebra_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_vector_to_diagonal_matrix</span>
@@ -734,7 +735,7 @@
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.discrete_curves.DiscreteCurvesStartingAtOrigin.normalize">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Rescale discrete curve to have unit length."""</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...-&gt;...ij"</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">(</span><span class="n">point</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">scalarmatmul</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">point</span><span class="p">)</span></div>
 </div>
 
 
@@ -835,9 +836,7 @@
 
         <span class="n">dt</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k_sampling_points</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">pointwise_delta_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...,...i-&gt;...i"</span><span class="p">,</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">image_point_norm</span><span class="p">,</span> <span class="n">image_point</span>
-        <span class="p">)</span>
+        <span class="n">pointwise_delta_points</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">image_point_norm</span><span class="p">,</span> <span class="n">image_point</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">pointwise_delta_points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
 
@@ -2317,7 +2316,7 @@
         <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">initial_srv</span><span class="p">),</span> <span class="n">end_srv</span><span class="p">)</span>
         <span class="n">u_svd</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">vt_svd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
         <span class="n">sign</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">u_svd</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">))</span>
-        <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,...j-&gt;...j"</span><span class="p">,</span> <span class="n">sign</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">sign</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">rotation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">u_svd</span><span class="p">,</span> <span class="n">vt_svd</span><span class="p">)</span>
 
         <span class="n">point_aligned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">rotation</span><span class="p">)</span>
