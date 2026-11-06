@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 5, 2026, 11:49:25 PM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 3:28:48 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -436,9 +436,165 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorSpace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.lie_group</span><span class="w"> </span><span class="kn">import</span> <span class="n">LieGroup</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.symmetric_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SymmetricMatrices</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_scalarmatmul</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Vectorized scalar matrix multiplication.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scalar : array-like, shape=[...]</span>
+<span class="sd">    mat : array-like, shape=[n, m]</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ij-&gt;...ij"</span><span class="p">,</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">mat</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="HeisenbergVectorsToMatrices">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectorsToMatrices">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HeisenbergVectorsToMatrices</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Diffeomorphism from the vector to the matrix representation.</span>
+
+<span class="sd">    The 3D Heisenberg group can also be represented as the group of 3x3 upper</span>
+<span class="sd">    triangular matrices with unit diagonal. In exponential coordinates, the</span>
+<span class="sd">    diffeomorphism is the group exponential (composed with the hat map)</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        (x, y, z) \mapsto \begin{pmatrix}</span>
+<span class="sd">        1 &amp; x &amp; z + \frac{1}{2} x y \\</span>
+<span class="sd">        0 &amp; 1 &amp; y \\</span>
+<span class="sd">        0 &amp; 0 &amp; 1</span>
+<span class="sd">        \end{pmatrix}</span>
+
+<span class="sd">    It is also a group isomorphism.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_matrix_from_entries</span><span class="p">(</span><span class="n">entry_01</span><span class="p">,</span> <span class="n">entry_12</span><span class="p">,</span> <span class="n">entry_02</span><span class="p">,</span> <span class="n">diag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Build a 3x3 upper triangular matrix from its entries.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        entry_01 : array-like, shape=[...]</span>
+<span class="sd">        entry_12 : array-like, shape=[...]</span>
+<span class="sd">        entry_02 : array-like, shape=[...]</span>
+<span class="sd">        diag : float</span>
+<span class="sd">            Value of the diagonal entries.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix : array-like, shape=[..., 3, 3]</span>
+<span class="sd">        """</span>
+        <span class="n">zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">entry_02</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">zeros</span> <span class="o">+</span> <span class="n">diag</span>
+        <span class="n">entry_01</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">entry_01</span><span class="p">,</span> <span class="n">entry_02</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">entry_12</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">entry_12</span><span class="p">,</span> <span class="n">entry_02</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">diag</span><span class="p">,</span> <span class="n">entry_01</span><span class="p">,</span> <span class="n">entry_02</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">diag</span><span class="p">,</span> <span class="n">entry_12</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">diag</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">entry_02</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the upper triangular matrix representation of a point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 3]</span>
+<span class="sd">            Point in the vector representation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_point : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Upper triangular matrix with unit diagonal.</span>
+<span class="sd">        """</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_from_entries</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HeisenbergVectorsToMatrices.inverse">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectorsToMatrices.inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the vector representation of an upper triangular matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Upper triangular matrix with unit diagonal.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        base_point : array-like, shape=[..., 3]</span>
+<span class="sd">            Point in the vector representation.</span>
+<span class="sd">        """</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">image_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">image_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">image_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HeisenbergVectorsToMatrices.tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectorsToMatrices.tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Tangent diffeomorphism at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 3]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 3]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Image tangent vector at image of the base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_from_entries</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HeisenbergVectorsToMatrices.inverse_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectorsToMatrices.inverse_tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inverse tangent diffeomorphism at image point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 3, 3]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 3]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 3]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">image_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">image_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">da</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">dc</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">image_tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">image_tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="n">image_tangent_vec</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">dc</span> <span class="o">-</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">db</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">da</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">da</span><span class="p">,</span> <span class="n">dz</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">dz</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">dz</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="HeisenbergVectors">
@@ -556,14 +712,14 @@
         <span class="k">if</span> <span class="n">left</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
                 <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-                <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ij-&gt;...ij"</span><span class="p">,</span> <span class="o">-</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e31</span><span class="p">)</span>
-                <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ij-&gt;...ij"</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e32</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">_scalarmatmul</span><span class="p">(</span><span class="o">-</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e31</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">_scalarmatmul</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e32</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ij-&gt;...ij"</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e31</span><span class="p">)</span>
-            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ij-&gt;...ij"</span><span class="p">,</span> <span class="o">-</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e32</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">_scalarmatmul</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e31</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">_scalarmatmul</span><span class="p">(</span><span class="o">-</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">e32</span><span class="p">)</span>
         <span class="p">)</span></div>
 
 
@@ -601,72 +757,6 @@
 <span class="sd">            Group logarithm.</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="HeisenbergVectors.upper_triangular_matrix_from_vector">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectors.upper_triangular_matrix_from_vector">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">upper_triangular_matrix_from_vector</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the upper triangular matrix representation of the vector.</span>
-
-<span class="sd">        The 3D Heisenberg group can also be represented as 3x3 upper triangular</span>
-<span class="sd">        matrices. This function computes this representation of the vector</span>
-<span class="sd">        `point`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 3]</span>
-<span class="sd">            Point in the vector-represention.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        upper_triangular_mat : array-like, shape=[..., 3, 3]</span>
-<span class="sd">            Upper triangular matrix.</span>
-<span class="sd">        """</span>
-        <span class="n">element_02</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">modified_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">element_02</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">n_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">point</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">modified_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_points</span><span class="p">),</span>
-                    <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
-                    <span class="n">element_02</span><span class="p">,</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_points</span><span class="p">),</span>
-                    <span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                    <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_points</span><span class="p">),</span>
-                <span class="p">),</span>
-                <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">modified_point</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="HeisenbergVectors.vector_from_upper_triangular_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.heisenberg.HeisenbergVectors.vector_from_upper_triangular_matrix">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">vector_from_upper_triangular_matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the vector representation of the upper triangular matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        matrix : array-like, shape=[..., 3, 3]</span>
-<span class="sd">            Upper triangular matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        vector : array-like, shape=[..., 3]</span>
-<span class="sd">        """</span>
-        <span class="n">modified_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu_to_vec</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">corrected_elem</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">modified_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">modified_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">modified_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">modified_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">modified_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">corrected_elem</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
-        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HeisenbergVectors.lie_bracket">
