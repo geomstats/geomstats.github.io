@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 7:20:59 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 7:24:27 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -451,10 +451,13 @@
 <span class="sd">    https://ieeexplore.ieee.org/document/6514112</span>
 <span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComplexVectorSpaceOpenSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.complex_riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComplexRiemannianMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hermitian</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hermitian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="ComplexPoincareDisk">
@@ -496,7 +499,6 @@
 <span class="sd">            Point to be checked.</span>
 <span class="sd">        atol : float</span>
 <span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -522,7 +524,6 @@
 <span class="sd">            Point to project.</span>
 <span class="sd">        atol : float</span>
 <span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -547,10 +548,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
 <span class="sd">        bound : float</span>
-<span class="sd">            Bound of the interval in which to sample in the tangent space.</span>
-<span class="sd">            Optional, default: 0.8.</span>
+<span class="sd">            Bound of the modulus of the sampled points.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -558,9 +557,34 @@
 <span class="sd">            Points sampled in the unit disk.</span>
 <span class="sd">        """</span>
         <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
-        <span class="n">modulus</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">())</span>
+        <span class="n">modulus</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">())</span>
         <span class="n">angle</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">modulus</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">angle</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ComplexPoincareDisk.random_tangent_vec">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_poincare_disk.ComplexPoincareDisk.random_tangent_vec">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">random_tangent_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Sample tangent vectors at base point.</span>
+
+<span class="sd">        The samples are scaled by the inverse conformal factor</span>
+<span class="sd">        :math:`1 - |x|^2`, so that their norm for the Poincaré metric does not</span>
+<span class="sd">        depend on the base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        n_samples : int</span>
+<span class="sd">            Number of samples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vectors at base point.</span>
+<span class="sd">        """</span>
+        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">random_tangent_vec</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">tangent_vec</span></div>
 </div>
 
 
@@ -640,7 +664,6 @@
 <span class="sd">            Point.</span>
 <span class="sd">        atol : float</span>
 <span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -719,7 +742,6 @@
 <span class="sd">            Point.</span>
 <span class="sd">        atol : float</span>
 <span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -727,6 +749,77 @@
 <span class="sd">            Riemannian distance.</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tau</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ComplexPoincareDiskMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_poincare_disk.ComplexPoincareDiskMetric.parallel_transport">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        Denoting `base_point` by :math:`x` and `end_point` by :math:`y`,</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            P_{x \rightarrow y}(v) = \frac{1 - |y|^2}{1 - |x|^2}</span>
+<span class="sd">            \frac{1 - y \bar{x}}{1 - \bar{y} x} v</span>
+
+<span class="sd">        i.e. the ratio of conformal factors times the gyration of the</span>
+<span class="sd">        Mobius addition, which is a rotation in the complex plane.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point in the complex Poincare disk.</span>
+<span class="sd">        direction : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">        end_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point in the complex Poincare disk to transport to. Unused if</span>
+<span class="sd">            `direction` is given.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Transported tangent vector at `exp_(base_point)(direction)`.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Either an end_point or a direction must be given to define the"</span>
+                <span class="s2">" geodesic along which to transport."</span>
+            <span class="p">)</span>
+
+        <span class="n">conformal_ratio</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">end_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">gyration</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">end_point</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">base_point</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">end_point</span><span class="p">)</span> <span class="o">*</span> <span class="n">base_point</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">conformal_ratio</span> <span class="o">*</span> <span class="n">gyration</span> <span class="o">*</span> <span class="n">tangent_vec</span></div>
+
+
+<div class="viewcode-block" id="ComplexPoincareDiskMetric.injectivity_radius">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.complex_poincare_disk.ComplexPoincareDiskMetric.injectivity_radius">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the radius of the injectivity domain.</span>
+
+<span class="sd">        In the complex Poincare disk, it is infinite everywhere.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        radius : array-like, shape=[...,]</span>
+<span class="sd">            Injectivity radius.</span>
+<span class="sd">        """</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
