@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 7:27:23 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:01:14 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -443,7 +443,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.errors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">error</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn_max_iterations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hypersphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">HypersphereMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hypersphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">AngleToExtrinsicDiffeo</span><span class="p">,</span> <span class="n">HypersphereMetric</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_is_elastic_metric</span><span class="p">,</span>
@@ -981,6 +981,11 @@
 <span class="sd">        points : array-like, shape=[n_samples, 1]</span>
 <span class="sd">            Data set of angles (intrinsic coordinates).</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mean : array-like, shape=[1]</span>
+<span class="sd">            Mean angle.</span>
+
 <span class="sd">        Reference</span>
 <span class="sd">        ---------</span>
 <span class="sd">        .. [HH15] Hotz, T. and S. F. Huckemann (2015), "Intrinsic means on the</span>
@@ -993,7 +998,7 @@
         <span class="n">var0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">points</span> <span class="o">-</span> <span class="n">mean0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">sorted_points</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_circle_variances</span><span class="p">(</span><span class="n">mean0</span><span class="p">,</span> <span class="n">var0</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">sorted_points</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">means</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">means</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">means</span><span class="p">[</span><span class="n">gs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">means</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="p">:</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_circle_variances</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
@@ -1061,9 +1066,8 @@
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self.</span>
 <span class="sd">        """</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">angle_to_extrinsic</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_circle_mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">extrinsic_to_angle</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
-        <span class="p">)</span>
+        <span class="n">diffeo</span> <span class="o">=</span> <span class="n">AngleToExtrinsicDiffeo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate_</span> <span class="o">=</span> <span class="n">diffeo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_circle_mean</span><span class="p">(</span><span class="n">diffeo</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 </div>
 
