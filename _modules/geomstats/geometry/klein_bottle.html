@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:01:14 AM"/>
+    <meta name="docbuild:last-update" content="Nov 6, 2026, 10:32:53 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -897,6 +897,8 @@
 
 <span class="sd">        Computed by adding tangent_vec to base_point and finding canonical</span>
 <span class="sd">        representation in the unit square.</span>
+<span class="sd">        The tangent vector is understood at the given representative of</span>
+<span class="sd">        base_point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -910,12 +912,7 @@
 <span class="sd">        exp : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">while</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-                <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">base_point_canonical</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">base_point_canonical</span> <span class="o">+</span> <span class="n">tangent_vec</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KleinBottleMetric.log">
@@ -925,6 +922,8 @@
 
 <span class="sd">        Computed by finding the representative of point closest to base_point and</span>
 <span class="sd">        returning their difference.</span>
+<span class="sd">        The tangent vector is returned at the given representative of</span>
+<span class="sd">        base_point.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -944,7 +943,46 @@
         <span class="n">base_point_canonical</span><span class="p">,</span> <span class="n">point_minimal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closest_representative</span><span class="p">(</span>
             <span class="n">base_point</span><span class="p">,</span> <span class="n">point</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">point_minimal</span> <span class="o">-</span> <span class="n">base_point_canonical</span></div>
+        <span class="k">return</span> <span class="n">_glide_sign</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">point_minimal</span> <span class="o">-</span> <span class="n">base_point_canonical</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KleinBottleMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.klein_bottle.KleinBottleMetric.parallel_transport">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        The metric is flat, so the transport is the identity in the covering</span>
+<span class="sd">        :math:`\mathbb R^2`. Regularizing the end point</span>
+<span class="sd">        :math:`p = base\_point + direction` uses</span>
+<span class="sd">        :math:`k = \lfloor p_1 \rfloor` glide reflections, each flipping the</span>
+<span class="sd">        second component of the vector:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            P(v) = (v_1, (-1)^k v_2)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the manifold. Point to transport from.</span>
+<span class="sd">        direction : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">        end_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point on the manifold. Point to transport to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec : array-like, shape=[..., 2]</span>
+<span class="sd">            Transported tangent vector at ``exp_(base_point)(direction)``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_glide_sign</span><span class="p">(</span><span class="n">base_point</span> <span class="o">+</span> <span class="n">direction</span><span class="p">)</span> <span class="o">*</span> <span class="n">tangent_vec</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_closest_representative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">):</span>
@@ -1018,6 +1056,26 @@
     <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span>
         <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">atol</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="n">divisor</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
     <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_glide_sign</span><span class="p">(</span><span class="n">point</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the tangent sign change induced by regularizing a point.</span>
+
+<span class="sd">    Regularizing uses :math:`k = \lfloor x \rfloor` glide reflections,</span>
+<span class="sd">    each flipping the second component of tangent vectors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point : array-like, shape=[..., 2]</span>
+<span class="sd">        Point.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sign : array-like, shape=[..., 2]</span>
+<span class="sd">        Componentwise sign, :math:`(1, (-1)^k)`.</span>
+<span class="sd">    """</span>
+    <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">sign</span><span class="p">),</span> <span class="n">sign</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
                 </article>
