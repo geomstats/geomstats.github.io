@@ -55,7 +55,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 7, 2026, 7:19:00 AM"/>
+    <meta name="docbuild:last-update" content="Nov 7, 2026, 7:20:11 AM"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -2981,7 +2981,7 @@ without loss of generality.</p>
 <dd><p>Interpolate between the sampling points of a discrete curve.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>point</strong> (<em>array-like, shape=[…, k_sampling_points, ambient_dim]</em>) – Discrete curve starting at the origin.</p>
+<dd class="field-odd"><p><strong>point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Discrete curve starting at the origin.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>spline</strong> (<em>function</em>) – Cubic spline that interpolates between the sampling points
@@ -3151,7 +3151,7 @@ arXiv, September 20, 2022. <a class="reference external" href="https://doi.org/1
 <dl class="py class">
 <dt class="sig sig-object py" id="geomstats.geometry.discrete_curves.FTransform">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomstats.geometry.discrete_curves.</span></span><span class="sig-name descname"><span class="pre">FTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ambient_manifold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_sampling_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/discrete_curves.html#FTransform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.discrete_curves.FTransform" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#geomstats.geometry.diffeo.AutodiffDiffeo" title="geomstats.geometry.diffeo.AutodiffDiffeo"><code class="xref py py-class docutils literal notranslate"><span class="pre">AutodiffDiffeo</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#geomstats.geometry.diffeo.Diffeo" title="geomstats.geometry.diffeo.Diffeo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diffeo</span></code></a></p>
 <p>FTransform.</p>
 <p>The f_transform is defined on the space of curves
 quotiented by translations, which is identified with the space
@@ -3205,6 +3205,61 @@ See <a class="reference internal" href="#kn2018" id="id6"><span>[KN2018]</span><
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Curve starting at the origin retrieved from its square-root velocity.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomstats.geometry.discrete_curves.FTransform.inverse_tangent">
+<span class="sig-name descname"><span class="pre">inverse_tangent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_tangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/discrete_curves.html#FTransform.inverse_tangent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.discrete_curves.FTransform.inverse_tangent" title="Link to this definition">#</a></dt>
+<dd><p>Differential of the inverse F_transform.</p>
+<p>With <span class="math notranslate nohighlight">\(\rho, \theta\)</span> the polar coordinates of the F_transform
+<span class="math notranslate nohighlight">\(q\)</span> and <span class="math notranslate nohighlight">\(\lambda = a / (2b)\)</span>, the velocity of the curve is
+<span class="math notranslate nohighlight">\(c' = r u(\phi)\)</span> with <span class="math notranslate nohighlight">\(r = \rho^2 / (4 b^2)\)</span> and
+<span class="math notranslate nohighlight">\(\phi = \theta / \lambda\)</span>. Its differential is</p>
+<div class="math notranslate nohighlight">
+\[dc' = dr u(\phi) + r d\phi u^\perp(\phi)\]</div>
+<p>where <span class="math notranslate nohighlight">\(u^\perp\)</span> is <span class="math notranslate nohighlight">\(u\)</span> rotated by a quarter turn, and the
+variation of the curve is obtained by integration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_tangent_vec</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Tangent vector to the F_transform of the curve.</p></li>
+<li><p><strong>image_point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – F_transform of the curve.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Discrete curve. Used to compute <cite>image_point</cite> if it is not given.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Differential of the inverse F_transform at <cite>image_point</cite> evaluated
+at <cite>image_tangent_vec</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomstats.geometry.discrete_curves.FTransform.tangent">
+<span class="sig-name descname"><span class="pre">tangent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tangent_vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomstats/geometry/discrete_curves.html#FTransform.tangent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomstats.geometry.discrete_curves.FTransform.tangent" title="Link to this definition">#</a></dt>
+<dd><p>Differential of the F_transform.</p>
+<p>With <span class="math notranslate nohighlight">\(r, \theta\)</span> the polar coordinates of the velocity
+<span class="math notranslate nohighlight">\(c'\)</span> and <span class="math notranslate nohighlight">\(\lambda = a / (2b)\)</span>, the F_transform is
+<span class="math notranslate nohighlight">\(q = 2b \sqrt{r} u(\lambda \theta)\)</span>, with
+<span class="math notranslate nohighlight">\(u(\phi) = (\cos \phi, \sin \phi)\)</span>. Its differential is</p>
+<div class="math notranslate nohighlight">
+\[dq = 2b \left( \frac{dr}{2 \sqrt{r}} u(\lambda \theta)
++ \lambda \sqrt{r} d\theta u^\perp(\lambda \theta) \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(u^\perp\)</span> is <span class="math notranslate nohighlight">\(u\)</span> rotated by a quarter turn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tangent_vec</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Tangent vector to curve.</p></li>
+<li><p><strong>base_point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Discrete curve.</p></li>
+<li><p><strong>image_point</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – F_transform of the curve. Used to compute <cite>base_point</cite> if it is
+not given.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>image_tangent_vec</strong> (<em>array-like, shape=[…, k_sampling_points - 1, ambient_dim]</em>) – Differential of the F_transform at <cite>base_point</cite> evaluated at
+<cite>tangent_vec</cite>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -18850,6 +18905,8 @@ Geometry [math.DG]. Université Côte d’Azur, 2022.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.ElasticMetric"><code class="docutils literal notranslate"><span class="pre">ElasticMetric</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.FTransform"><code class="docutils literal notranslate"><span class="pre">FTransform</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.FTransform.inverse"><code class="docutils literal notranslate"><span class="pre">FTransform.inverse()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.FTransform.inverse_tangent"><code class="docutils literal notranslate"><span class="pre">FTransform.inverse_tangent()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.FTransform.tangent"><code class="docutils literal notranslate"><span class="pre">FTransform.tangent()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomstats.geometry.discrete_curves.IterativeHorizontalGeodesicAligner"><code class="docutils literal notranslate"><span class="pre">IterativeHorizontalGeodesicAligner</span></code></a><ul class="nav section-nav flex-column">
