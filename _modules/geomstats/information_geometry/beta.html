@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 7, 2026, 11:35:49 AM"/>
+    <meta name="docbuild:last-update" content="Nov 7, 2026, 11:46:21 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -437,6 +437,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">beta</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.symmetric_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SymmetricMatrices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.information_geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScipyUnivariateRandomVariable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.information_geometry.dirichlet</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DirichletDistributions</span><span class="p">,</span>
@@ -611,6 +612,135 @@
             <span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span>
         <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">metric_det</span></div>
+
+
+<div class="viewcode-block" id="BetaMetric.metric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the inner-product matrix.</span>
+
+<span class="sd">        Compute the inner-product matrix of the Fisher information metric</span>
+<span class="sd">        at the tangent space at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat : array-like, shape=[..., 2, 2]</span>
+<span class="sd">            Inner-product matrix.</span>
+<span class="sd">        """</span>
+        <span class="n">param_a</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">param_b</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">trigamma_sum</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
+        <span class="n">vector</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span> <span class="o">-</span> <span class="n">trigamma_sum</span><span class="p">,</span>
+                <span class="o">-</span><span class="n">trigamma_sum</span><span class="p">,</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span> <span class="o">-</span> <span class="n">trigamma_sum</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BetaMetric.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the Christoffel symbols.</span>
+
+<span class="sd">        Compute the Christoffel symbols of the Fisher information metric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        christoffels : array-like, shape=[..., 2, 2, 2]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">            :math:`christoffels[..., i, j, k] = Gamma^i_{jk}`</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_coefficients</span><span class="p">(</span><span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span><span class="p">):</span>
+            <span class="n">trigamma_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
+            <span class="n">tetragamma_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
+            <span class="n">trigamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
+            <span class="n">tetragamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
+            <span class="n">trigamma_ab</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
+            <span class="n">tetragamma_ab</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">trigamma_a</span> <span class="o">*</span> <span class="n">trigamma_b</span> <span class="o">-</span> <span class="n">trigamma_ab</span> <span class="o">*</span> <span class="p">(</span><span class="n">trigamma_a</span> <span class="o">+</span> <span class="n">trigamma_b</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="n">coef_1</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">tetragamma_a</span> <span class="o">*</span> <span class="p">(</span><span class="n">trigamma_b</span> <span class="o">-</span> <span class="n">trigamma_ab</span><span class="p">)</span> <span class="o">-</span> <span class="n">trigamma_b</span> <span class="o">*</span> <span class="n">tetragamma_ab</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+            <span class="n">coef_2</span> <span class="o">=</span> <span class="o">-</span><span class="n">trigamma_b</span> <span class="o">*</span> <span class="n">tetragamma_ab</span> <span class="o">/</span> <span class="n">denominator</span>
+            <span class="n">coef_3</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">tetragamma_b</span> <span class="o">*</span> <span class="n">trigamma_ab</span> <span class="o">-</span> <span class="n">trigamma_b</span> <span class="o">*</span> <span class="n">tetragamma_ab</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+            <span class="k">return</span> <span class="n">coef_1</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">coef_3</span>
+
+        <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">coef_1</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">coef_3</span> <span class="o">=</span> <span class="n">_coefficients</span><span class="p">(</span><span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
+        <span class="n">coef_4</span><span class="p">,</span> <span class="n">coef_5</span><span class="p">,</span> <span class="n">coef_6</span> <span class="o">=</span> <span class="n">_coefficients</span><span class="p">(</span><span class="n">param_b</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
+        <span class="n">christoffels_a</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">coef_1</span><span class="p">,</span> <span class="n">coef_2</span><span class="p">,</span> <span class="n">coef_3</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">christoffels_b</span> <span class="o">=</span> <span class="n">SymmetricMatrices</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">coef_6</span><span class="p">,</span> <span class="n">coef_5</span><span class="p">,</span> <span class="n">coef_4</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">christoffels_a</span><span class="p">,</span> <span class="n">christoffels_b</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BetaMetric.sectional_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.sectional_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the sectional curvature.</span>
+
+<span class="sd">        The space is two-dimensional, so the sectional curvature only</span>
+<span class="sd">        depends on the base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at `base_point`.</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
+<span class="sd">            Sectional curvature at `base_point`.</span>
+<span class="sd">        """</span>
+        <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">trigamma_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
+        <span class="n">trigamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
+        <span class="n">trigamma_ab</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
+        <span class="n">tetragamma_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
+        <span class="n">tetragamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
+        <span class="n">tetragamma_ab</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
+
+        <span class="n">curvature</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">tetragamma_a</span>
+            <span class="o">*</span> <span class="n">tetragamma_b</span>
+            <span class="o">*</span> <span class="n">tetragamma_ab</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="n">trigamma_a</span> <span class="o">/</span> <span class="n">tetragamma_a</span>
+                <span class="o">+</span> <span class="n">trigamma_b</span> <span class="o">/</span> <span class="n">tetragamma_b</span>
+                <span class="o">-</span> <span class="n">trigamma_ab</span> <span class="o">/</span> <span class="n">tetragamma_ab</span>
+            <span class="p">)</span>
+            <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_det</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">batch_zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">tangent_vec_b</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">curvature</span> <span class="o">+</span> <span class="n">batch_zeros</span></div>
 </div>
 
 
