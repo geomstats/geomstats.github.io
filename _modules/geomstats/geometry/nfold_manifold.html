@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 7, 2026, 12:54:55 AM"/>
+    <meta name="docbuild:last-update" content="Nov 7, 2026, 7:19:00 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -845,6 +845,53 @@
         <span class="n">point_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">each_log</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_log</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NFoldMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.nfold_manifold.NFoldMetric.parallel_transport">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        Each copy is transported with the metric of the base manifold. Scales</span>
+<span class="sd">        do not change parallel transport.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n_copies, *base_shape]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., n_copies, *base_shape]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        direction : array-like, shape=[..., n_copies, *base_shape]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">        end_point : array-like, shape=[..., n_copies, *base_shape]</span>
+<span class="sd">            Point on the manifold to transport to. Unused if `direction` is</span>
+<span class="sd">            given.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec : array-like, shape=[..., n_copies, *base_shape]</span>
+<span class="sd">            Transported tangent vector at the end point of the geodesic.</span>
+<span class="sd">        """</span>
+        <span class="n">base_manifold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">base_manifold</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">value</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="s2">"direction"</span><span class="p">,</span> <span class="s2">"end_point"</span><span class="p">),</span> <span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">end_point</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">}</span>
+        <span class="n">arrays</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="o">*</span><span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="o">*</span><span class="n">arrays</span><span class="p">)</span>
+
+        <span class="n">tangent_vec_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">base_manifold</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span> <span class="k">for</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">arrays</span>
+        <span class="p">]</span>
+        <span class="n">each_transport</span> <span class="o">=</span> <span class="n">base_manifold</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">parallel_transport</span><span class="p">(</span>
+            <span class="n">tangent_vec_</span><span class="p">,</span> <span class="n">base_point_</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">others</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">each_transport</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="NFoldMetric.injectivity_radius">
