@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 7, 2026, 9:23:44 AM"/>
+    <meta name="docbuild:last-update" content="Nov 7, 2026, 10:28:00 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -440,6 +440,8 @@
 <span class="sd">    Geometry [math.DG]. Université Côte d'Azur, 2022.</span>
 <span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiffeomorphicManifold</span><span class="p">,</span> <span class="n">LevelSet</span><span class="p">,</span> <span class="n">VectorSpaceOpenSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
@@ -450,6 +452,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.open_hemisphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenHemisphere</span><span class="p">,</span> <span class="n">OpenHemispheresProduct</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="PositiveLowerTriangularMatrices">
@@ -518,6 +521,31 @@
         <span class="n">diagonal</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">diag_shape</span><span class="p">)</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">mat_from_diag_triu_tril</span><span class="p">(</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]),</span> <span class="n">lower_part</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PositiveLowerTriangularMatrices.to_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_lower_triangular_matrices.PositiveLowerTriangularMatrices.to_tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Project a vector to a tangent space of the manifold.</span>
+
+<span class="sd">        The tangent space is the lower triangular matrices at every point,</span>
+<span class="sd">        so the vector is projected in the embedding space. The projection</span>
+<span class="sd">        of :class:`MatrixLieGroup`, which goes through the identity, is</span>
+<span class="sd">        ill-conditioned for points with small diagonal elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array-like, shape=[..., n, n]</span>
+<span class="sd">            Vector.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">VectorSpaceOpenSet</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PositiveLowerTriangularMatrices.belongs">
@@ -599,10 +627,10 @@
 <span class="sd">        ip_diagonal : array-like, shape=[...]</span>
 <span class="sd">            Inner-product.</span>
 <span class="sd">        """</span>
-        <span class="n">inv_sqrt_diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">inv_squared_diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">tangent_vec_a_diagonal</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">)</span>
         <span class="n">tangent_vec_b_diagonal</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">)</span>
-        <span class="n">prod</span> <span class="o">=</span> <span class="n">tangent_vec_a_diagonal</span> <span class="o">*</span> <span class="n">tangent_vec_b_diagonal</span> <span class="o">*</span> <span class="n">inv_sqrt_diagonal</span>
+        <span class="n">prod</span> <span class="o">=</span> <span class="n">tangent_vec_a_diagonal</span> <span class="o">*</span> <span class="n">tangent_vec_b_diagonal</span> <span class="o">*</span> <span class="n">inv_squared_diagonal</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">prod</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
@@ -624,9 +652,9 @@
 <span class="sd">        ip_sl : array-like, shape=[...]</span>
 <span class="sd">            Inner-product.</span>
 <span class="sd">        """</span>
-        <span class="n">sl_tagnet_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril_to_vec</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">sl_tagnet_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril_to_vec</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">ip_sl</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sl_tagnet_vec_a</span><span class="p">,</span> <span class="n">sl_tagnet_vec_b</span><span class="p">)</span>
+        <span class="n">sl_tangent_vec_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril_to_vec</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">sl_tangent_vec_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril_to_vec</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ip_sl</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sl_tangent_vec_a</span><span class="p">,</span> <span class="n">sl_tangent_vec_b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ip_sl</span></div>
 
 
@@ -724,6 +752,74 @@
         <span class="n">sl_log</span> <span class="o">=</span> <span class="n">sl_point</span> <span class="o">-</span> <span class="n">sl_base_point</span>
         <span class="n">diag_log</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="n">diag_base_point</span> <span class="o">*</span> <span class="n">diag_product_logm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sl_log</span> <span class="o">+</span> <span class="n">diag_log</span></div>
+
+
+<div class="viewcode-block" id="CholeskyMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_lower_triangular_matrices.CholeskyMetric.parallel_transport">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parallel_transport</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the parallel transport of a tangent vector.</span>
+
+<span class="sd">        Closed-form solution for the parallel transport of a tangent vector</span>
+<span class="sd">        along the geodesic between two points ``base_point`` and ``end_point``</span>
+<span class="sd">        or alternatively defined by :math:`t \mapsto exp_{(base\_point)}(</span>
+<span class="sd">        t*direction)`.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            P_{L \rightarrow K}(X) = \lfloor X \rfloor</span>
+<span class="sd">            + \mathbb{D}(K) \mathbb{D}(L)^{-1} \mathbb{D}(X)</span>
+
+<span class="sd">        where :math:`\lfloor \cdot \rfloor` is the strictly lower triangular</span>
+<span class="sd">        part and :math:`\mathbb{D}` the diagonal part [TP2019]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point to be transported.</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold. Point to transport from.</span>
+<span class="sd">        direction : array-like, shape=[..., n, n]</span>
+<span class="sd">            Tangent vector at base point, along which the parallel transport</span>
+<span class="sd">            is computed.</span>
+<span class="sd">        end_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold. Point to transport to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transported_tangent_vec : array-like, shape=[..., n, n]</span>
+<span class="sd">            Transported tangent vector at `end_point`.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">diag_ratio</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">end_point</span><span class="p">)</span> <span class="o">/</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">sl_tangent_vec</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">to_strictly_lower_triangular</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="n">diag_tangent_vec</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sl_tangent_vec</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="n">diag_ratio</span> <span class="o">*</span> <span class="n">diag_tangent_vec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CholeskyMetric.injectivity_radius">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_lower_triangular_matrices.CholeskyMetric.injectivity_radius">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Radius of the largest ball where the exponential is injective.</span>
+
+<span class="sd">        The space is isometric to a Euclidean space, so the injectivity</span>
+<span class="sd">        radius is infinite everywhere.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., n, n]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        radius : array-like, shape=[...,]</span>
+<span class="sd">            Injectivity radius.</span>
+<span class="sd">        """</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CholeskyMetric.squared_dist">
