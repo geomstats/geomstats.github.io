@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 12:32:34 AM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 1:14:44 AM"/>
   
     
     <script src="../../../../_static/searchtools.js"></script>
@@ -429,126 +429,27 @@
                 <article class="bd-article">
                   
   <h1>Source code for geomstats.variants.geometry.positive_reals</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Logarithmic metric on the positive reals as a pullback diffeo metric."""</span>
+<span></span><span class="sd">"""Variants of the logarithmic metric on the positive reals."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.open_interval</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenInterval</span><span class="p">,</span> <span class="n">OpenIntervalMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.positive_reals</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogDiffeo</span><span class="p">,</span> <span class="n">PositiveReals</span><span class="p">,</span> <span class="n">PowerDiffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
 
 
-<div class="viewcode-block" id="LogDiffeo">
-<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogDiffeo">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">LogDiffeo</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">"""Logarithm diffeomorphism from the positive reals to the reals.</span>
+<div class="viewcode-block" id="PullbackLogMetric">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.PullbackLogMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PullbackLogMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Logarithmic metric on the positive reals as a pullback metric.</span>
 
-<span class="sd">    .. math::</span>
-
-<span class="sd">        \log: \mathbb{R}_{&gt;0} \rightarrow \mathbb{R}, \quad x \mapsto \log x</span>
-
-<span class="sd">    with inverse the exponential function and differentials</span>
-
-<span class="sd">    .. math::</span>
-
-<span class="sd">        d\log_x(u) = \frac{u}{x}, \quad d\exp_z(w) = e^z w</span>
-<span class="sd">    """</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Diffeomorphism at base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        image_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Image point.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-<div class="viewcode-block" id="LogDiffeo.inverse">
-<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogDiffeo.inverse">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Inverse diffeomorphism at image point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        image_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Image point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Base point.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="LogDiffeo.tangent">
-<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogDiffeo.tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Tangent diffeomorphism at base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Base point.</span>
-<span class="sd">        image_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Image point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
-<span class="sd">            Image tangent vector at image of the base point.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">/</span> <span class="n">base_point</span></div>
-
-
-<div class="viewcode-block" id="LogDiffeo.inverse_tangent">
-<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogDiffeo.inverse_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Inverse tangent diffeomorphism at image point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
-<span class="sd">            Image tangent vector at image point.</span>
-<span class="sd">        image_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Image point.</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">base_point</span> <span class="o">*</span> <span class="n">image_tangent_vec</span></div>
-</div>
-
-
-
-<div class="viewcode-block" id="PullbackPositiveRealsMetric">
-<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.PullbackPositiveRealsMetric">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PullbackPositiveRealsMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">"""Logarithmic metric on the positive reals.</span>
-
-<span class="sd">    Variant of :class:`geomstats.geometry.positive_reals.PositiveRealsMetric`</span>
-<span class="sd">    obtained by pulling back the Euclidean metric through the logarithm:</span>
-
-<span class="sd">    .. math::</span>
-
-<span class="sd">        g_x(u, v) = \frac{uv}{x^2}</span>
+<span class="sd">    Variant of :class:`geomstats.geometry.positive_reals.LogMetric`</span>
+<span class="sd">    without its closed forms: the Christoffel symbols and the curvature</span>
+<span class="sd">    tensors are computed from the pullback metric matrix with automatic</span>
+<span class="sd">    differentiation.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -562,6 +463,109 @@
             <span class="n">diffeo</span><span class="o">=</span><span class="n">LogDiffeo</span><span class="p">(),</span>
             <span class="n">image_space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PullbackPowerMetric">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.PullbackPowerMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PullbackPowerMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Power-Euclidean metric on the positive reals as a pullback metric.</span>
+
+<span class="sd">    Variant of :class:`geomstats.geometry.positive_reals.PowerMetric`</span>
+<span class="sd">    without its closed forms: the Christoffel symbols and the curvature</span>
+<span class="sd">    tensors are computed from the pullback metric matrix with automatic</span>
+<span class="sd">    differentiation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : PositiveReals</span>
+<span class="sd">        Manifold.</span>
+<span class="sd">    power : float</span>
+<span class="sd">        Non-zero power.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">power</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">image_space</span> <span class="o">=</span> <span class="n">PositiveReals</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">image_space</span> <span class="o">=</span> <span class="n">OpenInterval</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">image_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">OpenIntervalMetric</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="o">=</span><span class="n">PowerDiffeo</span><span class="p">(</span><span class="n">power</span><span class="p">),</span> <span class="n">image_space</span><span class="o">=</span><span class="n">image_space</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span></div>
+
+
+
+<div class="viewcode-block" id="LogMetric">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Logarithmic metric on the positive reals given only by its metric matrix.</span>
+
+<span class="sd">    The Christoffel symbols and the curvature tensors are computed from the</span>
+<span class="sd">    metric matrix with automatic differentiation, instead of the closed forms</span>
+<span class="sd">    of :class:`geomstats.geometry.positive_reals.LogMetric`.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="LogMetric.metric_matrix">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.LogMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the inner-product matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat : array-like, shape=[..., 1, 1]</span>
+<span class="sd">            Inner-product matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">base_point</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PowerMetric">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.PowerMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Power-Euclidean metric on the positive reals given by its metric matrix.</span>
+
+<span class="sd">    The Christoffel symbols and the curvature tensors are computed from the</span>
+<span class="sd">    metric matrix with automatic differentiation, instead of the closed forms</span>
+<span class="sd">    of :class:`geomstats.geometry.positive_reals.PowerMetric`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : PositiveReals</span>
+<span class="sd">        Manifold.</span>
+<span class="sd">    power : float</span>
+<span class="sd">        Non-zero power.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span>
+
+<div class="viewcode-block" id="PowerMetric.metric_matrix">
+<a class="viewcode-back" href="../../../../api/geomstats.variants.geometry.html#geomstats.variants.geometry.positive_reals.PowerMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the inner-product matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat : array-like, shape=[..., 1, 1]</span>
+<span class="sd">            Inner-product matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
 
 </pre></div>
 

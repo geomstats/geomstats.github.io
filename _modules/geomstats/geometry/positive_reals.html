@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 12:32:34 AM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 1:14:44 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -475,33 +475,233 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.open_interval</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenInterval</span><span class="p">,</span> <span class="n">OpenIntervalMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
 
 
+<div class="viewcode-block" id="LogDiffeo">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogDiffeo">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogDiffeo</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Logarithm diffeomorphism from the positive reals to the reals.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \log: \mathbb{R}_{&gt;0} \rightarrow \mathbb{R}, \quad x \mapsto \log x</span>
+
+<span class="sd">    with inverse the exponential function and differentials</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        d\log_x(u) = \frac{u}{x}, \quad d\exp_z(w) = e^z w</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Diffeomorphism at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LogDiffeo.inverse">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogDiffeo.inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inverse diffeomorphism at image point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogDiffeo.tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogDiffeo.tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Tangent diffeomorphism at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Image tangent vector at image of the base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">/</span> <span class="n">base_point</span></div>
+
+
+<div class="viewcode-block" id="LogDiffeo.inverse_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogDiffeo.inverse_tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inverse tangent diffeomorphism at image point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">base_point</span> <span class="o">*</span> <span class="n">image_tangent_vec</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PowerDiffeo">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerDiffeo">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerDiffeo</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Power diffeomorphism from the positive reals to a half-line.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        x \mapsto x^p / p</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    power : float</span>
+<span class="sd">        Non-zero power.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Diffeomorphism at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">base_point</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span>
+
+<div class="viewcode-block" id="PowerDiffeo.inverse">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerDiffeo.inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inverse diffeomorphism at image point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">*</span> <span class="n">image_point</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PowerDiffeo.tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerDiffeo.tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Tangent diffeomorphism at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Image tangent vector at image of the base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">tangent_vec</span></div>
+
+
+<div class="viewcode-block" id="PowerDiffeo.inverse_tangent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerDiffeo.inverse_tangent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inverse tangent diffeomorphism at image point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Image tangent vector at image point.</span>
+<span class="sd">        image_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Image point.</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">image_tangent_vec</span> <span class="o">/</span> <span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="PositiveReals">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveReals">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PositiveReals</span><span class="p">(</span><span class="n">VectorSpaceOpenSet</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PositiveReals</span><span class="p">(</span><span class="n">OpenInterval</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Class for the manifold of positive reals.</span>
 
 <span class="sd">    The real positive axis endowed with the Information geometry metric.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">embedding_space</span><span class="o">=</span><span class="n">Euclidean</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-            <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lower_bound</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper_bound</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PositiveReals.default_metric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveReals.default_metric">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_metric</span><span class="p">():</span>
 <span class="w">        </span><span class="sd">"""Metric to equip the space with if equip is True."""</span>
-        <span class="k">return</span> <span class="n">PositiveRealsMetric</span></div>
+        <span class="k">return</span> <span class="n">LogMetric</span></div>
 
 
 <div class="viewcode-block" id="PositiveReals.belongs">
@@ -537,71 +737,23 @@
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">res</span></div>
-
-
-<div class="viewcode-block" id="PositiveReals.projection">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveReals.projection">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">projection</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Project a point on the positive reals.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., 1]</span>
-<span class="sd">            Point in ambient manifold.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        projected : array-like, shape=[..., 1]</span>
-<span class="sd">            Projected point.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">point</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="PositiveReals.random_point">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveReals.random_point">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Sample in the positive reals.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
-<span class="sd">        bound : float</span>
-<span class="sd">            Bound of the interval in which to sample in the tangent space.</span>
-<span class="sd">            Optional, default: 1.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        samples : array-like, shape=[..., 1]</span>
-<span class="sd">            Points sampled in the positive reals.</span>
-<span class="sd">        """</span>
-        <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">bound</span> <span class="o">-</span> <span class="n">atol</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">+</span> <span class="n">atol</span></div>
 </div>
 
 
 
-<div class="viewcode-block" id="PositiveRealsMetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PositiveRealsMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Class for the positive reals metric.</span>
+<div class="viewcode-block" id="LogMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Class for the logarithmic metric on the positive reals.</span>
 
 <span class="sd">    It is a particular case in dimension 1</span>
 <span class="sd">    of the SPD affine-invariant metric</span>
 <span class="sd">    with a power affine coefficient equal to one.</span>
+<span class="sd">    The space is one-dimensional, so the metric is flat.</span>
 <span class="sd">    """</span>
 
-<div class="viewcode-block" id="PositiveRealsMetric.metric_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.metric_matrix">[docs]</a>
+<div class="viewcode-block" id="LogMetric.metric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.metric_matrix">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the inner product matrix at base point.</span>
 
@@ -619,8 +771,71 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.exp">[docs]</a>
+<div class="viewcode-block" id="LogMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        The only entry is :math:`\partial_x g_{xx} = -2 / x^3`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., 1, 1, 1]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">/</span> <span class="n">base_point</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LogMetric.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Christoffel symbols.</span>
+
+<span class="sd">        The only symbol is :math:`\Gamma^x_{xx} = -1 / x`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        christoffels : array-like, shape=[..., 1, 1, 1]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LogMetric.jacobian_christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.jacobian_christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">jacobian_christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Jacobian of the Christoffel symbols.</span>
+
+<span class="sd">        The only entry is :math:`\partial_x \Gamma^x_{xx} = 1 / x^2`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jac : array-like, shape=[..., 1, 1, 1, 1]</span>
+<span class="sd">            Jacobian of the Christoffel symbols.</span>
+<span class="sd">            :math:`jac[..., i, j, k, l] = dGamma^i_{jk} / dx_l`</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">base_point</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LogMetric.exp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.exp">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the positive reals exponential map.</span>
@@ -640,8 +855,8 @@
         <span class="k">return</span> <span class="n">base_point</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tangent_vec</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.log">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.log">[docs]</a>
+<div class="viewcode-block" id="LogMetric.log">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.log">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the positive reals logarithm map.</span>
@@ -665,8 +880,8 @@
         <span class="k">return</span> <span class="n">base_point</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">point</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.parallel_transport">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.parallel_transport">[docs]</a>
+<div class="viewcode-block" id="LogMetric.parallel_transport">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.parallel_transport">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parallel_transport</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
@@ -705,8 +920,8 @@
         <span class="k">return</span> <span class="n">tangent_vec</span> <span class="o">*</span> <span class="n">end_point</span> <span class="o">/</span> <span class="n">base_point</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.squared_dist">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.squared_dist">[docs]</a>
+<div class="viewcode-block" id="LogMetric.squared_dist">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.squared_dist">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">squared_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the positive reals squared distance.</span>
 
@@ -728,8 +943,8 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ratio</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.dist">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.dist">[docs]</a>
+<div class="viewcode-block" id="LogMetric.dist">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.dist">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the positive reals distance.</span>
 
@@ -751,8 +966,8 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ratio</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="PositiveRealsMetric.injectivity_radius">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PositiveRealsMetric.injectivity_radius">[docs]</a>
+<div class="viewcode-block" id="LogMetric.injectivity_radius">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.LogMetric.injectivity_radius">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">injectivity_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the radius of the injectivity domain.</span>
 
@@ -773,6 +988,127 @@
 <span class="sd">        """</span>
         <span class="n">radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PowerMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Class for the power-Euclidean metric on the positive reals.</span>
+
+<span class="sd">    It is the pullback of the Euclidean metric on a half-line through</span>
+<span class="sd">    :class:`PowerDiffeo`, i.e. :math:`g_x = x^{2p - 2}`, and a particular</span>
+<span class="sd">    case in dimension 1 of the SPD power-Euclidean metric.</span>
+<span class="sd">    The limit :math:`p \to 0` is the logarithmic metric.</span>
+<span class="sd">    The space is one-dimensional, so the metric is flat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : PositiveReals</span>
+<span class="sd">        Manifold.</span>
+<span class="sd">    power : float</span>
+<span class="sd">        Non-zero power.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The power must be non-zero. Use `LogMetric` instead."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">power</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">image_space</span> <span class="o">=</span> <span class="n">PositiveReals</span><span class="p">(</span><span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">image_space</span> <span class="o">=</span> <span class="n">OpenInterval</span><span class="p">(</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">image_space</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span><span class="n">OpenIntervalMetric</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">diffeo</span><span class="o">=</span><span class="n">PowerDiffeo</span><span class="p">(</span><span class="n">power</span><span class="p">),</span> <span class="n">image_space</span><span class="o">=</span><span class="n">image_space</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">power</span>
+
+<div class="viewcode-block" id="PowerMetric.metric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the inner product matrix at base point.</span>
+
+<span class="sd">        The only entry is :math:`g_{xx} = x^{2p - 2}`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inner_prod_mat : array-like, shape=[..., 1, 1]</span>
+<span class="sd">            Inner product matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PowerMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        The only entry is :math:`\partial_x g_{xx} = (2p - 2) x^{2p - 3}`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., 1, 1, 1]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        """</span>
+        <span class="n">derivative</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">derivative</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="PowerMetric.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerMetric.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Christoffel symbols.</span>
+
+<span class="sd">        The only symbol is :math:`\Gamma^x_{xx} = (p - 1) / x`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        christoffels : array-like, shape=[..., 1, 1, 1]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="PowerMetric.jacobian_christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.positive_reals.PowerMetric.jacobian_christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">jacobian_christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Jacobian of the Christoffel symbols.</span>
+
+<span class="sd">        The only entry is :math:`\partial_x \Gamma^x_{xx} = (1 - p) / x^2`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 1]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jac : array-like, shape=[..., 1, 1, 1, 1]</span>
+<span class="sd">            Jacobian of the Christoffel symbols.</span>
+<span class="sd">            :math:`jac[..., i, j, k, l] = dGamma^i_{jk} / dx_l`</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">)</span> <span class="o">/</span> <span class="n">base_point</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>
