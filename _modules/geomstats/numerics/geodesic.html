@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:25:02 PM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:47:06 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -431,6 +431,7 @@
   <h1>Source code for geomstats.numerics.geodesic</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Geodesic solvers implementation."""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
@@ -1664,6 +1665,174 @@
 
         <span class="k">return</span> <span class="n">discrete_path</span></div>
 
+
+
+<div class="viewcode-block" id="PolynomialPathLogSolver">
+<a class="viewcode-back" href="../../../api/geomstats.numerics.html#geomstats.numerics.geodesic.PolynomialPathLogSolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolynomialPathLogSolver</span><span class="p">(</span>
+    <span class="n">_LogBatchMixins</span><span class="p">,</span> <span class="n">_DiscreteGeodesicBVPBatchMixins</span><span class="p">,</span> <span class="n">PathBasedLogSolver</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Geodesic boundary value problem restricted to polynomial paths.</span>
+
+<span class="sd">    The coordinates of the path are polynomial functions of time of degree</span>
+<span class="sd">    ``degree``, with fixed values at times 0 and 1. The free coefficients</span>
+<span class="sd">    minimize the energy of the path, approximated by its average squared</span>
+<span class="sd">    speed at ``n_times`` uniformly sampled times.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold</span>
+<span class="sd">        Equipped manifold.</span>
+<span class="sd">    degree : int</span>
+<span class="sd">        Degree of the polynomial functions of time.</span>
+<span class="sd">    n_times : int</span>
+<span class="sd">        Number of times at which the path is sampled.</span>
+<span class="sd">    optimizer : Minimizer</span>
+<span class="sd">        Optimizer to solve the energy minimization problem.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_times</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ScipyMinimize</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">"BFGS"</span><span class="p">,</span> <span class="n">autodiff_jac</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">has_autodiff</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">=</span> <span class="n">degree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_times</span> <span class="o">=</span> <span class="n">n_times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">free_coefficients</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Assemble the coefficients of the path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        free_coefficients : array-like, shape=[degree - 1, *point_shape]</span>
+<span class="sd">            Coefficients of the monomials of degree 1 to degree - 1.</span>
+<span class="sd">        point : array-like, shape=[*point_shape]</span>
+<span class="sd">            End point.</span>
+<span class="sd">        base_point : array-like, shape=[*point_shape]</span>
+<span class="sd">            Initial point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        coefficients : array-like, shape=[degree + 1, *point_shape]</span>
+<span class="sd">            Coefficients of the monomials of degree 0 to degree.</span>
+<span class="sd">        """</span>
+        <span class="n">last_coefficient</span> <span class="o">=</span> <span class="n">point</span> <span class="o">-</span> <span class="n">base_point</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">free_coefficients</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                <span class="n">free_coefficients</span><span class="p">,</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">last_coefficient</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Evaluate the path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coefficients : array-like, shape=[degree + 1, *point_shape]</span>
+<span class="sd">            Coefficients of the monomials of degree 0 to degree.</span>
+<span class="sd">        times : array-like, shape=[n_times,]</span>
+<span class="sd">            Times.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : array-like, shape=[n_times, *point_shape]</span>
+<span class="sd">            Points of the path.</span>
+<span class="sd">        """</span>
+        <span class="n">powers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">times</span><span class="o">**</span><span class="n">power</span> <span class="k">for</span> <span class="n">power</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"kn,k...-&gt;n..."</span><span class="p">,</span> <span class="n">powers</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">times</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Evaluate the velocity of the path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coefficients : array-like, shape=[degree + 1, *point_shape]</span>
+<span class="sd">            Coefficients of the monomials of degree 0 to degree.</span>
+<span class="sd">        times : array-like, shape=[n_times,]</span>
+<span class="sd">            Times.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        velocity : array-like, shape=[n_times, *point_shape]</span>
+<span class="sd">            Velocities of the path.</span>
+<span class="sd">        """</span>
+        <span class="n">powers</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">power</span> <span class="o">*</span> <span class="n">times</span> <span class="o">**</span> <span class="p">(</span><span class="n">power</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">power</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"kn,k...-&gt;n..."</span><span class="p">,</span> <span class="n">powers</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_solve_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Find the coefficients of the polynomial geodesic.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[*point_shape]</span>
+<span class="sd">            End point.</span>
+<span class="sd">        base_point : array-like, shape=[*point_shape]</span>
+<span class="sd">            Initial point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        coefficients : array-like, shape=[degree + 1, *point_shape]</span>
+<span class="sd">            Coefficients of the monomials of degree 0 to degree.</span>
+<span class="sd">        """</span>
+        <span class="n">free_shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_times</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">objective</span><span class="p">(</span><span class="n">flat_free_coefficients</span><span class="p">):</span>
+            <span class="n">free_coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flat_free_coefficients</span><span class="p">,</span> <span class="n">free_shape</span><span class="p">)</span>
+            <span class="n">coefficients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coefficients</span><span class="p">(</span><span class="n">free_coefficients</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+            <span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span>
+
+        <span class="n">init_free_coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">free_shape</span><span class="p">))</span>
+        <span class="n">sol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">init_free_coefficients</span><span class="p">)</span>
+
+        <span class="n">free_coefficients</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">free_shape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coefficients</span><span class="p">(</span><span class="n">free_coefficients</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_discrete_geodesic_bvp_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Solve boundary value problem (BVP).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[*point_shape]</span>
+<span class="sd">            End point.</span>
+<span class="sd">        base_point : array-like, shape=[*point_shape]</span>
+<span class="sd">            Initial point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        discr_geod_path : array-like, shape=[n_times, *point_shape]</span>
+<span class="sd">            Discrete geodesic.</span>
+<span class="sd">        """</span>
+        <span class="n">coefficients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_single</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_times</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Logarithm map.</span>
+
+<span class="sd">        The initial velocity of a polynomial path is its coefficient of degree 1.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[*point_shape]</span>
+<span class="sd">            End point.</span>
+<span class="sd">        base_point : array-like, shape=[*point_shape]</span>
+<span class="sd">            Initial point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[*point_shape]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_single</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
 
 </pre></div>
 
