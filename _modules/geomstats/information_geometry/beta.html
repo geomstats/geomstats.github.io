@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 5:49:50 AM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:00:24 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -443,6 +443,7 @@
     <span class="n">DirichletDistributions</span><span class="p">,</span>
     <span class="n">DirichletMetric</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
 
 
 <div class="viewcode-block" id="BetaDistributions">
@@ -453,12 +454,10 @@
 <span class="sd">    This is Beta = :math:`R_+^* \times R_+^*`, the upper-right</span>
 <span class="sd">    quadrant of the Euclidean plane.</span>
 
-<span class="sd">    Attributes</span>
+<span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    dim : int</span>
-<span class="sd">        Dimension of the manifold of beta distributions, equal to 2.</span>
-<span class="sd">    embedding_space : Manifold</span>
-<span class="sd">        Embedding manifold.</span>
+<span class="sd">    equip : bool</span>
+<span class="sd">        If True, equip space with default metric.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -488,7 +487,6 @@
 <span class="sd">            Point representing a beta distribution.</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of points to sample with each pair of parameters in point.</span>
-<span class="sd">            Optional, default: 1.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -561,11 +559,9 @@
 <span class="sd">        loc : float</span>
 <span class="sd">            Location parameter of the distribution to estimate parameters</span>
 <span class="sd">            from. It is kept fixed during optimization.</span>
-<span class="sd">            Optional, default: 0.</span>
 <span class="sd">        scale : float</span>
 <span class="sd">            Scale parameter of the distribution to estimate parameters</span>
 <span class="sd">            from. It is kept fixed during optimization.</span>
-<span class="sd">            Optional, default: 1.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -698,13 +694,48 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">christoffels_a</span><span class="p">,</span> <span class="n">christoffels_b</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="BetaMetric.riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Riemannian tensor at base_point.</span>
+
+<span class="sd">        In dimension two, the curvature is determined by the Gaussian</span>
+<span class="sd">        curvature :math:`K`:</span>
+<span class="sd">        :math:`R(X, Y)Z = K (\langle Y, Z \rangle X - \langle X, Z \rangle Y)`,</span>
+<span class="sd">        i.e. :math:`R_{ijk}^l = K (g_{ki} \delta_j^l - g_{ji} \delta_k^l)`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        riemann_curvature : array-like, shape=[..., 2, 2, 2, 2]</span>
+<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
+<span class="sd">            Riemannian tensor curvature,</span>
+<span class="sd">            with the contravariant index on the last dimension.</span>
+<span class="sd">        """</span>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">eye</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">metric_mat</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">constant_curvature_tensor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ki,jl-&gt;...ijkl"</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">eye</span>
+        <span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ji,kl-&gt;...ijkl"</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">eye</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...,...ijkl-&gt;...ijkl"</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_curvature</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span>
+            <span class="n">constant_curvature_tensor</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="BetaMetric.sectional_curvature">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.sectional_curvature">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Compute the sectional curvature.</span>
 
-<span class="sd">        The space is two-dimensional, so the sectional curvature only</span>
-<span class="sd">        depends on the base point.</span>
+<span class="sd">        The space is two-dimensional, so the sectional curvature is the</span>
+<span class="sd">        Gaussian curvature, whatever the tangent vectors (including</span>
+<span class="sd">        collinear ones, for which the general definition is degenerate).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -720,6 +751,68 @@
 <span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
 <span class="sd">            Sectional curvature at `base_point`.</span>
 <span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_curvature</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BetaMetric.scalar_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.scalar_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalar_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute scalar curvature at base_point.</span>
+
+<span class="sd">        The space is two-dimensional, so the scalar curvature is twice the</span>
+<span class="sd">        Gaussian curvature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[...,]</span>
+<span class="sd">            Scalar curvature.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gaussian_curvature</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BetaMetric.gaussian_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.beta.BetaMetric.gaussian_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Gaussian curvature.</span>
+
+<span class="sd">        The Gaussian curvature of the Fisher information metric is [LP2019]_:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            K = \frac{\psi''(a) \psi''(b) \psi''(a + b)}{4 \det(g)^2}</span>
+<span class="sd">            \left( \frac{\psi'(a)}{\psi''(a)} + \frac{\psi'(b)}{\psi''(b)}</span>
+<span class="sd">            - \frac{\psi'(a + b)}{\psi''(a + b)} \right)</span>
+
+<span class="sd">        where :math:`\psi` is the digamma function and :math:`g` the</span>
+<span class="sd">        metric matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[...,]</span>
+<span class="sd">            Gaussian curvature at `base_point`.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [LP2019] A. Le Brigant, S. Puechmorel. The Fisher-Rao geometry of</span>
+<span class="sd">            beta distributions applied to the study of canonical moments.</span>
+<span class="sd">            arXiv:1904.08247, 2019.</span>
+<span class="sd">        """</span>
         <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">trigamma_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_a</span><span class="p">)</span>
         <span class="n">trigamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
@@ -728,7 +821,7 @@
         <span class="n">tetragamma_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_b</span><span class="p">)</span>
         <span class="n">tetragamma_ab</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">polygamma</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">param_a</span> <span class="o">+</span> <span class="n">param_b</span><span class="p">)</span>
 
-        <span class="n">curvature</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="k">return</span> <span class="p">(</span>
             <span class="n">tetragamma_a</span>
             <span class="o">*</span> <span class="n">tetragamma_b</span>
             <span class="o">*</span> <span class="n">tetragamma_ab</span>
@@ -738,9 +831,7 @@
                 <span class="o">-</span> <span class="n">trigamma_ab</span> <span class="o">/</span> <span class="n">tetragamma_ab</span>
             <span class="p">)</span>
             <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_det</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">batch_zeros</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">tangent_vec_b</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">curvature</span> <span class="o">+</span> <span class="n">batch_zeros</span></div>
+        <span class="p">)</span></div>
 </div>
 
 

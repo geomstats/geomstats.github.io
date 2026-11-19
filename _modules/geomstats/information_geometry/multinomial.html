@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 5:49:50 AM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:00:24 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -434,124 +434,22 @@
 <span class="sd">Lead author: Alice Le Brigant.</span>
 <span class="sd">"""</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">dirichlet</span><span class="p">,</span> <span class="n">multinomial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">multinomial</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">scalarvecmul</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">LevelSet</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hypersphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hypersphere</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.positive_hypersphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">PositiveHypersphere</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.scalar_product_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarProductMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.simplex</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenSimplex</span><span class="p">,</span> <span class="n">SqrtDiffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.information_geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">InformationManifoldMixin</span><span class="p">,</span>
     <span class="n">ScipyMultivariateRandomVariable</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">repeat_out</span>
-
-
-<div class="viewcode-block" id="SimplexToPositiveHypersphere">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SimplexToPositiveHypersphere</span><span class="p">(</span><span class="n">Diffeo</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Diffeomorphism between simplex and its image under componentwise square root."""</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Send point of the simplex to the sphere.</span>
-
-<span class="sd">        The map takes the square root of each component.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the simplex.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        image_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the sphere.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">base_point</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-
-<div class="viewcode-block" id="SimplexToPositiveHypersphere.inverse">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.inverse">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inverse</span><span class="p">(</span><span class="n">image_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Send point of the sphere to the simplex.</span>
-
-<span class="sd">        The map squares each component.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        image_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the sphere.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the simplex.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">image_point</span><span class="o">**</span><span class="mi">2</span></div>
-
-
-<div class="viewcode-block" id="SimplexToPositiveHypersphere.tangent">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Send tangent vector of the simplex to tangent space of sphere.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vec to the simplex at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point of the simplex.</span>
-<span class="sd">        image_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point of the sphere.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        image_tangent_vector : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vec to the sphere at the image of</span>
-<span class="sd">            base point by simplex_to_sphere.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...i,...i-&gt;...i"</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">image_point</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="SimplexToPositiveHypersphere.inverse_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.SimplexToPositiveHypersphere.inverse_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="n">image_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Send tangent vector of the sphere to tangent space of simplex.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        image_tangent_vec : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vec to the sphere at image point.</span>
-<span class="sd">        image_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point of the sphere.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point of the simplex.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec_simplex : array-like, shape=[..., dim]</span>
-<span class="sd">            Tangent vec to the simplex at the image of</span>
-<span class="sd">            base point by sphere_to_simplex.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">image_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">image_point</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...i,...i-&gt;...i"</span><span class="p">,</span> <span class="n">image_tangent_vec</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">image_point</span><span class="p">)</span></div>
-</div>
-
 
 
 <div class="viewcode-block" id="MultinomialDistributions">
 <a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">MultinomialDistributions</span><span class="p">(</span><span class="n">InformationManifoldMixin</span><span class="p">,</span> <span class="n">LevelSet</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultinomialDistributions</span><span class="p">(</span><span class="n">InformationManifoldMixin</span><span class="p">,</span> <span class="n">OpenSimplex</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""Class for the manifold of multinomial distributions.</span>
 
 <span class="sd">    This is the set of ``n+1``-tuples of positive reals that sum up to one,</span>
@@ -559,22 +457,23 @@
 <span class="sd">    distribution, i.e. gives the probabilities of ``n`` different outcomes</span>
 <span class="sd">    in a single experiment.</span>
 
-<span class="sd">    Attributes</span>
+<span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    dim : int</span>
 <span class="sd">        Dimension of the parameter manifold of multinomial distributions.</span>
 <span class="sd">        The number of outcomes is dim + 1.</span>
-<span class="sd">    embedding_manifold : Manifold</span>
-<span class="sd">        Embedding manifold.</span>
+<span class="sd">    n_draws : int</span>
+<span class="sd">        Number of draws.</span>
+<span class="sd">    equip : bool</span>
+<span class="sd">        If True, equip space with default metric.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">n_draws</span><span class="p">,</span> <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_draws</span> <span class="o">=</span> <span class="n">n_draws</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">equip</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">()</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">support_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">equip</span><span class="o">=</span><span class="n">equip</span>
-        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scp_rv</span> <span class="o">=</span> <span class="n">MultinomialRandomVariable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MultinomialDistributions.default_metric">
@@ -583,122 +482,6 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">default_metric</span><span class="p">():</span>
 <span class="w">        </span><span class="sd">"""Metric to equip the space with if equip is True."""</span>
         <span class="k">return</span> <span class="n">MultinomialMetric</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_define_embedding_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Euclidean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-<div class="viewcode-block" id="MultinomialDistributions.submersion">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions.submersion">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">submersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Submersion that defines the manifold.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., dim + 1]</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        submersed_point : array-like, shape=[...]</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span></div>
-
-
-<div class="viewcode-block" id="MultinomialDistributions.tangent_submersion">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions.tangent_submersion">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">tangent_submersion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Tangent submersion.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., dim + 1]</span>
-<span class="sd">        point : Ignored.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        submersed_vector : array-like, shape=[...]</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MultinomialDistributions.random_point">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions.random_point">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Generate parameters of multinomial distributions.</span>
-
-<span class="sd">        The Dirichlet distribution on the simplex is used</span>
-<span class="sd">        to generate parameters.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        samples : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Sample of points representing multinomial distributions.</span>
-<span class="sd">        """</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">dirichlet</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">samples</span></div>
-
-
-<div class="viewcode-block" id="MultinomialDistributions.projection">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions.projection">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Project a point on the simplex.</span>
-
-<span class="sd">        Negative components are replaced by zero and the point is</span>
-<span class="sd">        renormalized by its 1-norm.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point: array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point in embedding Euclidean space.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Tolerance to evaluate positivity.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        projected_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point projected on the simplex.</span>
-<span class="sd">        """</span>
-        <span class="n">point_quadrant</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">point</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
-        <span class="n">norm</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">point_quadrant</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">projected_point</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">norm</span><span class="p">,</span> <span class="n">point_quadrant</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">projected_point</span></div>
-
-
-<div class="viewcode-block" id="MultinomialDistributions.to_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.information_geometry.html#geomstats.information_geometry.multinomial.MultinomialDistributions.to_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Project a vector to the tangent space.</span>
-
-<span class="sd">        Project a vector in Euclidean space on the tangent space of</span>
-<span class="sd">        the simplex at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Vector in Euclidean space.</span>
-<span class="sd">        base_point : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Point on the simplex defining the tangent space,</span>
-<span class="sd">            where the vector will be projected.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        vector : array-like, shape=[..., dim + 1]</span>
-<span class="sd">            Tangent vector in the tangent space of the simplex</span>
-<span class="sd">            at the base point.</span>
-<span class="sd">        """</span>
-        <span class="n">component_mean</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">vector</span> <span class="o">-</span> <span class="n">component_mean</span>
-
-        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
-        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MultinomialDistributions.sample">
@@ -716,7 +499,6 @@
 <span class="sd">            associated to dim + 1 outcomes.</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of points to sample with each set of parameters in point.</span>
-<span class="sd">            Optional, default: 1.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -769,8 +551,8 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">space</span><span class="p">,</span>
-            <span class="n">diffeo</span><span class="o">=</span><span class="n">SimplexToPositiveHypersphere</span><span class="p">(),</span>
-            <span class="n">image_space</span><span class="o">=</span><span class="n">Hypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
+            <span class="n">diffeo</span><span class="o">=</span><span class="n">SqrtDiffeo</span><span class="p">(),</span>
+            <span class="n">image_space</span><span class="o">=</span><span class="n">PositiveHypersphere</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span><span class="o">.</span><span class="n">equip_with_metric</span><span class="p">(</span>
                 <span class="n">ScalarProductMetric</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">n_draws</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
             <span class="p">),</span>
         <span class="p">)</span></div>
