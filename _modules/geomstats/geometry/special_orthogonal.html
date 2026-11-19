@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 5:00:46 AM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 5:49:50 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -570,7 +570,7 @@
         <span class="k">return</span> <span class="n">_project_on_rotation_matrices</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Sample in SO(n) using a normal distribution (not the Haar measure).</span>
+<span class="w">        </span><span class="sd">"""Sample in SO(n) from the Haar measure.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -588,7 +588,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_uniform</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">random_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Sample in SO(n) using a normal distribution (not the Haar measure).</span>
+<span class="w">        </span><span class="sd">"""Sample in SO(n) from the Haar measure.</span>
+
+<span class="sd">        Q from the QR decomposition of a Gaussian matrix is Haar distributed</span>
+<span class="sd">        on O(n) once the diagonal of R is made positive [Mezzadri2007]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -601,13 +604,21 @@
 <span class="sd">        -------</span>
 <span class="sd">        samples : array-like, shape=[..., n, n]</span>
 <span class="sd">            Points sampled on the SO(n).</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [Mezzadri2007] F. Mezzadri, "How to generate random matrices from</span>
+<span class="sd">            the classical compact groups", Notices of the AMS, 54(5), 2007.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
         <span class="n">random_mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
-        <span class="n">rotation_mat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">random_mat</span><span class="p">)</span>
+        <span class="n">rotation_mat</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">random_mat</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">upper</span><span class="p">)</span>
+        <span class="n">signs</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">diag</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rotation_mat</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">rotation_mat</span> <span class="o">=</span> <span class="n">rotation_mat</span> <span class="o">*</span> <span class="n">signs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">flip_determinant</span><span class="p">(</span><span class="n">rotation_mat</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
 
