@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:00:24 PM"/>
+    <meta name="docbuild:last-update" content="Nov 19, 2026, 10:25:02 PM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -537,8 +537,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_integrator</span> <span class="o">=</span> <span class="n">integrator</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
 
         <span class="n">state_axis</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">initial_state</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">state_axis</span><span class="p">)</span>
@@ -592,8 +591,6 @@
                 <span class="s2">"Can't solve for geodesic at different t with this integrator."</span>
             <span class="p">)</span>
 
-        <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
         <span class="k">def</span><span class="w"> </span><span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">"""Time parametrized geodesic curve.</span>
 
@@ -607,10 +604,8 @@
 <span class="sd">                Geodesic points evaluated at t.</span>
 <span class="sd">            """</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simplify_result_t</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
@@ -958,6 +953,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">integrator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialization</span> <span class="o">=</span> <span class="n">initialization</span>
+        <span class="k">if</span> <span class="n">use_jac</span> <span class="ow">and</span> <span class="n">space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"The Jacobian of the geodesic equation is only implemented for "</span>
+                <span class="s2">"points represented by a vector. Use `use_jac=False`."</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_jac</span> <span class="o">=</span> <span class="n">use_jac</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_grid</span><span class="p">()</span>
@@ -1031,7 +1031,9 @@
         <span class="n">df_dvelocity</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijk,k...-&gt;ij..."</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
 
         <span class="n">jac_nw</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">raveled_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-        <span class="n">jac_ne</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">permute_dims</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))))</span>
+        <span class="n">jac_ne</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="n">jac_sw</span> <span class="o">=</span> <span class="n">df_dposition</span>
         <span class="n">jac_se</span> <span class="o">=</span> <span class="n">df_dvelocity</span>
@@ -1078,8 +1080,7 @@
 <span class="sd">        path : callable</span>
 <span class="sd">            Time parametrized geodesic curve. `f(t)`. 0 &lt;= t &lt;= 1.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
 
         <span class="n">is_batch</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
@@ -1103,10 +1104,8 @@
 <span class="sd">                Geodesic points evaluated at t.</span>
 <span class="sd">            """</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_array</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">is_batch</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simplify_result_t</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">sol</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
@@ -1664,6 +1663,7 @@
                 <span class="k">break</span>
 
         <span class="k">return</span> <span class="n">discrete_path</span></div>
+
 
 </pre></div>
 
