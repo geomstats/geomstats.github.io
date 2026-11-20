@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:12 AM"/>
+    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:29 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -440,8 +440,12 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.geometry</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">geometry</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Connection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_is_batch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.connection</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Connection</span><span class="p">,</span>
+    <span class="n">CoordinateConnection</span><span class="p">,</span>
+    <span class="n">ZeroChristoffelsMixin</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_is_batch</span><span class="p">,</span> <span class="n">repeat_out</span>
 
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-4</span>
 
@@ -511,6 +515,11 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Metric matrix at the tangent space at a base point.</span>
 
+<span class="sd">        Matrix of the inner product in the representation of tangent vectors.</span>
+<span class="sd">        If points are not represented in a chart (e.g. they live in an</span>
+<span class="sd">        ambient space), only its action on tangent vectors is meaningful:</span>
+<span class="sd">        it is not unique, and its derivatives do not describe the metric.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
@@ -546,72 +555,6 @@
 <span class="sd">        """</span>
         <span class="n">metric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">metric_matrix</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="RiemannianMetric.inner_product_derivative_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.inner_product_derivative_matrix">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
-
-<span class="sd">        Writing :math:`g_{ij}` the inner-product matrix at base point,</span>
-<span class="sd">        this computes :math:`mat_{ijk} = \partial_k g_{ij}`, where the</span>
-<span class="sd">        index k of the derivation is put last.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        metric_derivative : array-like, shape=[..., dim, dim, dim]</span>
-<span class="sd">            Derivative of the inner-product matrix, where the index</span>
-<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian_vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">)(</span><span class="n">base_point</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="RiemannianMetric.christoffels">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.christoffels">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Christoffel symbols of the Levi-Civita connection.</span>
-
-<span class="sd">        The Koszul formula defining the Levi-Civita connection gives the</span>
-<span class="sd">        expression of the Christoffel symbols with respect to the metric:</span>
-<span class="sd">        :math:`\Gamma^k_{ij}(p) = \frac{1}{2} g^{lk}(</span>
-<span class="sd">        \partial_i g_{jl} + \partial_j g_{li} - \partial_l g_{ij})`,</span>
-<span class="sd">        where:</span>
-
-<span class="sd">        - :math:`p` represents the base point, and</span>
-<span class="sd">        - :math:`g` represents the Riemannian metric tensor.</span>
-
-<span class="sd">        Note that the function computing the derivative of the metric matrix</span>
-<span class="sd">        puts the index of the derivation last.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point: array-like, shape=[..., dim]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        christoffels: array-like, shape=[..., dim, dim, dim]</span>
-<span class="sd">            Christoffel symbols, where the contravariant index is first.</span>
-<span class="sd">        """</span>
-        <span class="n">cometric_mat_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">metric_derivative_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_derivative_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...lk,...jli-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
-        <span class="p">)</span>
-        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...lk,...lij-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
-        <span class="p">)</span>
-        <span class="n">term_3</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...lk,...ijl-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span> <span class="o">+</span> <span class="n">term_3</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMetric.inner_product">
@@ -1025,36 +968,6 @@
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"i, ikl-&gt;ikl"</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">norms</span><span class="p">),</span> <span class="n">basis</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RiemannianMetric.covariant_riemann_tensor">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.covariant_riemann_tensor">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">covariant_riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute purely covariant version of Riemannian tensor at base_point.</span>
-
-<span class="sd">        In the literature the covariant riemannian tensor is noted :math:`R_{ijkl}`.</span>
-
-<span class="sd">        Convention used in the literature (tensor index notation, ref. Wikipedia) is:</span>
-<span class="sd">        :math:`R_{ijkl} = &lt;R(x_k, x_l)x_j, x_i&gt;`</span>
-<span class="sd">        where :math:`x_i` is the i-th basis vector of the tangent space at base point.</span>
-
-<span class="sd">        In other words:</span>
-<span class="sd">        [cov_riemann_tensor]_{ijkl} = [metric_matrix]_{im} [riemann_tensor]_{jkl}^m</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        covariant_tensor : array-like, shape=[..., dim, dim, dim, dim]</span>
-<span class="sd">            covariant_riemann_tensor[..., i, j, k, l] = R_{ijkl}</span>
-<span class="sd">            Covariant version of Riemannian curvature tensor.</span>
-<span class="sd">        """</span>
-        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij, ...klmj-&gt;...iklm"</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="RiemannianMetric.sectional_curvature">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.sectional_curvature">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1088,6 +1001,11 @@
 <span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
 <span class="sd">            Sectional curvature at ``base_point``.</span>
 <span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Sectional curvature is not defined for 1-dimensional manifolds."</span>
+            <span class="p">)</span>
+
         <span class="n">curvature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curvature</span><span class="p">(</span>
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span>
@@ -1119,9 +1037,7 @@
 <span class="sd">        curvature : array-like, shape=[...,]</span>
 <span class="sd">            Scalar curvature.</span>
 <span class="sd">        """</span>
-        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ricci_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">cometric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij, ...ij -&gt; ..."</span><span class="p">,</span> <span class="n">cometric_matrix</span><span class="p">,</span> <span class="n">ricci_tensor</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The scalar curvature is not implemented."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMetric.injectivity_radius">
@@ -1144,6 +1060,401 @@
 <span class="sd">            Injectivity radius.</span>
 <span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The injectivity range is not implemented yet."</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RiemannianMetric.flat">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.flat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a tangent vector to a covector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., *shape]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The flat map is not implemented."</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RiemannianMetric.sharp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.RiemannianMetric.sharp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sharp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cotangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a covector to a tangent vector.</span>
+
+<span class="sd">        Inverse of :meth:`flat`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., *shape]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The sharp map is not implemented."</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CoordinateRiemannianMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">,</span> <span class="n">CoordinateConnection</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Class for Riemannian and pseudo-Riemannian metrics given in a chart.</span>
+
+<span class="sd">    Points are represented by their ``dim`` coordinates, and the metric matrix</span>
+<span class="sd">    is computed in these coordinates. The Christoffel symbols of the</span>
+<span class="sd">    Levi-Civita connection follow from the derivatives of the metric matrix.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        Writing :math:`g_{ij}` the inner-product matrix at base point,</span>
+<span class="sd">        this computes :math:`mat_{ijk} = \partial_k g_{ij}`, where the</span>
+<span class="sd">        index k of the derivation is put last.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian_vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">)(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Christoffel symbols of the Levi-Civita connection.</span>
+
+<span class="sd">        The Koszul formula defining the Levi-Civita connection gives the</span>
+<span class="sd">        expression of the Christoffel symbols with respect to the metric:</span>
+<span class="sd">        :math:`\Gamma^k_{ij}(p) = \frac{1}{2} g^{lk}(</span>
+<span class="sd">        \partial_i g_{jl} + \partial_j g_{li} - \partial_l g_{ij})`,</span>
+<span class="sd">        where:</span>
+
+<span class="sd">        - :math:`p` represents the base point, and</span>
+<span class="sd">        - :math:`g` represents the Riemannian metric tensor.</span>
+
+<span class="sd">        Note that the function computing the derivative of the metric matrix</span>
+<span class="sd">        puts the index of the derivation last.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point: array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        christoffels: array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Christoffel symbols, where the contravariant index is first.</span>
+<span class="sd">        """</span>
+        <span class="n">cometric_mat_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">metric_derivative_at_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product_derivative_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">term_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...lk,...jli-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
+        <span class="p">)</span>
+        <span class="n">term_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...lk,...lij-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
+        <span class="p">)</span>
+        <span class="n">term_3</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...lk,...ijl-&gt;...kij"</span><span class="p">,</span> <span class="n">cometric_mat_at_point</span><span class="p">,</span> <span class="n">metric_derivative_at_point</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">term_1</span> <span class="o">+</span> <span class="n">term_2</span> <span class="o">+</span> <span class="n">term_3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.covariant_riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.covariant_riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariant_riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute purely covariant version of Riemannian tensor at base_point.</span>
+
+<span class="sd">        In the literature the covariant riemannian tensor is noted :math:`R_{ijkl}`.</span>
+
+<span class="sd">        Convention used in the literature (tensor index notation, ref. Wikipedia) is:</span>
+<span class="sd">        :math:`R_{ijkl} = &lt;R(x_k, x_l)x_j, x_i&gt;`</span>
+<span class="sd">        where :math:`x_i` is the i-th basis vector of the tangent space at base point.</span>
+
+<span class="sd">        In other words:</span>
+<span class="sd">        [cov_riemann_tensor]_{ijkl} = [metric_matrix]_{im} [riemann_tensor]_{jkl}^m</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        covariant_tensor : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            covariant_riemann_tensor[..., i, j, k, l] = R_{ijkl}</span>
+<span class="sd">            Covariant version of Riemannian curvature tensor.</span>
+<span class="sd">        """</span>
+        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij, ...klmj-&gt;...iklm"</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.scalar_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.scalar_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalar_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute scalar curvature at base_point.</span>
+
+<span class="sd">        In the literature scalar_curvature is noted S and writes:</span>
+<span class="sd">        :math:`S = g^{ij} Ric_{ij}`,</span>
+<span class="sd">        with Einstein notation, where we recognize the trace of the Ricci</span>
+<span class="sd">        tensor according to the Riemannian metric :math:`g`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[...,]</span>
+<span class="sd">            Scalar curvature.</span>
+<span class="sd">        """</span>
+        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ricci_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">cometric_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij, ...ij -&gt; ..."</span><span class="p">,</span> <span class="n">cometric_matrix</span><span class="p">,</span> <span class="n">ricci_tensor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.flat">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.flat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a tangent vector to a covector.</span>
+
+<span class="sd">        This is the multiplication by the metric matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ij,...j-&gt;...i"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">tangent_vec</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateRiemannianMetric.sharp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.CoordinateRiemannianMetric.sharp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sharp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cotangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a covector to a tangent vector.</span>
+
+<span class="sd">        This is the multiplication by the cometric matrix. Inverse of</span>
+<span class="sd">        :meth:`flat`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ij,...j-&gt;...i"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">cotangent_vec</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConstantMetricMatrixRiemannianMetric</span><span class="p">(</span>
+    <span class="n">ZeroChristoffelsMixin</span><span class="p">,</span> <span class="n">CoordinateRiemannianMetric</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Class for metrics whose matrix is constant in the chart.</span>
+
+<span class="sd">    The Christoffel symbols of the Levi-Civita connection vanish, and the</span>
+<span class="sd">    metric is flat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold object</span>
+<span class="sd">        M in the tuple (M, g).</span>
+<span class="sd">    metric_matrix : array-like, shape=[dim, dim]</span>
+<span class="sd">        Metric matrix.</span>
+<span class="sd">        Optional, default: identity.</span>
+<span class="sd">    signature : tuple</span>
+<span class="sd">        Signature of the metric.</span>
+<span class="sd">        Optional, default: (dim, 0).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">metric_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metric_matrix</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="n">expected_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric_matrix</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"metric_matrix shape is </span><span class="si">{</span><span class="n">metric_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">;"</span>
+                <span class="sa">f</span><span class="s2">"expected: </span><span class="si">{</span><span class="n">expected_shape</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span> <span class="o">=</span> <span class="n">metric_matrix</span>
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric.metric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric.metric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Metric matrix at the tangent space at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            Inner-product matrix.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span><span class="p">),</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric.cometric_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric.cometric_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cometric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Inner co-product matrix at the cotangent space at a base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cometric_matrix : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            Inverse of inner-product matrix.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span><span class="p">),</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric.flat">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric.flat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a tangent vector to a covector.</span>
+
+<span class="sd">        The metric matrix is independent of the base point, so it is not</span>
+<span class="sd">        repeated along the batch.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        """</span>
+        <span class="n">cotangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">cotangent_vec</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConstantMetricMatrixRiemannianMetric.sharp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.riemannian_metric.ConstantMetricMatrixRiemannianMetric.sharp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sharp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cotangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Map a covector to a tangent vector.</span>
+
+<span class="sd">        Inverse of :meth:`flat`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cotangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Covector at base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Base point.</span>
+<span class="sd">            Optional, default: None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at base point.</span>
+<span class="sd">        """</span>
+        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix_</span><span class="p">),</span> <span class="n">cotangent_vec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">tangent_vec</span><span class="p">,</span>
+            <span class="n">cotangent_vec</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+            <span class="n">out_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>

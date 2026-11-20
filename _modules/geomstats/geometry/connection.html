@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:12 AM"/>
+    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:29 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -438,6 +438,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.errors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_is_batch</span><span class="p">,</span> <span class="n">get_batch_shape</span><span class="p">,</span> <span class="n">repeat_out</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_log_solver</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">raise_</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -476,48 +477,6 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_space</span> <span class="o">=</span> <span class="n">space</span>
 
-<div class="viewcode-block" id="Connection.christoffels">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.christoffels">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Christoffel symbols associated with the connection.</span>
-
-<span class="sd">        The contravariant index is on the first dimension.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        gamma : array-like, shape=[..., dim, dim, dim]</span>
-<span class="sd">            Christoffel symbols, with the contravariant index on</span>
-<span class="sd">            the first dimension.</span>
-<span class="sd">        """</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The Christoffel symbols are not implemented."</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Connection.jacobian_christoffels">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.jacobian_christoffels">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">jacobian_christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Jacobian of the Christoffel symbols.</span>
-
-<span class="sd">        Computed with automatic differentiation, unless overridden.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        jac : array-like, shape=[..., dim, dim, dim, dim]</span>
-<span class="sd">            Jacobian of the Christoffel symbols.</span>
-<span class="sd">            :math:`jac[..., i, j, k, l] = dGamma^i_{jk} / dx_l`</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian_vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">)(</span><span class="n">base_point</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="Connection.geodesic_equation">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.geodesic_equation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">geodesic_equation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
@@ -525,25 +484,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        state : array-like, shape=[..., 2, dim]</span>
-<span class="sd">            Tangent vector at the position.</span>
+<span class="sd">        state : array-like, shape=[..., 2, *shape]</span>
+<span class="sd">            Position and velocity, stacked along the state axis.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        geodesic_ode : array-like, shape=[..., 2, dim]</span>
+<span class="sd">        geodesic_ode : array-like, shape=[..., 2, *shape]</span>
 <span class="sd">            Value of the vector field to be integrated at position.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">"The geodesic equation is only implemented for points "</span>
-                <span class="s2">"represented by a vector."</span>
-            <span class="p">)</span>
-        <span class="n">position</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">velocity</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
-        <span class="n">equation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...kij,...i-&gt;...kj"</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
-        <span class="n">equation</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...kj,...j-&gt;...k"</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">equation</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The geodesic equation is not implemented."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Connection.exp">
@@ -581,15 +530,6 @@
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        base_point : array-like, shape=[..., dim]</span>
 <span class="sd">            Point on the manifold.</span>
-<span class="sd">        n_steps : int</span>
-<span class="sd">            Number of discrete time steps to take in the integration.</span>
-<span class="sd">            Optional, default: N_STEPS.</span>
-<span class="sd">        step : str, {'euler', 'rk4'}</span>
-<span class="sd">            Numerical scheme to use for integration.</span>
-<span class="sd">            Optional, default: 'euler'.</span>
-<span class="sd">        max_iter</span>
-<span class="sd">        verbose</span>
-<span class="sd">        tol</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -826,57 +766,6 @@
         <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="Connection.riemann_tensor">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.riemann_tensor">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Riemannian tensor at base_point.</span>
-
-<span class="sd">        In the literature the Riemannian curvature tensor is noted :math:`R_{ijk}^l`.</span>
-
-<span class="sd">        Following tensor index convention (ref. Wikipedia), we have:</span>
-<span class="sd">        :math:`R_{ijk}^l = dx^l(R(X_j, X_k)X_i)`</span>
-
-<span class="sd">        which gives :math:`R_{ijk}^l` as a sum of four terms:</span>
-
-<span class="sd">        .. math::</span>
-<span class="sd">            \partial_j \Gamma^l_{ki} - \partial_k \Gamma^l_{ji}</span>
-<span class="sd">            + \Gamma^l_{jm} \Gamma^m_{ki} - \Gamma^l_{km} \Gamma^m_{ji}</span>
-
-<span class="sd">        Note that geomstats puts the contravariant index on</span>
-<span class="sd">        the first dimension of the Christoffel symbols.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        riemann_curvature : array-like, shape=[..., dim, dim, dim, dim]</span>
-<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
-<span class="sd">            Riemannian tensor curvature,</span>
-<span class="sd">            with the contravariant index on the last dimension.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">"Riemann tensor not implemented for manifolds with points of ndim &gt; 1."</span>
-            <span class="p">)</span>
-        <span class="n">christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">jacobian_christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_christoffels</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-
-        <span class="n">prod_christoffels</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...ijk,...klm-&gt;...ijlm"</span><span class="p">,</span> <span class="n">christoffels</span><span class="p">,</span> <span class="n">christoffels</span>
-        <span class="p">)</span>
-        <span class="n">riemann_curvature</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...lmji"</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...ljmi"</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
-            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...mjli"</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...lmji"</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">riemann_curvature</span></div>
-
-
 <div class="viewcode-block" id="Connection.curvature">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.curvature">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -912,40 +801,7 @@
 <span class="sd">            curvature(X, Y, Z, P)[..., l] = dx^l(R(X, Y)Z)</span>
 <span class="sd">            Tangent vector at ``base_point``.</span>
 <span class="sd">        """</span>
-        <span class="n">riemann</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">curvature</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...ijkl, ...j, ...k, ...i -&gt; ...l"</span><span class="p">,</span>
-            <span class="n">riemann</span><span class="p">,</span>
-            <span class="n">tangent_vec_a</span><span class="p">,</span>
-            <span class="n">tangent_vec_b</span><span class="p">,</span>
-            <span class="n">tangent_vec_c</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">curvature</span></div>
-
-
-<div class="viewcode-block" id="Connection.ricci_tensor">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.Connection.ricci_tensor">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ricci_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Ricci curvature tensor at base_point.</span>
-
-<span class="sd">        The Ricci curvature tensor :math:`\mathrm{Ric}_{ij}` is defined as:</span>
-<span class="sd">        :math:`\mathrm{Ric}_{ij} = R_{ikj}^k`</span>
-<span class="sd">        with Einstein notation.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        ricci_tensor : array-like, shape=[..., dim, dim]</span>
-<span class="sd">            ricci_tensor[...,i,j] = Ric_{ij}</span>
-<span class="sd">            Ricci tensor curvature.</span>
-<span class="sd">        """</span>
-        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijkj -&gt; ...ik"</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ricci_tensor</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The curvature is not implemented."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Connection.directional_curvature">
@@ -1250,6 +1106,600 @@
             <span class="s2">"The closed-form solution of parallel transport is not known, "</span>
             <span class="s2">"use the ladder_parallel_transport instead."</span>
         <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CoordinateConnection">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CoordinateConnection</span><span class="p">(</span><span class="n">Connection</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Class for affine connections given by Christoffel symbols.</span>
+
+<span class="sd">    The connection is described in a chart: points are represented by their</span>
+<span class="sd">    ``dim`` coordinates, and the Christoffel symbols are computed in these</span>
+<span class="sd">    coordinates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : Manifold object</span>
+<span class="sd">        M in the tuple (M, g).</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="CoordinateConnection.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Christoffel symbols associated with the connection.</span>
+
+<span class="sd">        The contravariant index is on the first dimension, and the first</span>
+<span class="sd">        covariant index is the direction of differentiation:</span>
+<span class="sd">        :math:`\nabla_{\partial_i} \partial_j = \Gamma^k_{ij} \partial_k`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        gamma : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"The Christoffel symbols are not implemented."</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateConnection.jacobian_christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.jacobian_christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">jacobian_christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Jacobian of the Christoffel symbols.</span>
+
+<span class="sd">        Computed with automatic differentiation, unless overridden.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jac : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            Jacobian of the Christoffel symbols.</span>
+<span class="sd">            :math:`jac[..., i, j, k, l] = dGamma^i_{jk} / dx_l`</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">autodiff</span><span class="o">.</span><span class="n">jacobian_vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">)(</span><span class="n">base_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateConnection.geodesic_equation">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.geodesic_equation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">geodesic_equation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the geodesic ODE associated with the connection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : array-like, shape=[..., 2, dim]</span>
+<span class="sd">            Tangent vector at the position.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        geodesic_ode : array-like, shape=[..., 2, dim]</span>
+<span class="sd">            Value of the vector field to be integrated at position.</span>
+<span class="sd">        """</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+        <span class="n">equation</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...kij,...i-&gt;...kj"</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
+        <span class="n">equation</span> <span class="o">=</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...kj,...j-&gt;...k"</span><span class="p">,</span> <span class="n">equation</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">equation</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoordinateConnection.riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Riemannian tensor at base_point.</span>
+
+<span class="sd">        In the literature the Riemannian curvature tensor is noted :math:`R_{ijk}^l`.</span>
+
+<span class="sd">        Following tensor index convention (ref. Wikipedia), we have:</span>
+<span class="sd">        :math:`R_{ijk}^l = dx^l(R(X_j, X_k)X_i)`</span>
+
+<span class="sd">        which gives :math:`R_{ijk}^l` as a sum of four terms:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \partial_j \Gamma^l_{ki} - \partial_k \Gamma^l_{ji}</span>
+<span class="sd">            + \Gamma^l_{jm} \Gamma^m_{ki} - \Gamma^l_{km} \Gamma^m_{ji}</span>
+
+<span class="sd">        Note that geomstats puts the contravariant index on</span>
+<span class="sd">        the first dimension of the Christoffel symbols.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        riemann_curvature : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
+<span class="sd">            Riemannian tensor curvature,</span>
+<span class="sd">            with the contravariant index on the last dimension.</span>
+<span class="sd">        """</span>
+        <span class="n">christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">christoffels</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">jacobian_christoffels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jacobian_christoffels</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+
+        <span class="n">prod_christoffels</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ijk,...klm-&gt;...ijlm"</span><span class="p">,</span> <span class="n">christoffels</span><span class="p">,</span> <span class="n">christoffels</span>
+        <span class="p">)</span>
+        <span class="n">riemann_curvature</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...lmji"</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...ljmi"</span><span class="p">,</span> <span class="n">jacobian_christoffels</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...mjli"</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijlm-&gt;...mlji"</span><span class="p">,</span> <span class="n">prod_christoffels</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">riemann_curvature</span></div>
+
+
+<div class="viewcode-block" id="CoordinateConnection.curvature">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Riemann curvature map R.</span>
+
+<span class="sd">        For three tangent vectors at base point :math:`P`:</span>
+
+<span class="sd">        - :math:`X|_P = tangent\_vec\_a`,</span>
+<span class="sd">        - :math:`Y|_P = tangent\_vec\_b`,</span>
+<span class="sd">        - :math:`Z|_P = tangent\_vec\_c`,</span>
+
+<span class="sd">        the curvature :math:`(X, Y, Z, P)` is defined by</span>
+<span class="sd">        :math:`R(X,Y)Z = \nabla_X \nabla_Y Z - \nabla_Y \nabla_X Z - \nabla_{[X, Y]}Z`.</span>
+
+<span class="sd">        The output is the tangent vector:</span>
+<span class="sd">        :math:`dx^l(R(X, Y)Z) = R_{ijk}^l X_j Y_k Z_i`</span>
+<span class="sd">        written with Einstein notation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[..., dim]</span>
+<span class="sd">            curvature(X, Y, Z, P)[..., l] = dx^l(R(X, Y)Z)</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        """</span>
+        <span class="n">riemann</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">curvature</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ijkl, ...j, ...k, ...i -&gt; ...l"</span><span class="p">,</span>
+            <span class="n">riemann</span><span class="p">,</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">tangent_vec_c</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">curvature</span></div>
+
+
+<div class="viewcode-block" id="CoordinateConnection.ricci_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.CoordinateConnection.ricci_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ricci_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Ricci curvature tensor at base_point.</span>
+
+<span class="sd">        The Ricci curvature tensor :math:`\mathrm{Ric}_{ij}` is defined as:</span>
+<span class="sd">        :math:`\mathrm{Ric}_{ij} = R_{ikj}^k`</span>
+<span class="sd">        with Einstein notation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point :  array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ricci_tensor : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            ricci_tensor[...,i,j] = Ric_{ij}</span>
+<span class="sd">            Ricci tensor curvature.</span>
+<span class="sd">        """</span>
+        <span class="n">riemann_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">riemann_tensor</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">ricci_tensor</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ijkj -&gt; ...ik"</span><span class="p">,</span> <span class="n">riemann_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ricci_tensor</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FlatMixin">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FlatMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Mixin for flat connections.</span>
+
+<span class="sd">    The curvature and its covariant derivative vanish. This does not depend</span>
+<span class="sd">    on the representation of the points.</span>
+
+<span class="sd">    To be placed before the connection class in the bases.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="FlatMixin.curvature">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatMixin.curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Riemann curvature map R.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        """</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">tangent_vec_c</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlatMixin.curvature_derivative">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatMixin.curvature_derivative">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">curvature_derivative</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tangent_vec_a</span><span class="p">,</span>
+        <span class="n">tangent_vec_b</span><span class="p">,</span>
+        <span class="n">tangent_vec_c</span><span class="p">,</span>
+        <span class="n">tangent_vec_d</span><span class="p">,</span>
+        <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the covariant derivative of the curvature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_d : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature_derivative : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        """</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">tangent_vec_c</span><span class="p">,</span>
+            <span class="n">tangent_vec_d</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlatMixin.sectional_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatMixin.sectional_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sectional_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the sectional curvature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., *shape]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Point in the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sectional_curvature : array-like, shape=[...,]</span>
+<span class="sd">            Sectional curvature at ``base_point``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Sectional curvature is not defined for 1-dimensional manifolds."</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(()),</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlatMixin.scalar_curvature">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatMixin.scalar_curvature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalar_curvature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute scalar curvature at base_point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., *shape]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature : array-like, shape=[...,]</span>
+<span class="sd">            Scalar curvature.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(()),</span> <span class="n">base_point</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FlatCoordinateMixin">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatCoordinateMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FlatCoordinateMixin</span><span class="p">(</span><span class="n">FlatMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Mixin for flat connections given in a chart.</span>
+
+<span class="sd">    All the curvature tensors vanish.</span>
+
+<span class="sd">    To be placed before a coordinate connection or metric class in the bases.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="FlatCoordinateMixin.riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatCoordinateMixin.riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Riemannian tensor at base_point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        riemann_curvature : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
+<span class="sd">            Riemannian tensor curvature,</span>
+<span class="sd">            with the contravariant index on the last dimension.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlatCoordinateMixin.ricci_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatCoordinateMixin.ricci_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ricci_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Ricci curvature tensor at base_point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ricci_tensor : array-like, shape=[..., dim, dim]</span>
+<span class="sd">            ricci_tensor[...,i,j] = Ric_{ij}</span>
+<span class="sd">            Ricci tensor curvature.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlatCoordinateMixin.covariant_riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.FlatCoordinateMixin.covariant_riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariant_riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute purely covariant version of Riemannian tensor at base_point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        covariant_tensor : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            covariant_riemann_tensor[..., i, j, k, l] = R_{ijkl}</span>
+<span class="sd">            Covariant version of Riemannian curvature tensor.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ZeroChristoffelsMixin</span><span class="p">(</span><span class="n">FlatCoordinateMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Mixin for connections whose Christoffel symbols vanish in the chart.</span>
+
+<span class="sd">    The coordinates are affine for the connection: geodesics are straight</span>
+<span class="sd">    lines in the chart, and the connection is flat.</span>
+
+<span class="sd">    To be placed before a coordinate connection or metric class in the bases.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin.christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin.christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Christoffel symbols associated with the connection.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        gamma : array-like, shape=[..., dim, dim, dim]</span>
+<span class="sd">            Christoffel symbols, with the contravariant index on</span>
+<span class="sd">            the first dimension.</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin.jacobian_christoffels">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin.jacobian_christoffels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">jacobian_christoffels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the Jacobian of the Christoffel symbols.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jac : array-like, shape=[..., dim, dim, dim, dim]</span>
+<span class="sd">            Jacobian of the Christoffel symbols.</span>
+<span class="sd">            :math:`jac[..., i, j, k, l] = dGamma^i_{jk} / dx_l`</span>
+<span class="sd">        """</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="n">shape</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin.geodesic_equation">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin.geodesic_equation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">geodesic_equation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the geodesic ODE associated with the connection.</span>
+
+<span class="sd">        The Christoffel symbols vanish, so the acceleration is zero.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : array-like, shape=[..., 2, dim]</span>
+<span class="sd">            Position and velocity, stacked along the state axis.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        geodesic_ode : array-like, shape=[..., 2, dim]</span>
+<span class="sd">            Value of the vector field to be integrated at position.</span>
+<span class="sd">        """</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">velocity</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">velocity</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin.exp">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin.exp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the exponential map.</span>
+
+<span class="sd">        Geodesics are straight lines in the chart. The end point is</span>
+<span class="sd">        regularized, which accounts for identifications of the chart.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec : array-like, shape=[..., dim]</span>
+<span class="sd">            Tangent vector at the base point.</span>
+<span class="sd">        base_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        exp : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ZeroChristoffelsMixin.geodesic">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.connection.ZeroChristoffelsMixin.geodesic">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">geodesic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">end_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Generate parameterized function for the geodesic curve.</span>
+
+<span class="sd">        Geodesics are straight lines in the chart. Points along them are</span>
+<span class="sd">        regularized, which accounts for identifications of the chart.</span>
+
+<span class="sd">        Geodesic curve defined by either:</span>
+
+<span class="sd">        - an initial point and an initial tangent vector,</span>
+<span class="sd">        - an initial point and an end point.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        initial_point : array-like, shape=[..., dim]</span>
+<span class="sd">            Point on the manifold, initial point of the geodesic.</span>
+<span class="sd">        end_point : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Point on the manifold, end point of the geodesic. If None,</span>
+<span class="sd">            an initial tangent vector must be given.</span>
+<span class="sd">        initial_tangent_vec : array-like, shape=[..., dim], optional</span>
+<span class="sd">            Tangent vector at base point, the initial speed of the geodesics.</span>
+<span class="sd">            Optional, default: None.</span>
+<span class="sd">            If None, an end point must be given and a logarithm is computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        path : callable</span>
+<span class="sd">            Time parameterized geodesic curve. If a batch of initial</span>
+<span class="sd">            conditions is passed, the output array's first dimension</span>
+<span class="sd">            represents the different initial conditions, and the second</span>
+<span class="sd">            corresponds to time.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Specify an end point or an initial tangent "</span>
+                <span class="s2">"vector to define the geodesic."</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_tangent_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Cannot specify both an end point and an initial tangent vector."</span>
+                <span class="p">)</span>
+
+            <span class="n">initial_tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">)</span>
+
+        <span class="n">is_batch</span> <span class="o">=</span> <span class="n">check_is_batch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">,</span> <span class="n">initial_tangent_vec</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_batch</span><span class="p">:</span>
+            <span class="n">initial_point</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span>
+                <span class="n">initial_point</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">ijk</span> <span class="o">=</span> <span class="s2">"ijk"</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">path</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""Generate parameterized function for geodesic curve.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            t : array-like, shape=[n_points,]</span>
+<span class="sd">                Times at which to compute points of the geodesics.</span>
+<span class="sd">            """</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">to_ndarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">to_ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">initial_tangent_vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">tangent_vecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">"n,...</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">-&gt;...n</span><span class="si">{</span><span class="n">ijk</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">initial_tangent_vec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">initial_point</span> <span class="o">+</span> <span class="n">tangent_vecs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">path</span></div>
 </div>
 
 

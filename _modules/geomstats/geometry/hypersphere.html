@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:12 AM"/>
+    <meta name="docbuild:last-update" content="Nov 20, 2026, 12:31:29 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -450,8 +450,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.diffeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Diffeo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.euclidean</span><span class="w"> </span><span class="kn">import</span> <span class="n">Euclidean</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">Manifold</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoordinatePullbackDiffeoMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ConstantMetricMatrixRiemannianMetric</span><span class="p">,</span>
+    <span class="n">RiemannianMetric</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_batch_shape</span><span class="p">,</span> <span class="n">repeat_out</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -1029,9 +1032,7 @@
 
         <span class="n">coef_1</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">norm2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">cos_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">coef_2</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span><span class="n">norm2</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">sinc_close_0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef_1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span> <span class="o">+</span> <span class="n">scalarvecmul</span><span class="p">(</span>
-            <span class="n">coef_2</span><span class="p">,</span> <span class="n">proj_tangent_vec</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef_1</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span> <span class="o">+</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">coef_2</span><span class="p">,</span> <span class="n">proj_tangent_vec</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HypersphereMetric.log">
@@ -1198,9 +1199,6 @@
 <span class="sd">        curvature : array-like, shape=[..., dim + 1]</span>
 <span class="sd">            Tangent vector at ``base_point``.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Curvature is not implemented for the circle."</span><span class="p">)</span>
-
         <span class="n">inner_ac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">)</span>
         <span class="n">inner_bc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_product</span><span class="p">(</span><span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">tangent_vec_c</span><span class="p">)</span>
         <span class="n">first_term</span> <span class="o">=</span> <span class="n">scalarvecmul</span><span class="p">(</span><span class="n">inner_bc</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">)</span>
@@ -1536,32 +1534,12 @@
 
 <div class="viewcode-block" id="CircleAnglesMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.CircleAnglesMetric">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">CircleAnglesMetric</span><span class="p">(</span><span class="n">RiemannianMetric</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CircleAnglesMetric</span><span class="p">(</span><span class="n">ConstantMetricMatrixRiemannianMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""Flat metric on the circle parametrized by angles.</span>
 
 <span class="sd">    Exponential and logarithm are computed in closed form, modulo</span>
 <span class="sd">    :math:`2\pi`.</span>
 <span class="sd">    """</span>
-
-<div class="viewcode-block" id="CircleAnglesMetric.metric_matrix">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.CircleAnglesMetric.metric_matrix">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">metric_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Metric matrix at the tangent space at a base point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Base point.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mat : array-like, shape=[..., 1, 1]</span>
-<span class="sd">            Inner-product matrix.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="CircleAnglesMetric.inner_product">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.CircleAnglesMetric.inner_product">[docs]</a>
@@ -1590,30 +1568,6 @@
             <span class="n">tangent_vec_b</span><span class="p">,</span>
             <span class="n">base_point</span><span class="p">,</span>
         <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="CircleAnglesMetric.exp">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.CircleAnglesMetric.exp">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the exponential map.</span>
-
-<span class="sd">        .. math::</span>
-
-<span class="sd">            \exp_\theta(v) = \theta + v \mod 2\pi</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., 1]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        base_point : array-like, shape=[..., 1]</span>
-<span class="sd">            Point on the circle.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        exp : array-like, shape=[..., 1]</span>
-<span class="sd">            Point on the circle, in :math:`(-\pi, \pi]`.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">regularize</span><span class="p">(</span><span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CircleAnglesMetric.log">
@@ -1775,7 +1729,7 @@
 
 <div class="viewcode-block" id="SphereSphericalCoordinatesMetric">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.SphereSphericalCoordinatesMetric">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SphereSphericalCoordinatesMetric</span><span class="p">(</span><span class="n">PullbackDiffeoMetric</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SphereSphericalCoordinatesMetric</span><span class="p">(</span><span class="n">CoordinatePullbackDiffeoMetric</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Metric on the sphere in spherical coordinates.</span>
 
 <span class="sd">    Pulled back from the sphere in extrinsic coordinates.</span>
@@ -1809,6 +1763,31 @@
         <span class="n">theta</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">vec_to_diag</span><span class="p">(</span><span class="n">diagonal</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SphereSphericalCoordinatesMetric.inner_product_derivative_matrix">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.SphereSphericalCoordinatesMetric.inner_product_derivative_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner_product_derivative_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute derivative of the inner prod matrix at base point.</span>
+
+<span class="sd">        The only non-zero entry is</span>
+<span class="sd">        :math:`\partial_\theta g_{\phi\phi} = 2 \sin \theta \cos \theta`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Base point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        metric_derivative : array-like, shape=[..., 2, 2, 2]</span>
+<span class="sd">            Derivative of the inner-product matrix, where the index</span>
+<span class="sd">            k of the derivation is last: :math:`mat_{ijk} = \partial_k g_{ij}`.</span>
+<span class="sd">        """</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">base_point</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">derivative</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]]])</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...,ijk-&gt;...ijk"</span><span class="p">,</span> <span class="n">derivative</span><span class="p">,</span> <span class="n">support</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SphereSphericalCoordinatesMetric.christoffels">
@@ -1852,6 +1831,78 @@
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">gamma_0</span><span class="p">,</span> <span class="n">gamma_1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SphereSphericalCoordinatesMetric.riemann_tensor">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.SphereSphericalCoordinatesMetric.riemann_tensor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">riemann_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute Riemannian tensor at base_point.</span>
+
+<span class="sd">        The sphere has constant curvature one, so</span>
+<span class="sd">        :math:`R(X, Y)Z = \langle Y, Z \rangle X - \langle X, Z \rangle Y`, i.e.</span>
+<span class="sd">        :math:`R_{ijk}^l = g_{ki} \delta_j^l - g_{ji} \delta_k^l`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point in spherical coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        riemann_curvature : array-like, shape=[..., 2, 2, 2, 2]</span>
+<span class="sd">            riemann_tensor[...,i,j,k,l] = R_{ijk}^l</span>
+<span class="sd">            Riemannian tensor curvature,</span>
+<span class="sd">            with the contravariant index on the last dimension.</span>
+<span class="sd">        """</span>
+        <span class="n">metric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="n">eye</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">metric_mat</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ki,jl-&gt;...ijkl"</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">eye</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...ji,kl-&gt;...ijkl"</span><span class="p">,</span> <span class="n">metric_mat</span><span class="p">,</span> <span class="n">eye</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SphereSphericalCoordinatesMetric.curvature_derivative">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.hypersphere.SphereSphericalCoordinatesMetric.curvature_derivative">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">curvature_derivative</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tangent_vec_a</span><span class="p">,</span>
+        <span class="n">tangent_vec_b</span><span class="p">,</span>
+        <span class="n">tangent_vec_c</span><span class="p">,</span>
+        <span class="n">tangent_vec_d</span><span class="p">,</span>
+        <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the covariant derivative of the curvature.</span>
+
+<span class="sd">        The sphere has constant curvature, so the covariant derivative of</span>
+<span class="sd">        the curvature vanishes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tangent_vec_a : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_b : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_c : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        tangent_vec_d : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        base_point : array-like, shape=[..., 2]</span>
+<span class="sd">            Point in spherical coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        curvature_derivative : array-like, shape=[..., 2]</span>
+<span class="sd">            Tangent vector at ``base_point``.</span>
+<span class="sd">        """</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">get_batch_shape</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span>
+            <span class="n">tangent_vec_a</span><span class="p">,</span>
+            <span class="n">tangent_vec_b</span><span class="p">,</span>
+            <span class="n">tangent_vec_c</span><span class="p">,</span>
+            <span class="n">tangent_vec_d</span><span class="p">,</span>
+            <span class="n">base_point</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 </div>
 
 
