@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 21, 2026, 7:41:34 AM"/>
+    <meta name="docbuild:last-update" content="Nov 21, 2026, 10:21:29 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -1204,8 +1204,8 @@
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If the maximum absolute imaginary component of the returned</span>
-<span class="sd">            matrix logarithm is at least self.imag_tol.</span>
+<span class="sd">            If the maximum absolute imaginary component of the matrix</span>
+<span class="sd">            logarithm of an iterate is at least self.imag_tol.</span>
 
 <span class="sd">        Warns</span>
 <span class="sd">        -----</span>
@@ -1217,6 +1217,13 @@
 
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
             <span class="n">matrix_lv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">matrix_v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">):</span>
+                <span class="n">max_imag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">max_imag</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag_tol</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"Non-negligible imaginary part. max is </span><span class="si">{</span><span class="n">max_imag</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="p">)</span>
+                <span class="n">matrix_lv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">)</span>
 
             <span class="n">matrix_c</span> <span class="o">=</span> <span class="n">_lower_right_block</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
             <span class="n">norm_matrix_c</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">vector_norm</span><span class="p">(</span><span class="n">matrix_c</span><span class="p">)</span>
@@ -1229,13 +1236,6 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"`log` hasn't converged."</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">):</span>
-            <span class="n">max_imag</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">)))</span>
-            <span class="k">if</span> <span class="n">max_imag</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag_tol</span><span class="p">:</span>
-                <span class="n">matrix_lv</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">matrix_lv</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Non-neglible imaginary part. max is </span><span class="si">{</span><span class="n">max_imag</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">matrix_lv</span>
 
