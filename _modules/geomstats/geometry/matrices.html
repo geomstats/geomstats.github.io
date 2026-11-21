@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 21, 2026, 1:03:24 AM"/>
+    <meta name="docbuild:last-update" content="Nov 21, 2026, 1:30:40 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -921,16 +921,21 @@
 <span class="sd">        -------</span>
 <span class="sd">        is_pd : array-like, shape=[...,]</span>
 <span class="sd">            Boolean evaluating if the matrix is positive definite.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        A real matrix is checked through the eigenvalues of its lower</span>
+<span class="sd">        triangle, as a Cholesky decomposition would. A complex matrix must</span>
+<span class="sd">        also be hermitian.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">is_single_matrix_pd</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+            <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))),</span> <span class="n">is_pd</span><span class="p">)</span>
 
-        <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">is_single_matrix_pd</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mat</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">is_pd</span><span class="p">,</span> <span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="n">is_pd</span></div>
 
 
 <div class="viewcode-block" id="Matrices.is_spd">
