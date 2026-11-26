@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 26, 2026, 1:58:22 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 3:16:37 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -463,10 +463,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">algebra_utils</span> <span class="k">as</span> <span class="n">utils</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats._einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">scalarmatmul</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.complex_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComplexMatrices</span><span class="p">,</span> <span class="n">ComplexMatrixOperations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hermitian_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">expmh</span><span class="p">,</span> <span class="n">powermh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hermitian_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_func_to_eigvalsh</span><span class="p">,</span> <span class="n">powermh</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatrixOperations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.symmetric_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SymmetricMatrices</span>
@@ -731,19 +732,18 @@
 <span class="sd">        exp : array-like, shape=[..., n, n]</span>
 <span class="sd">            Point on the manifold.</span>
 <span class="sd">        """</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tangent_vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tangent_vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">tangent_vec_transconj</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">)</span>
-        <span class="n">aux_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">tangent_vec_transconj</span><span class="p">)</span>
-        <span class="n">aux_2</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">aux_1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">aux_3</span> <span class="o">=</span> <span class="n">expmh</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">aux_2</span><span class="p">)</span>
-        <span class="n">factor_1</span> <span class="o">=</span> <span class="n">aux_3</span> <span class="o">-</span> <span class="n">identity</span>
-        <span class="n">aux_4</span> <span class="o">=</span> <span class="n">aux_3</span> <span class="o">+</span> <span class="n">identity</span>
-        <span class="n">factor_2</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">aux_4</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">factor_3</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">aux_2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">factor_3</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">factor_3</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">factor_2</span><span class="p">),</span> <span class="n">factor_3</span><span class="p">)</span>
-        <span class="n">prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">)</span>
-        <span class="n">prod_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">prod_1</span><span class="p">,</span> <span class="n">factor_3</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">prod_2</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
+        <span class="n">squared_radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">tangent_vec_transconj</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">tanh_card</span><span class="p">(</span><span class="n">eigvals</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""Evaluate tanh(sqrt(x)) / sqrt(x), including its limit at zero."""</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">eigvals</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">utils</span><span class="o">.</span><span class="n">inv_tanh_close_0</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">values</span><span class="p">,</span> <span class="n">eigvals</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">factor</span> <span class="o">=</span> <span class="n">apply_func_to_eigvalsh</span><span class="p">(</span><span class="n">squared_radius</span><span class="p">,</span> <span class="n">tanh_card</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SiegelMetric.isometry">
@@ -830,19 +830,18 @@
 <span class="sd">        log_at_zero : array-like, shape=[..., n, n]</span>
 <span class="sd">            Riemannian logarithm at zero (null matrix).</span>
 <span class="sd">        """</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">point_transconj</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
-        <span class="n">aux_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">point_transconj</span><span class="p">)</span>
-        <span class="n">aux_2</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">aux_1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">num</span> <span class="o">=</span> <span class="n">identity</span> <span class="o">+</span> <span class="n">aux_2</span>
-        <span class="n">den</span> <span class="o">=</span> <span class="n">identity</span> <span class="o">-</span> <span class="n">aux_2</span>
-        <span class="n">inv_den</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">den</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">frac</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">inv_den</span><span class="p">)</span>
-        <span class="n">factor_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">frac</span><span class="p">)</span>
-        <span class="n">factor_2</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">aux_2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">factor_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">factor_2</span><span class="p">),</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">factor_2</span><span class="p">),</span> <span class="n">factor_2</span><span class="p">)</span>
-        <span class="n">prod_1</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">prod_1</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span></div>
+        <span class="n">squared_radius</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">point_transconj</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">arctanh_card</span><span class="p">(</span><span class="n">eigvals</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">"""Evaluate arctanh(sqrt(x)) / sqrt(x), including its limit at zero."""</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">taylor_exp_even_func</span><span class="p">(</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">eigvals</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">utils</span><span class="o">.</span><span class="n">arctanh_card_close_0</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">eigvals</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">factor</span> <span class="o">=</span> <span class="n">apply_func_to_eigvalsh</span><span class="p">(</span><span class="n">squared_radius</span><span class="p">,</span> <span class="n">arctanh_card</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SiegelMetric.tangent_vec_from_zero_to_base_point">
