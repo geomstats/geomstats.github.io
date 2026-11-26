@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 21, 2026, 10:45:50 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 12:31:47 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -461,7 +461,8 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">signature</span> <span class="o">=</span> <span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">real_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span> <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">field</span> <span class="o">==</span> <span class="s2">"complex"</span> <span class="k">else</span> <span class="n">space</span><span class="o">.</span><span class="n">dim</span>
+            <span class="n">signature</span> <span class="o">=</span> <span class="p">(</span><span class="n">real_dim</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">signature</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
@@ -577,8 +578,9 @@
 <span class="sd">            Inner-product.</span>
 <span class="sd">        """</span>
         <span class="n">inner_prod_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...j,...jk-&gt;...k"</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">inner_prod_mat</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">vecdot</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">vecdot</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">inner_prod_mat</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">))</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMetric.inner_coproduct">
@@ -602,10 +604,10 @@
 <span class="sd">        inner_coproduct : float</span>
 <span class="sd">            Inner coproduct between the two cotangent vectors.</span>
 <span class="sd">        """</span>
-        <span class="n">vector_2</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">"...ij,...j-&gt;...i"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">),</span> <span class="n">cotangent_vec_b</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">vecdot</span><span class="p">(</span><span class="n">cotangent_vec_a</span><span class="p">,</span> <span class="n">vector_2</span><span class="p">)</span></div>
+        <span class="n">cometric_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cometric_matrix</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">vecdot</span><span class="p">(</span><span class="n">cotangent_vec_a</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matvec</span><span class="p">(</span><span class="n">cometric_mat</span><span class="p">,</span> <span class="n">cotangent_vec_b</span><span class="p">))</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RiemannianMetric.hamiltonian">
@@ -732,9 +734,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">"Several tangent vectors is only applicable to a single base point."</span>
             <span class="p">)</span>
-        <span class="n">point_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">vec_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_vectors</span><span class="p">,</span> <span class="o">*</span><span class="n">point_shape</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_vectors</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">point_shape</span>
-        <span class="n">random_vector</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">vec_shape</span><span class="p">)</span>
+        <span class="n">random_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">random_tangent_vec</span><span class="p">(</span>
+            <span class="n">base_point</span><span class="o">=</span><span class="n">base_point</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_vectors</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">random_vector</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
 
 

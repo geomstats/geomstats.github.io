@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 21, 2026, 10:45:50 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 12:31:47 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -448,6 +448,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.quotient_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuotientMetric</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_default_dtype</span><span class="p">(</span><span class="n">complex_repr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Get the default dtype of a representation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    complex_repr : bool</span>
+<span class="sd">        Whether the representation is complex.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dtype : dtype</span>
+<span class="sd">        Default complex dtype if `complex_repr`, default real dtype otherwise.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">complex_repr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="Manifold">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.manifold.Manifold">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Manifold</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -456,14 +474,18 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    dim : int</span>
-<span class="sd">        Dimension of the manifold.</span>
+<span class="sd">        Dimension of the manifold, over its field.</span>
 <span class="sd">    shape : tuple of int</span>
 <span class="sd">        Shape of one element of the manifold.</span>
-<span class="sd">        Optional, default : None.</span>
 <span class="sd">    intrinsic : bool</span>
 <span class="sd">        Coordinate type.</span>
 <span class="sd">    equip : bool</span>
-<span class="sd">        If True, equip space with default metric.</span>
+<span class="sd">        Whether to equip space with default metric.</span>
+<span class="sd">    field : str, {"real", "complex"}</span>
+<span class="sd">        Field over which the manifold is defined.</span>
+<span class="sd">    complex_repr : bool</span>
+<span class="sd">        Whether points are represented by complex arrays. If None, points</span>
+<span class="sd">        are complex if and only if the field is complex.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -477,8 +499,11 @@
         <span class="n">shape</span><span class="p">,</span>
         <span class="n">intrinsic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">equip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">field</span><span class="o">=</span><span class="s2">"real"</span><span class="p">,</span>
+        <span class="n">complex_repr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_integer</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="s2">"dim"</span><span class="p">)</span>
+        <span class="n">geomstats</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">check_field</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Expected a tuple for the shape argument."</span><span class="p">)</span>
@@ -486,9 +511,14 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">equip</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected a boolean value for 'equip' argument."</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">complex_repr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">complex_repr</span> <span class="o">=</span> <span class="n">field</span> <span class="o">==</span> <span class="s2">"complex"</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intrinsic</span> <span class="o">=</span> <span class="n">intrinsic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">field</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">complex_repr</span> <span class="o">=</span> <span class="n">complex_repr</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
@@ -721,7 +751,6 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
 <span class="sd">        base_point :  array-like, shape={[n_samples, *point_shape], [*point_shape,]}</span>
 <span class="sd">            Point.</span>
 
@@ -742,7 +771,11 @@
             <span class="p">)</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="p">()</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_tangent</span><span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">batch_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">base_point</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">batch_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">_get_default_dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">complex_repr</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">base_point</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 

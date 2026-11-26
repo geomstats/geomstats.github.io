@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 21, 2026, 10:45:50 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 12:31:47 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -438,7 +438,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.complex_manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComplexManifold</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.manifold</span><span class="w"> </span><span class="kn">import</span> <span class="n">Manifold</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.vectorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_batch_shape</span>
@@ -551,10 +550,10 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples : int</span>
 <span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
 <span class="sd">        bound : float</span>
-<span class="sd">            Side of hypercube support of the uniform distribution.</span>
-<span class="sd">            Optional, default: 1.0</span>
+<span class="sd">            Half side of the hypercube support of the uniform distribution.</span>
+<span class="sd">            If the field is complex, it bounds both the real and imaginary</span>
+<span class="sd">            parts.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -564,7 +563,10 @@
         <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,)</span>
         <span class="k">if</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span> <span class="o">+</span> <span class="n">size</span>
-        <span class="k">return</span> <span class="n">bound</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span></div>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">==</span> <span class="s2">"complex"</span><span class="p">:</span>
+            <span class="n">point</span> <span class="o">=</span> <span class="n">point</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">bound</span> <span class="o">*</span> <span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">point</span></div>
 
 
 <div class="viewcode-block" id="VectorSpace.random_tangent_vec">
@@ -669,7 +671,10 @@
 <span class="sd">        matrix_representation : array-like, shape=[..., *point_shape]</span>
 <span class="sd">            Matrix.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...i,ijk -&gt;...jk"</span><span class="p">,</span> <span class="n">basis_representation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span></div>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="s2">"...i,ijk -&gt;...jk"</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">basis_representation</span><span class="p">,</span> <span class="n">basis</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">basis</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MatrixVectorSpace.random_point">
@@ -693,140 +698,6 @@
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix_representation</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">bound</span><span class="p">))</span></div>
 </div>
-
-
-
-<div class="viewcode-block" id="ComplexVectorSpace">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpace">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ComplexVectorSpace</span><span class="p">(</span><span class="n">ComplexManifold</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Abstract class for complex vector spaces.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    shape : tuple</span>
-<span class="sd">        Shape of the elements of the vector space. The dimension is the</span>
-<span class="sd">        product of these values by default.</span>
-<span class="sd">    """</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dim</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-<div class="viewcode-block" id="ComplexVectorSpace.belongs">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpace.belongs">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">belongs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Evaluate if the point belongs to the vector space.</span>
-
-<span class="sd">        This method checks the shape of the input point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[.., *point_shape]</span>
-<span class="sd">            Point to test.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Unused here.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        belongs : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if point belongs to the space.</span>
-<span class="sd">        """</span>
-        <span class="n">belongs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span> <span class="p">:]</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">belongs</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="ComplexVectorSpace.is_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpace.is_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check whether the vector is tangent at base_point.</span>
-
-<span class="sd">        Tangent vectors are identified with points of the vector space so</span>
-<span class="sd">        this checks the shape of the input vector.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point in the vector space.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_tangent : bool</span>
-<span class="sd">            Boolean denoting if vector is a tangent vector at the base point.</span>
-<span class="sd">        """</span>
-        <span class="n">belongs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">vector</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">belongs</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">belongs</span></div>
-
-
-<div class="viewcode-block" id="ComplexVectorSpace.to_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpace.to_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Project a vector to a tangent space of the vector space.</span>
-
-<span class="sd">        This method is for compatibility and returns vector.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point in the vector space</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        """</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">vector</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span></div>
-
-
-<div class="viewcode-block" id="ComplexVectorSpace.random_point">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpace.random_point">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Sample in the complex vector space with a uniform distribution in a box.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
-<span class="sd">        bound : float</span>
-<span class="sd">            Side of hypercube support of the uniform distribution.</span>
-<span class="sd">            Optional, default: 1.0</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">           Sample.</span>
-<span class="sd">        """</span>
-        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">*</span> <span class="p">(</span>
-            <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">())</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="mf">0.5</span><span class="n">j</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">point</span></div>
-</div>
-
-
-
-<div class="viewcode-block" id="ComplexMatrixVectorSpace">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexMatrixVectorSpace">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ComplexMatrixVectorSpace</span><span class="p">(</span><span class="n">ComplexVectorSpace</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""A matrix vector space."""</span></div>
 
 
 
@@ -1017,14 +888,20 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    embedding_space: Manifold</span>
-<span class="sd">        Embedding space that contains the manifold.</span>
+<span class="sd">        Embedding space that contains the manifold. The field and the</span>
+<span class="sd">        representation of points are the ones of the embedding space.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding_space</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span> <span class="o">=</span> <span class="n">embedding_space</span>
         <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">shape</span> <span class="o">=</span> <span class="n">embedding_space</span><span class="o">.</span><span class="n">shape</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">field</span><span class="o">=</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">field</span><span class="p">,</span>
+            <span class="n">complex_repr</span><span class="o">=</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">complex_repr</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="OpenSet.is_tangent">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.OpenSet.is_tangent">[docs]</a>
@@ -1159,105 +1036,6 @@
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">vector</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tangent_vec</span></div>
-</div>
-
-
-
-<div class="viewcode-block" id="ComplexVectorSpaceOpenSet">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpaceOpenSet">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ComplexVectorSpaceOpenSet</span><span class="p">(</span><span class="n">ComplexManifold</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Class for manifolds that are open sets of a complex vector space.</span>
-
-<span class="sd">    In this case, tangent vectors are identified with vectors of the embedding</span>
-<span class="sd">    space.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    dim: int</span>
-<span class="sd">        Dimension of the manifold. It is often the same as the embedding space</span>
-<span class="sd">        dimension but may differ in some cases.</span>
-<span class="sd">    embedding_space: VectorSpace</span>
-<span class="sd">        Embedding space that contains the manifold.</span>
-<span class="sd">    """</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding_space</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">shape</span> <span class="o">=</span> <span class="n">embedding_space</span><span class="o">.</span><span class="n">shape</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">intrinsic</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span> <span class="o">=</span> <span class="n">embedding_space</span>
-
-<div class="viewcode-block" id="ComplexVectorSpaceOpenSet.is_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpaceOpenSet.is_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check whether the vector is tangent at base_point.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_tangent : bool</span>
-<span class="sd">            Boolean denoting if vector is a tangent vector at the base point.</span>
-<span class="sd">        """</span>
-        <span class="n">is_tangent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">belongs</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">vector</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">is_tangent</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">is_tangent</span></div>
-
-
-<div class="viewcode-block" id="ComplexVectorSpaceOpenSet.to_tangent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpaceOpenSet.to_tangent">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_tangent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">,</span> <span class="n">base_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Project a vector to a tangent space of the manifold.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vector : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Vector.</span>
-<span class="sd">        base_point : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Point on the manifold.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tangent_vec : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Tangent vector at base point.</span>
-<span class="sd">        """</span>
-        <span class="n">tangent_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">vector</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">base_point</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tangent_vec</span></div>
-
-
-<div class="viewcode-block" id="ComplexVectorSpaceOpenSet.random_point">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.base.ComplexVectorSpaceOpenSet.random_point">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">random_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Sample random points on the manifold.</span>
-
-<span class="sd">        If the manifold is compact, a uniform distribution is used.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">            Number of samples.</span>
-<span class="sd">            Optional, default: 1.</span>
-<span class="sd">        bound : float</span>
-<span class="sd">            Bound of the interval in which to sample for non compact manifolds.</span>
-<span class="sd">            Optional, default: 1.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        samples : array-like, shape=[..., *point_shape]</span>
-<span class="sd">            Points sampled on the hypersphere.</span>
-<span class="sd">        """</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_space</span><span class="o">.</span><span class="n">random_point</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">bound</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span></div>
 </div>
 
 
