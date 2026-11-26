@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 26, 2026, 12:31:47 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 1:58:22 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -449,10 +449,13 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">geomstats.backend</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorSpaceOpenSet</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.complex_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComplexMatrices</span><span class="p">,</span> <span class="n">ComplexMatricesMetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.complex_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ComplexMatricesMetric</span><span class="p">,</span>
+    <span class="n">ComplexMatrixOperations</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.general_linear</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralLinear</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.hermitian_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">HermitianMatrices</span><span class="p">,</span> <span class="n">expmh</span><span class="p">,</span> <span class="n">powermh</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">Matrices</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatrixOperations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.pullback_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">PullbackDiffeoMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.riemannian_metric</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiemannianMetric</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">geomstats.geometry.spd_matrices</span><span class="w"> </span><span class="kn">import</span> <span class="n">SymMatrixLog</span><span class="p">,</span> <span class="n">logmh</span>
@@ -505,7 +508,7 @@
 <span class="sd">        belongs : array-like, shape=[...,]</span>
 <span class="sd">            Boolean denoting if mat is an HPD matrix.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">is_hpd</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">is_hpd</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HPDMatrices.projection">
@@ -529,11 +532,11 @@
 <span class="sd">        projected: array-like, shape=[..., n, n]</span>
 <span class="sd">            HPD matrix.</span>
 <span class="sd">        """</span>
-        <span class="n">herm</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">herm</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="n">eigvals</span><span class="p">,</span> <span class="n">eigvecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">herm</span><span class="p">)</span>
         <span class="n">regularized</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">eigvals</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">eigvals</span><span class="p">)</span>
         <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...j-&gt;...ij"</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">,</span> <span class="n">regularized</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="HPDMatrices.random_point">
@@ -594,11 +597,11 @@
         <span class="n">tangent_vec_at_id_aux</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">get_default_cdtype</span><span class="p">())</span>
         <span class="n">tangent_vec_at_id_aux</span> <span class="o">*=</span> <span class="mi">2</span>
         <span class="n">tangent_vec_at_id_aux</span> <span class="o">-=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span>
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">tangent_vec_at_id_aux</span> <span class="o">+</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">tangent_vec_at_id_aux</span> <span class="o">+</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span>
             <span class="n">tangent_vec_at_id_aux</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 </div>
 
 
@@ -634,7 +637,7 @@
         <span class="n">aux_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">)</span>
         <span class="n">aux_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inv_base_point</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">trace_product</span><span class="p">(</span><span class="n">aux_a</span><span class="p">,</span> <span class="n">aux_b</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">MatrixOperations</span><span class="o">.</span><span class="n">trace_product</span><span class="p">(</span><span class="n">aux_a</span><span class="p">,</span> <span class="n">aux_b</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="HPDAffineMetric.exp">
@@ -660,14 +663,14 @@
 <span class="sd">        """</span>
         <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
 
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
             <span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span>
         <span class="p">)</span>
 
-        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
+        <span class="n">tangent_vec_at_id</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
         <span class="n">exp_from_id</span> <span class="o">=</span> <span class="n">expmh</span><span class="p">(</span><span class="n">tangent_vec_at_id</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">exp_from_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HPDAffineMetric.log">
@@ -692,13 +695,13 @@
 <span class="sd">            Riemannian logarithm of point at base_point.</span>
 <span class="sd">        """</span>
         <span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
-        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">)</span>
+        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_base_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">inv_sqrt_base_point</span><span class="p">)</span>
 
         <span class="c1"># TODO: only this differs</span>
-        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
+        <span class="n">point_near_id</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">to_hermitian</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
 
         <span class="n">log_at_id</span> <span class="o">=</span> <span class="n">logmh</span><span class="p">(</span><span class="n">point_near_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">log_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_base_point</span><span class="p">,</span> <span class="n">log_at_id</span><span class="p">,</span> <span class="n">sqrt_base_point</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HPDAffineMetric.parallel_transport">
@@ -741,9 +744,9 @@
         <span class="k">if</span> <span class="n">end_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">end_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span>
         <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
-        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">congruence_mat</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">congruent</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">congruence_mat</span><span class="p">)</span></div>
+        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">inv_sqrt_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">congruence_mat</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">congruent</span><span class="p">(</span><span class="n">tangent_vec</span><span class="p">,</span> <span class="n">congruence_mat</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HPDAffineMetric.injectivity_radius">
@@ -802,13 +805,13 @@
 <span class="sd">            Inner-product.</span>
 <span class="sd">        """</span>
         <span class="n">eigvals</span><span class="p">,</span> <span class="n">eigvecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">transconj_eigvecs</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">)</span>
-        <span class="n">rotated_tangent_vec_a</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
-        <span class="n">rotated_tangent_vec_b</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
+        <span class="n">transconj_eigvecs</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">)</span>
+        <span class="n">rotated_tangent_vec_a</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
+        <span class="n">rotated_tangent_vec_b</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
 
         <span class="n">coefficients</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">eigvals</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">eigvals</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span>
-            <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span>
+            <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span>
                 <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rotated_tangent_vec_a</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
                 <span class="o">*</span> <span class="n">rotated_tangent_vec_a</span><span class="p">,</span>
                 <span class="n">rotated_tangent_vec_b</span><span class="p">,</span>
@@ -837,15 +840,15 @@
 <span class="sd">            Riemannian exponential.</span>
 <span class="sd">        """</span>
         <span class="n">eigvals</span><span class="p">,</span> <span class="n">eigvecs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
-        <span class="n">transconj_eigvecs</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">)</span>
-        <span class="n">rotated_tangent_vec</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
+        <span class="n">transconj_eigvecs</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">)</span>
+        <span class="n">rotated_tangent_vec</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">transconj_eigvecs</span><span class="p">,</span> <span class="n">tangent_vec</span><span class="p">,</span> <span class="n">eigvecs</span><span class="p">)</span>
         <span class="n">coefficients</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">eigvals</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">eigvals</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">rotated_sylvester</span> <span class="o">=</span> <span class="n">rotated_tangent_vec</span> <span class="o">*</span> <span class="n">gs</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
             <span class="n">coefficients</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">rotated_tangent_vec</span><span class="o">.</span><span class="n">dtype</span>
         <span class="p">)</span>
         <span class="n">rotated_hessian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...j-&gt;...ij"</span><span class="p">,</span> <span class="n">rotated_sylvester</span><span class="p">,</span> <span class="n">eigvals</span><span class="p">)</span>
         <span class="n">rotated_hessian</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotated_hessian</span><span class="p">,</span> <span class="n">rotated_sylvester</span><span class="p">)</span>
-        <span class="n">hessian</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">,</span> <span class="n">rotated_hessian</span><span class="p">,</span> <span class="n">transconj_eigvecs</span><span class="p">)</span>
+        <span class="n">hessian</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">eigvecs</span><span class="p">,</span> <span class="n">rotated_hessian</span><span class="p">,</span> <span class="n">transconj_eigvecs</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">base_point</span> <span class="o">+</span> <span class="n">tangent_vec</span> <span class="o">+</span> <span class="n">hessian</span></div>
 
@@ -872,9 +875,9 @@
 <span class="sd">            Riemannian logarithm.</span>
 <span class="sd">        """</span>
         <span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">])</span>
-        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">sqrt_bp</span><span class="p">),</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="n">sqrt_product</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
-        <span class="n">transconj_sqrt_product</span> <span class="o">=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">sqrt_product</span><span class="p">)</span>
+        <span class="n">pdt</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">sqrt_bp</span><span class="p">),</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">sqrt_product</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_bp</span><span class="p">,</span> <span class="n">pdt</span><span class="p">,</span> <span class="n">inv_sqrt_bp</span><span class="p">)</span>
+        <span class="n">transconj_sqrt_product</span> <span class="o">=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">sqrt_product</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sqrt_product</span> <span class="o">+</span> <span class="n">transconj_sqrt_product</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">base_point</span></div>
 
 
@@ -900,7 +903,7 @@
         <span class="n">trace_a</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">point_a</span><span class="p">))</span>
         <span class="n">trace_b</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">point_b</span><span class="p">))</span>
         <span class="n">sqrt_a</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="n">cross_eigvals</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">sqrt_a</span><span class="p">))</span>
+        <span class="n">cross_eigvals</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">sqrt_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">sqrt_a</span><span class="p">))</span>
         <span class="n">cross_term</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cross_eigvals</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace_a</span> <span class="o">+</span> <span class="n">trace_b</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">cross_term</span><span class="p">)</span></div>
 
@@ -960,12 +963,12 @@
         <span class="p">)</span>
 
         <span class="n">square_root_bp</span><span class="p">,</span> <span class="n">inverse_square_root_bp</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">base_point</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">])</span>
-        <span class="n">end_point_lift</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">square_root_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
+        <span class="n">end_point_lift</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">square_root_bp</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
         <span class="n">square_root_lift</span> <span class="o">=</span> <span class="n">powermh</span><span class="p">(</span><span class="n">end_point_lift</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 
         <span class="n">horizontal_velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">inverse_square_root_bp</span><span class="p">,</span> <span class="n">square_root_lift</span><span class="p">)</span>
         <span class="n">partial_horizontal_velocity</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">horizontal_velocity</span><span class="p">,</span> <span class="n">square_root_bp</span><span class="p">)</span>
-        <span class="n">partial_horizontal_velocity</span> <span class="o">+=</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span>
+        <span class="n">partial_horizontal_velocity</span> <span class="o">+=</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span>
             <span class="n">partial_horizontal_velocity</span>
         <span class="p">)</span>
 
@@ -979,17 +982,17 @@
                 <span class="o">+</span> <span class="n">time</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">end_point</span>
             <span class="p">)</span>
 
-            <span class="n">align</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">align</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
                 <span class="n">horizontal_geodesic_t</span><span class="p">,</span>
-                <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">horizontal_velocity</span> <span class="o">-</span> <span class="n">square_root_bp</span><span class="p">),</span>
+                <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">horizontal_velocity</span> <span class="o">-</span> <span class="n">square_root_bp</span><span class="p">),</span>
                 <span class="n">state</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">right</span> <span class="o">=</span> <span class="n">align</span> <span class="o">+</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="n">align</span> <span class="o">+</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_sylvester</span><span class="p">(</span><span class="n">geodesic_t</span><span class="p">,</span> <span class="n">geodesic_t</span><span class="p">,</span> <span class="o">-</span><span class="n">right</span><span class="p">)</span>
 
         <span class="n">flow</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">force</span><span class="p">,</span> <span class="n">horizontal_lift_a</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
         <span class="n">final_align</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">end_point</span><span class="p">,</span> <span class="n">flow</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">final_align</span> <span class="o">+</span> <span class="n">ComplexMatrices</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">final_align</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">final_align</span> <span class="o">+</span> <span class="n">ComplexMatrixOperations</span><span class="o">.</span><span class="n">transconjugate</span><span class="p">(</span><span class="n">final_align</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HPDBuresWassersteinMetric.injectivity_radius">

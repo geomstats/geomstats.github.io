@@ -50,7 +50,7 @@
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="latest" />
-    <meta name="docbuild:last-update" content="Nov 26, 2026, 12:31:47 AM"/>
+    <meta name="docbuild:last-update" content="Nov 26, 2026, 1:58:22 AM"/>
   
     
     <script src="../../../_static/searchtools.js"></script>
@@ -528,7 +528,7 @@
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">base_point</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">base_point</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FlattenDiffeo.inverse">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.FlattenDiffeo.inverse">[docs]</a>
@@ -609,6 +609,651 @@
 
 
 
+<div class="viewcode-block" id="MatrixOperations">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MatrixOperations</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Operations on matrices."""</span>
+
+<div class="viewcode-block" id="MatrixOperations.equal">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.equal">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equal</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Test if matrices a and b are close.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat_a : array-like, shape=[..., dim1, dim2]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        mat_b : array-like, shape=[..., dim2, dim3]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        eq : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrices are close.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.mul">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.mul">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mul</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the product of matrices a1, ..., an.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a1 : array-like, shape=[..., dim_1, dim_2]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        a2 : array-like, shape=[..., dim_2, dim_3]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        ...</span>
+<span class="sd">        an : array-like, shape=[..., dim_n-1, dim_n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mul : array-like, shape=[..., dim_1, dim_n]</span>
+<span class="sd">            Result of the product of matrices.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.bracket">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.bracket">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bracket</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the commutator of a and b, i.e. `[a, b] = ab - ba`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat_a : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        mat_b : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat_c : array-like, shape=[..., n, n]</span>
+<span class="sd">            Commutator.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat_b</span><span class="p">,</span> <span class="n">mat_a</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.diagonal">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.diagonal">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return the diagonal of a matrix as a vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        diagonal : array-like, shape=[..., min(m, n)]</span>
+<span class="sd">            Vector of diagonal coefficients.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_square">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_square">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_square</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a matrix is square.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_square : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is square.</span>
+<span class="sd">        """</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_diagonal">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_diagonal">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_diagonal</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is diagonal.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_diagonal : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is square and diagonal.</span>
+<span class="sd">        """</span>
+        <span class="n">diagonal_mat</span> <span class="o">=</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span>
+        <span class="n">is_diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">diagonal_mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">is_diagonal</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_lower_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_lower_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is lower triangular.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default : backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_tril : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is lower triangular</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_upper_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_upper_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is upper triangular.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default : backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_triu : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is upper triangular.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_strictly_lower_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_strictly_lower_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_strictly_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is strictly lower triangular.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default : backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_strictly_tril : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is strictly lower triangular</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_strictly_upper_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_strictly_upper_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_strictly_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is strictly upper triangular.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default : backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_strictly_triu : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is strictly upper triangular</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_symmetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_symmetric">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is symmetric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_sym : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is symmetric.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_pd">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_pd">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_pd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a matrix is positive definite.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_pd : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is positive definite.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        A real matrix is checked through the eigenvalues of its lower</span>
+<span class="sd">        triangle, as a Cholesky decomposition would. A complex matrix must</span>
+<span class="sd">        also be hermitian.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+            <span class="n">is_hermitian</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">)))</span>
+            <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">is_hermitian</span><span class="p">,</span> <span class="n">is_pd</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">is_pd</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_spd">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_spd">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_spd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a matrix is symmetric positive definite.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_spd : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is symmetric positive definite.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">is_symmetric</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="p">),</span> <span class="bp">cls</span><span class="o">.</span><span class="n">is_pd</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.is_skew_symmetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.is_skew_symmetric">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_skew_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Check if a square matrix is skew symmetric.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            Absolute tolerance.</span>
+<span class="sd">            Optional, default: backend atol.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_skew_sym : array-like, shape=[...,]</span>
+<span class="sd">            Boolean evaluating if the matrix is skew-symmetric.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_diagonal">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_diagonal">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_diagonal</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix diagonal.</span>
+
+<span class="sd">        Make a matrix diagonal by zeroing out non</span>
+<span class="sd">        diagonal elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        diag : array-like, shape=[..., n, n]</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">to_lower_triangular</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_lower_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_lower_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix lower triangular.</span>
+
+<span class="sd">        Make a matrix lower triangular by zeroing</span>
+<span class="sd">        out upper elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tril : array-like, shape=[..., n, n]</span>
+<span class="sd">            Lower  triangular matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_upper_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_upper_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix upper triangular.</span>
+
+<span class="sd">        Make a matrix upper triangular by zeroing</span>
+<span class="sd">        out lower elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        triu : array-like, shape=[..., n, n]</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_strictly_lower_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_strictly_lower_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_strictly_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix strictly lower triangular.</span>
+
+<span class="sd">        Make a matrix stricly lower triangular by zeroing</span>
+<span class="sd">        out upper and diagonal elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tril : array-like, shape=[..., n, n]</span>
+<span class="sd">            Lower  triangular matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_strictly_upper_triangular">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_strictly_upper_triangular">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_strictly_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix stritcly upper triangular.</span>
+
+<span class="sd">        Make a matrix strictly upper triangular by zeroing</span>
+<span class="sd">        out lower and diagonal elements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        triu : array-like, shape=[..., n, n]</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_symmetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_symmetric">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix symmetric.</span>
+
+<span class="sd">        Make a matrix symmetric by averaging it</span>
+<span class="sd">        with its transpose.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sym : array-like, shape=[..., n, n]</span>
+<span class="sd">            Symmetric matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">mat</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_skew_symmetric">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_skew_symmetric">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_skew_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix skew-symmetric.</span>
+
+<span class="sd">        Make matrix skew-symmetric by averaging it</span>
+<span class="sd">        with minus its transpose.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        skew_sym : array-like, shape=[..., n, n]</span>
+<span class="sd">            Skew-symmetric matrix.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">mat</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.to_lower_triangular_diagonal_scaled">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.to_lower_triangular_diagonal_scaled">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_lower_triangular_diagonal_scaled</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make a matrix lower triangular.</span>
+
+<span class="sd">        Make matrix lower triangular by zeroing out</span>
+<span class="sd">        upper elements and divide diagonal by factor K.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tril : array-like, shape=[..., n, n]</span>
+<span class="sd">            Lower  triangular matrix.</span>
+<span class="sd">        """</span>
+        <span class="n">slt</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_strictly_lower_triangular</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">diag</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span>
+        <span class="k">return</span> <span class="n">slt</span> <span class="o">+</span> <span class="n">diag</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.congruent">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.congruent">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">congruent</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the congruent action of mat_2 on mat_1.</span>
+
+<span class="sd">        This is :math:`mat\_2 \ mat\_1 \ mat\_2^T`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat_1 : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        mat_2 : array-like, shape=[..., n, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cong : array-like, shape=[..., n, n]</span>
+<span class="sd">            Result of the congruent action.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">mat_2</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat_2</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.frobenius_product">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.frobenius_product">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">frobenius_product</span><span class="p">(</span><span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute Frobenius inner-product of two matrices.</span>
+
+<span class="sd">        The `einsum` function is used to avoid computing a matrix product. It</span>
+<span class="sd">        is also faster than using a sum an element-wise product.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat_1 : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        mat_2 : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        product : array-like, shape=[...,]</span>
+<span class="sd">            Frobenius inner-product of mat_1 and mat_2</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...ij-&gt;..."</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.trace_product">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.trace_product">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trace_product</span><span class="p">(</span><span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute trace of the product of two matrices.</span>
+
+<span class="sd">        The `einsum` function is used to avoid computing a matrix product. It</span>
+<span class="sd">        is also faster than using a sum an element-wise product.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat_1 : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+<span class="sd">        mat_2 : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        product : array-like, shape=[...,]</span>
+<span class="sd">            Frobenius inner-product of mat_1 and mat_2</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...ji-&gt;..."</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.flatten">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.flatten">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flatten</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return a flattened form of the matrix.</span>
+
+<span class="sd">        Flatten a matrix (compatible with vectorization on data axis 0).</span>
+<span class="sd">        The reverse operation is `Matrices.matrix_representation`. These</span>
+<span class="sd">        operations are often called matrix vectorization / matricization in</span>
+<span class="sd">        mathematics (https://en.wikipedia.org/wiki/Tensor_reshaping).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mat : array-like, shape=[..., m, n]</span>
+<span class="sd">            Matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        vec : array-like, shape=[..., m * n]</span>
+<span class="sd">            Flatten copy of mat.</span>
+<span class="sd">        """</span>
+        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">mat_shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat_shape</span><span class="p">),))</span></div>
+
+
+<div class="viewcode-block" id="MatrixOperations.align_matrices">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.MatrixOperations.align_matrices">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">align_matrices</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Align matrices.</span>
+
+<span class="sd">        Find the optimal rotation R in SO(m) such that the base point and</span>
+<span class="sd">        R.point are well positioned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : array-like, shape=[..., m, n]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        base_point : array-like, shape=[..., m, n]</span>
+<span class="sd">            Point on the manifold.</span>
+<span class="sd">        flip : bool</span>
+<span class="sd">            Whether to flip determinant if negative.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        aligned : array-like, shape=[..., m, n]</span>
+<span class="sd">            R.point.</span>
+<span class="sd">        """</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">base_point</span><span class="p">)</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">singular_values</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">conditioning</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="o">*</span> <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">conditioning</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"Singularity close, ill-conditioned matrix encountered: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">conditioning</span><span class="p">[</span><span class="n">conditioning</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">conditioning</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Alignment matrix is not unique."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="n">flipped</span> <span class="o">=</span> <span class="n">flip_determinant</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">right</span><span class="p">),</span> <span class="n">det</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flipped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">right</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">flipped</span><span class="p">))</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="Matrices">
 <a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Matrices</span><span class="p">(</span><span class="n">MatrixVectorSpace</span><span class="p">):</span>
@@ -658,504 +1303,7 @@
 <span class="sd">        basis_representation : array-like, shape=[..., dim]</span>
 <span class="sd">            Representation in the basis.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">matrix_representation</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.equal">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.equal">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">equal</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Test if matrices a and b are close.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat_a : array-like, shape=[..., dim1, dim2]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        mat_b : array-like, shape=[..., dim2, dim3]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        eq : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrices are close.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.mul">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.mul">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">mul</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the product of matrices a1, ..., an.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        a1 : array-like, shape=[..., dim_1, dim_2]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        a2 : array-like, shape=[..., dim_2, dim_3]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        ...</span>
-<span class="sd">        an : array-like, shape=[..., dim_n-1, dim_n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mul : array-like, shape=[..., dim_1, dim_n]</span>
-<span class="sd">            Result of the product of matrices.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.bracket">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.bracket">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">bracket</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute the commutator of a and b, i.e. `[a, b] = ab - ba`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat_a : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        mat_b : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mat_c : array-like, shape=[..., n, n]</span>
-<span class="sd">            Commutator.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">mat_b</span><span class="p">)</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mat_b</span><span class="p">,</span> <span class="n">mat_a</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.diagonal">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.diagonal">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return the diagonal of a matrix as a vector.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        diagonal : array-like, shape=[..., min(m, n)]</span>
-<span class="sd">            Vector of diagonal coefficients.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_square">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_square">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_square</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a matrix is square.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_square : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is square.</span>
-<span class="sd">        """</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_diagonal">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_diagonal">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_diagonal</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is diagonal.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_diagonal : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is square and diagonal.</span>
-<span class="sd">        """</span>
-        <span class="n">diagonal_mat</span> <span class="o">=</span> <span class="n">from_vector_to_diagonal_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span>
-        <span class="n">is_diagonal</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">diagonal_mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">is_diagonal</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_lower_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_lower_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is lower triangular.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default : backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_tril : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is lower triangular</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_upper_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_upper_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is upper triangular.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default : backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_triu : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is upper triangular.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_strictly_lower_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_strictly_lower_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_strictly_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is strictly lower triangular.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default : backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_strictly_tril : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is strictly lower triangular</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_strictly_upper_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_strictly_upper_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_strictly_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is strictly upper triangular.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default : backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_strictly_triu : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is strictly upper triangular</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_symmetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_symmetric">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_sym : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is symmetric.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_pd">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_pd">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_pd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a matrix is positive definite.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_pd : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is positive definite.</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        A real matrix is checked through the eigenvalues of its lower</span>
-<span class="sd">        triangle, as a Cholesky decomposition would. A complex matrix must</span>
-<span class="sd">        also be hermitian.</span>
-<span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
-
-        <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
-            <span class="n">is_hermitian</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">)))</span>
-            <span class="n">is_pd</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">is_hermitian</span><span class="p">,</span> <span class="n">is_pd</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">is_pd</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_spd">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_spd">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_spd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a matrix is symmetric positive definite.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_spd : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is symmetric positive definite.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">is_symmetric</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="p">),</span> <span class="bp">cls</span><span class="o">.</span><span class="n">is_pd</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.is_skew_symmetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.is_skew_symmetric">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_skew_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check if a square matrix is skew symmetric.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        atol : float</span>
-<span class="sd">            Absolute tolerance.</span>
-<span class="sd">            Optional, default: backend atol.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        is_skew_sym : array-like, shape=[...,]</span>
-<span class="sd">            Boolean evaluating if the matrix is skew-symmetric.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="o">-</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">),</span> <span class="n">atol</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_diagonal">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_diagonal">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_diagonal</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix diagonal.</span>
-
-<span class="sd">        Make a matrix diagonal by zeroing out non</span>
-<span class="sd">        diagonal elements.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        diag : array-like, shape=[..., n, n]</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">to_lower_triangular</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_lower_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_lower_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix lower triangular.</span>
-
-<span class="sd">        Make a matrix lower triangular by zeroing</span>
-<span class="sd">        out upper elements.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tril : array-like, shape=[..., n, n]</span>
-<span class="sd">            Lower  triangular matrix.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_upper_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_upper_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix upper triangular.</span>
-
-<span class="sd">        Make a matrix upper triangular by zeroing</span>
-<span class="sd">        out lower elements.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        triu : array-like, shape=[..., n, n]</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_strictly_lower_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_strictly_lower_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_strictly_lower_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix strictly lower triangular.</span>
-
-<span class="sd">        Make a matrix stricly lower triangular by zeroing</span>
-<span class="sd">        out upper and diagonal elements.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tril : array-like, shape=[..., n, n]</span>
-<span class="sd">            Lower  triangular matrix.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_strictly_upper_triangular">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_strictly_upper_triangular">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_strictly_upper_triangular</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix stritcly upper triangular.</span>
-
-<span class="sd">        Make a matrix strictly upper triangular by zeroing</span>
-<span class="sd">        out lower and diagonal elements.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        triu : array-like, shape=[..., n, n]</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_symmetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_symmetric">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix symmetric.</span>
-
-<span class="sd">        Make a matrix symmetric by averaging it</span>
-<span class="sd">        with its transpose.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        sym : array-like, shape=[..., n, n]</span>
-<span class="sd">            Symmetric matrix.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">mat</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_skew_symmetric">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_skew_symmetric">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_skew_symmetric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix skew-symmetric.</span>
-
-<span class="sd">        Make matrix skew-symmetric by averaging it</span>
-<span class="sd">        with minus its transpose.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        skew_sym : array-like, shape=[..., n, n]</span>
-<span class="sd">            Skew-symmetric matrix.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">mat</span> <span class="o">-</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.to_lower_triangular_diagonal_scaled">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.to_lower_triangular_diagonal_scaled">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_lower_triangular_diagonal_scaled</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Make a matrix lower triangular.</span>
-
-<span class="sd">        Make matrix lower triangular by zeroing out</span>
-<span class="sd">        upper elements and divide diagonal by factor K.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tril : array-like, shape=[..., n, n]</span>
-<span class="sd">            Lower  triangular matrix.</span>
-<span class="sd">        """</span>
-        <span class="n">slt</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_strictly_lower_triangular</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-        <span class="n">diag</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">to_diagonal</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span>
-        <span class="k">return</span> <span class="n">slt</span> <span class="o">+</span> <span class="n">diag</span></div>
+        <span class="k">return</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">matrix_representation</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Matrices.random_point">
@@ -1183,185 +1331,27 @@
         <span class="k">return</span> <span class="n">point</span></div>
 
 
-<div class="viewcode-block" id="Matrices.congruent">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.congruent">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">congruent</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">"""Compute the congruent action of mat_2 on mat_1.</span>
+<div class="viewcode-block" id="Matrices.matrix_representation">
+<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.matrix_representation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">matrix_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_representation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Compute the matrix representation for the given basis coefficients.</span>
 
-<span class="sd">        This is :math:`mat\_2 \ mat\_1 \ mat\_2^T`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat_1 : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        mat_2 : array-like, shape=[..., n, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        cong : array-like, shape=[..., n, n]</span>
-<span class="sd">            Result of the congruent action.</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">mat_2</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">mat_2</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.frobenius_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.frobenius_product">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">frobenius_product</span><span class="p">(</span><span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute Frobenius inner-product of two matrices.</span>
-
-<span class="sd">        The `einsum` function is used to avoid computing a matrix product. It</span>
-<span class="sd">        is also faster than using a sum an element-wise product.</span>
+<span class="sd">        The coefficients in the canonical basis are the flattened entries of</span>
+<span class="sd">        the matrix, so this reshapes them into a matrix.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        mat_1 : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
-<span class="sd">        mat_2 : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
+<span class="sd">        basis_representation : array-like, shape=[..., m * n]</span>
+<span class="sd">            Coefficients in the basis.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        product : array-like, shape=[...,]</span>
-<span class="sd">            Frobenius inner-product of mat_1 and mat_2</span>
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...ij-&gt;..."</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.trace_product">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.trace_product">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trace_product</span><span class="p">(</span><span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Compute trace of the product of two matrices.</span>
-
-<span class="sd">        The `einsum` function is used to avoid computing a matrix product. It</span>
-<span class="sd">        is also faster than using a sum an element-wise product.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat_1 : array-like, shape=[..., m, n]</span>
+<span class="sd">        matrix_representation : array-like, shape=[..., m, n]</span>
 <span class="sd">            Matrix.</span>
-<span class="sd">        mat_2 : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        product : array-like, shape=[...,]</span>
-<span class="sd">            Frobenius inner-product of mat_1 and mat_2</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...ij,...ji-&gt;..."</span><span class="p">,</span> <span class="n">mat_1</span><span class="p">,</span> <span class="n">mat_2</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.flatten">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.flatten">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">flatten</span><span class="p">(</span><span class="n">mat</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return a flattened form of the matrix.</span>
-
-<span class="sd">        Flatten a matrix (compatible with vectorization on data axis 0).</span>
-<span class="sd">        The reverse operation is reshape. These operations are often called</span>
-<span class="sd">        matrix vectorization / matricization in mathematics</span>
-<span class="sd">        (https://en.wikipedia.org/wiki/Tensor_reshaping).</span>
-<span class="sd">        The names flatten / reshape were chosen to avoid  confusion with</span>
-<span class="sd">        vectorization on data axis 0.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        mat : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matrix.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        vec : array-like, shape=[..., m * n]</span>
-<span class="sd">            Flatten copy of mat.</span>
-<span class="sd">        """</span>
-        <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">mat_shape</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">batch_shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat_shape</span><span class="p">),))</span></div>
-
-
-<div class="viewcode-block" id="Matrices.reshape">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.reshape">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return a matricized form of the vector.</span>
-
-<span class="sd">        Matricize a vector (compatible with vectorization on data axis 0).</span>
-<span class="sd">        The reverse operation is matrices.flatten. These operations are often</span>
-<span class="sd">        called matrix vectorization / matricization in mathematics</span>
-<span class="sd">        (https://en.wikipedia.org/wiki/Tensor_reshaping).</span>
-<span class="sd">        The names flatten / reshape were chosen to avoid  confusion with</span>
-<span class="sd">        vectorization on data axis 0.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        vec : array-like, shape=[..., m * n]</span>
-<span class="sd">            Vector.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        mat : array-like, shape=[..., m, n]</span>
-<span class="sd">            Matricized copy of vec.</span>
-<span class="sd">        """</span>
-        <span class="n">is_data_vectorized_on_axis_0</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vec</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span>
-        <span class="k">if</span> <span class="n">is_data_vectorized_on_axis_0</span><span class="p">:</span>
-            <span class="n">vector_size</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">vector_size</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">vector_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Incompatible vector and matrix sizes"</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Matrices.align_matrices">
-<a class="viewcode-back" href="../../../api/geomstats.geometry.html#geomstats.geometry.lie_algebra.Matrices.align_matrices">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">align_matrices</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">base_point</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Align matrices.</span>
-
-<span class="sd">        Find the optimal rotation R in SO(m) such that the base point and</span>
-<span class="sd">        R.point are well positioned.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        point : array-like, shape=[..., m, n]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        base_point : array-like, shape=[..., m, n]</span>
-<span class="sd">            Point on the manifold.</span>
-<span class="sd">        flip : bool</span>
-<span class="sd">            Whether to flip determinant if negative.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        aligned : array-like, shape=[..., m, n]</span>
-<span class="sd">            R.point.</span>
-<span class="sd">        """</span>
-        <span class="n">mat</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">point</span><span class="p">),</span> <span class="n">base_point</span><span class="p">)</span>
-        <span class="n">left</span><span class="p">,</span> <span class="n">singular_values</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">det</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-        <span class="n">conditioning</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">gs</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="o">*</span> <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="p">)</span> <span class="o">/</span> <span class="n">singular_values</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">conditioning</span> <span class="o">&lt;</span> <span class="n">gs</span><span class="o">.</span><span class="n">atol</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">"Singularity close, ill-conditioned matrix encountered: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
-                <span class="n">conditioning</span><span class="p">[</span><span class="n">conditioning</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">],</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="n">gs</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">conditioning</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Alignment matrix is not unique."</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">flip</span><span class="p">:</span>
-            <span class="n">flipped</span> <span class="o">=</span> <span class="n">flip_determinant</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">right</span><span class="p">),</span> <span class="n">det</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">flipped</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">right</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">gs</span><span class="o">.</span><span class="n">matrix_transpose</span><span class="p">(</span><span class="n">flipped</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">gs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">basis_representation</span><span class="p">,</span> <span class="n">basis_representation</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="p">)</span></div>
 </div>
 
 
@@ -1581,7 +1571,7 @@
 <span class="sd">        inner_prod : array-like, shape=[...,]</span>
 <span class="sd">            Frobenius inner-product of tangent_vec_a and tangent_vec_b.</span>
 <span class="sd">        """</span>
-        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span><span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_space</span><span class="o">.</span><span class="n">point_ndim</span><span class="p">,</span> <span class="n">inner_prod</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span>
         <span class="p">)</span></div>
@@ -1759,7 +1749,7 @@
 <span class="sd">        we just need to multiply each element of the tangent vector by the corresponding</span>
 <span class="sd">        diagonal coefficient. (Avoids unnecessary reshapings.)</span>
 <span class="sd">        """</span>
-        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">Matrices</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span>
+        <span class="n">inner_prod</span> <span class="o">=</span> <span class="n">MatrixOperations</span><span class="o">.</span><span class="n">frobenius_product</span><span class="p">(</span>
             <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_coeffs</span> <span class="o">*</span> <span class="n">tangent_vec_b</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">repeat_out</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">inner_prod</span><span class="p">,</span> <span class="n">tangent_vec_a</span><span class="p">,</span> <span class="n">tangent_vec_b</span><span class="p">,</span> <span class="n">base_point</span><span class="p">)</span></div>
